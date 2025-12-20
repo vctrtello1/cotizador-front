@@ -14,9 +14,12 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
 
   const fetchCotizaciones = async () => {
     try {
-      const data = await fetchCotizacionesApi();
+      const response = await fetchCotizacionesApi();
+      // Handle if response is wrapped in a data property or is the array directly
+      const data = Array.isArray(response) ? response : (response.data || []);
       cotizaciones.value = data;
       usingMockData.value = false;
+      console.log("Cotizaciones fetched:", data);
     } catch (error) {
       console.warn("⚠️ Backend no disponible, usando datos de prueba");
       cotizaciones.value = mockCotizaciones;

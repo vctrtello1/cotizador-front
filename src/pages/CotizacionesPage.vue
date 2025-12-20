@@ -10,7 +10,7 @@
             <div v-for="cotizacion in cotizaciones" :key="cotizacion.id" class="cotizacion-card">
                 <h3>{{ cotizacion.description }}</h3>
                 <p><strong>Fecha:</strong> {{ cotizacion.date }}</p>
-                <p><strong>Monto:</strong> ${{ cotizacion.amount.toFixed(2) }}</p>
+                <p><strong>Monto:</strong> ${{ typeof cotizacion.amount === 'number' ? cotizacion.amount.toFixed(2) : cotizacion.amount }}</p>
             </div>
         </div>
         <p v-else>No hay cotizaciones disponibles.</p>
