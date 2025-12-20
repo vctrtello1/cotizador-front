@@ -1,6 +1,6 @@
 <template>
     <div class="cotizaciones-container">
-        <h1>Cotizaciones</h1>
+        <h1>Cotizaciones activas</h1>
         
         <div v-if="usingMockData" class="warning-banner">
             ⚠️ Backend no disponible. Mostrando datos de prueba.
@@ -9,8 +9,9 @@
         <div v-if="cotizaciones.length" class="cotizaciones-list">
             <div v-for="cotizacion in cotizaciones" :key="cotizacion.id" class="cotizacion-card">
                 <h3>{{ cotizacion.description }}</h3>
-                <p><strong>Fecha:</strong> {{ cotizacion.date }}</p>
-                <p><strong>Monto:</strong> ${{ typeof cotizacion.amount === 'number' ? cotizacion.amount.toFixed(2) : cotizacion.amount }}</p>
+                <p><strong>Nom. Cliente:</strong> {{ cotizacion.cliente.nombre }}</p>
+                <p><strong>Fecha:</strong> {{ cotizacion.fecha }}</p>
+                <p><strong>Monto:</strong> ${{ typeof cotizacion.total === 'number' ? cotizacion.total.toFixed(2) : cotizacion.total }}</p>
             </div>
         </div>
         <p v-else>No hay cotizaciones disponibles.</p>
