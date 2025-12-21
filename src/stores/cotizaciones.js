@@ -21,10 +21,12 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
   const fecthCotizacionById = async (id) => {
     try {
       const response = await getCotizacionById(id);
-      return response;
       console.log("Cotización fetched by ID:", response);
+      // Si la respuesta viene envuelta en un objeto data, extrae el valor
+      return response.data || response;
     } catch (error) {
       console.warn("⚠️ Error fetching cotización by ID:", error);
+      return null;
     }
   };
 
