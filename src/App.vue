@@ -1,5 +1,4 @@
 <script setup>
-import WelcomePage from './pages/CotizacionesPage.vue'
 </script>
 
 <template>
@@ -8,7 +7,7 @@ import WelcomePage from './pages/CotizacionesPage.vue'
   </header>
 
   <main>
-    <WelcomePage />
+    <router-view />
   </main>
 </template>
 

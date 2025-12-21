@@ -7,7 +7,12 @@
         
 
         <div v-if="cotizaciones.length" class="cotizaciones-grid">
-            <div v-for="cotizacion in cotizaciones" :key="cotizacion.id" class="cotizacion-card">
+            <div 
+                v-for="cotizacion in cotizaciones" 
+                :key="cotizacion.id" 
+                class="cotizacion-card"
+                @click="goToCotizacionDetallada(cotizacion.id)"
+            >
                 <div class="card-header">
                     <span class="cotizacion-id">#{{ cotizacion.id }}</span>
                     <span class="cotizacion-date">{{ new Date(cotizacion.fecha).toLocaleDateString() }}</span>
@@ -34,11 +39,17 @@
 <script setup>  
     import { onMounted } from 'vue';
     import { storeToRefs } from 'pinia';
+    import { useRouter } from 'vue-router';
     import { useCotizacionesStore } from '@/stores/cotizaciones';
 
+    const router = useRouter();
     const store = useCotizacionesStore();
     const { cotizaciones } = storeToRefs(store);
     const { fetchCotizaciones } = store;
+
+    const goToCotizacionDetallada = (id) => {
+        router.push({ name: 'CotizacionDetallada', params: { id } });
+    };
 
     onMounted(() => {
         fetchCotizaciones();
@@ -163,6 +174,7 @@
     background: var(--color-background-soft);
     border: 2px solid var(--color-border);
     border-radius: 12px;
+    cursor: pointer;
     box-shadow: 0 6px 20px var(--shadow-light);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;

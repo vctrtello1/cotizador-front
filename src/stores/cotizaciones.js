@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue"; 
-import { fetchCotizaciones as fetchCotizacionesApi } from "../http/cotizaciones-api";
+import { fetchCotizaciones as fetchCotizacionesApi, getCotizacionById } from "../http/cotizaciones-api";
 
 
 export const useCotizacionesStore = defineStore("cotizaciones", () => {
@@ -18,8 +18,19 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
     }
   };
 
+  const fecthCotizacionById = async (id) => {
+    try {
+      const response = await getCotizacionById(id);
+      return response;
+      console.log("Cotización fetched by ID:", response);
+    } catch (error) {
+      console.warn("⚠️ Error fetching cotización by ID:", error);
+    }
+  };
+
   return {
     cotizaciones,
     fetchCotizaciones,
+    fecthCotizacionById,
   };
 });
