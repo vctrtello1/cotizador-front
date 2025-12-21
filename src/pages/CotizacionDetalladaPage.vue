@@ -12,18 +12,23 @@
                 <div v-for="detalle in detalles" :key="detalle.id" class="cotizacion-card"
                     @click="goToCotizacionDetallada(detalle.id)">
                     <div class="card-header">
-            
-                    </div>
-                    <div class="card-body">
                         <h3 class="modulo-name">
                             Modulo: {{ detalle.modulo ? detalle.modulo.nombre : 'Sin Módulo' }}
+                            Descripcion: {{ detalle.modulo ? detalle.modulo.descripcion : 'Sin Módulo' }}
                         </h3>
+                    </div>
+                    <div class="card-body">
+                        
                         <p class="description"> Articulo: {{ detalle.descripcion || detalle.description || 'Sin descripción' }}</p>
                     </div>
                     <div class="card-footer">
                         <span class="label">Precio Unitario:</span>
                         <span class="amount">${{ typeof detalle.precio_unitario === 'number' ? detalle.precio_unitario.toFixed(2) :
                             detalle.precio_unitario }}</span>
+                            <span class="label">Cantidad:</span>
+                        <span class="amount">{{ typeof detalle.cantidad === 'number' ?
+                            detalle.cantidad :
+                            detalle.cantidad }}</span>
                     </div>
                 </div>
             </div>
