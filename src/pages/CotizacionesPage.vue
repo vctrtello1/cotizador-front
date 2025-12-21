@@ -16,7 +16,9 @@
                     <span class="cotizacion-date">{{ new Date(cotizacion.fecha).toLocaleDateString() }}</span>
                 </div>
                 <div class="card-body">
-                    <h3 class="client-name">{{ cotizacion.cliente?.nombre || 'Cliente Desconocido' }}</h3>
+                    <h3 class="client-name">
+                        {{ cotizacion.cliente ? cotizacion.cliente.nombre : 'Sin Cliente' }}
+                    </h3>
                     <p class="description">{{ cotizacion.description }}</p>
                 </div>
                 <div class="card-footer">
@@ -218,22 +220,27 @@
 .card-body {
     padding: 24px;
     flex-grow: 1;
-    background: var(--warm-white);
+    background: var(--warm-white, #FAF8F3);
+    min-height: 120px;
 }
 
 .client-name {
     margin: 0 0 12px 0;
     font-size: 1.5rem;
-    color: var(--color-heading);
+    color: #2C1810 !important;
     font-weight: 700;
     line-height: 1.3;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .description {
     margin: 0;
-    color: var(--color-text-muted);
+    color: #6B4423 !important;
     font-size: 0.95rem;
     line-height: 1.6;
+    display: block !important;
 }
 
 .card-footer {
