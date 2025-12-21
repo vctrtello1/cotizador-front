@@ -10,15 +10,74 @@
 a,
 .green {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
+  color: var(--color-primary);
+  transition: all 0.3s ease;
   padding: 3px;
+  border-bottom: 2px solid transparent;
 }
 
 @media (hover: hover) {
   a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+    background-color: transparent;
   }
+}
+
+/* Estilos para botones con tema madera */
+button, .btn {
+  background: linear-gradient(135deg, var(--wood-medium) 0%, var(--wood-light) 100%);
+  color: var(--cream);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--shadow-light);
+}
+
+button:hover, .btn:hover {
+  background: linear-gradient(135deg, var(--wood-light) 0%, var(--wood-lighter) 100%);
+  box-shadow: 0 6px 12px var(--shadow-medium);
+  transform: translateY(-2px);
+}
+
+button:active, .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px var(--shadow-light);
+}
+
+/* Inputs con estilo madera */
+input, textarea, select {
+  background-color: var(--warm-white);
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: var(--color-text);
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.15);
+}
+
+/* Cards con efecto madera */
+.card {
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px var(--shadow-light);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 16px var(--shadow-medium);
+  transform: translateY(-4px);
 }
 
 @media (min-width: 1024px) {

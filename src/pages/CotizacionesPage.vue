@@ -48,13 +48,12 @@
 
 <style scoped>
 .cotizaciones-container {
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
     padding: 40px 20px;
-    font-family: 'Inter', sans-serif;
-    color: #000;
-    background-color: #fff; /* Force white background */
-    min-height: 100vh; /* Ensure it covers the screen height */
+    font-family: 'Georgia', 'Garamond', serif;
+    color: var(--color-text);
+    min-height: 100vh;
 }
 
 .page-header {
@@ -62,131 +61,184 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 40px;
-    border-bottom: 4px solid #000;
+    border-bottom: 3px solid var(--color-border);
     padding-bottom: 20px;
 }
 
 .page-header h1 {
     font-size: 2.5rem;
-    color: #000;
-    font-weight: 900;
+    color: var(--color-heading);
+    font-weight: 700;
     margin: 0;
-    text-transform: uppercase;
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
 }
 
 .btn-primary {
-    background-color: #000;
-    color: #fff;
-    border: 2px solid #000;
-    padding: 12px 24px;
-    font-weight: 700;
+    background: linear-gradient(135deg, var(--wood-medium) 0%, var(--wood-light) 100%);
+    color: var(--cream);
+    border: none;
+    padding: 14px 28px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-light);
 }
 
 .btn-primary:hover {
-    background-color: #fff;
-    color: #000;
+    background: linear-gradient(135deg, var(--wood-light) 0%, var(--wood-lighter) 100%);
+    box-shadow: 0 6px 16px var(--shadow-medium);
+    transform: translateY(-2px);
 }
 
 .warning-banner {
-    background-color: #fff;
-    color: #000;
-    padding: 15px;
-    border: 2px solid #000;
+    background-color: var(--cream);
+    color: var(--wood-dark);
+    padding: 15px 20px;
+    border: 2px solid var(--accent-gold);
+    border-radius: 8px;
     margin-bottom: 30px;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-weight: 700;
-    box-shadow: 4px 4px 0px #000;
+    font-weight: 600;
+    box-shadow: 0 4px 8px var(--shadow-light);
 }
 
+/* Galería responsiva */
 .cotizaciones-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 32px;
+    padding: 20px 0;
+}
+
+@media (min-width: 768px) {
+    .cotizaciones-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .cotizaciones-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1600px) {
+    .cotizaciones-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
 
 .cotizacion-card {
-    background: white;
-    border: 3px solid #000;
-    box-shadow: 6px 6px 0px #000;
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--color-background-soft);
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 6px 20px var(--shadow-light);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.cotizacion-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-gold), var(--accent-bronze));
+    opacity: 0;
+    transition: opacity 0.4s ease;
 }
 
 .cotizacion-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 10px 10px 0px #000;
+    transform: translateY(-8px);
+    box-shadow: 0 12px 32px var(--shadow-medium);
+    border-color: var(--accent-gold);
+}
+
+.cotizacion-card:hover::before {
+    opacity: 1;
 }
 
 .card-header {
-    padding: 15px;
-    background-color: #000;
-    color: #fff;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--wood-medium), var(--wood-light));
+    color: var(--cream);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-weight: 700;
-    border-bottom: 3px solid #000;
+    font-weight: 600;
 }
 
 .cotizacion-id {
-    font-family: monospace;
+    font-family: 'Courier New', monospace;
     font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.cotizacion-date {
+    font-size: 0.9rem;
+    opacity: 0.95;
 }
 
 .card-body {
-    padding: 20px;
+    padding: 24px;
     flex-grow: 1;
+    background: var(--warm-white);
 }
 
 .client-name {
-    margin: 0 0 10px 0;
-    font-size: 1.4rem;
-    color: #000;
-    font-weight: 800;
+    margin: 0 0 12px 0;
+    font-size: 1.5rem;
+    color: var(--color-heading);
+    font-weight: 700;
+    line-height: 1.3;
 }
 
 .description {
     margin: 0;
-    color: #000;
-    font-size: 1rem;
-    line-height: 1.5;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
 }
 
 .card-footer {
-    padding: 15px 20px;
-    border-top: 3px solid #000;
+    padding: 16px 24px;
+    border-top: 2px solid var(--color-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #fff;
+    background: var(--cream-soft);
 }
 
 .label {
-    color: #000;
+    color: var(--wood-medium);
     text-transform: uppercase;
-    font-weight: 800;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
 }
 
 .amount {
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: #000;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--accent-gold);
+    text-shadow: 1px 1px 2px var(--shadow-light);
 }
 
 .empty-state {
     text-align: center;
-    padding: 40px;
-    color: #000;
-    border: 3px dashed #000;
+    padding: 60px 40px;
+    color: var(--color-text-muted);
+    border: 2px dashed var(--color-border);
+    border-radius: 12px;
     font-weight: 600;
+    background: var(--color-background-soft);
 }
 </style>
