@@ -48,9 +48,9 @@
 
 <style scoped>
 .cotizaciones-container {
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 40px 20px;
+    width: 100%;
+    margin: 0;
+    padding: 40px 32px;
     font-family: 'Georgia', 'Garamond', serif;
     color: var(--color-text);
     min-height: 100vh;
@@ -60,9 +60,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
+    margin-bottom: 48px;
     border-bottom: 3px solid var(--color-border);
     padding-bottom: 20px;
+    max-width: 100%;
 }
 
 .page-header h1 {
@@ -98,7 +99,7 @@
     padding: 15px 20px;
     border: 2px solid var(--accent-gold);
     border-radius: 8px;
-    margin-bottom: 30px;
+    margin-bottom: 32px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -106,29 +107,56 @@
     box-shadow: 0 4px 8px var(--shadow-light);
 }
 
-/* Galería responsiva */
+/* Grid de galería con 3 columnas */
 .cotizaciones-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 32px;
-    padding: 20px 0;
+    padding: 0;
+    align-items: start;
+    width: 100%;
 }
 
-@media (min-width: 768px) {
+/* Mobile - 1 columna */
+@media (max-width: 767px) {
+    .cotizaciones-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .cotizaciones-container {
+        padding: 24px 16px;
+    }
+}
+
+/* Tablets - 2 columnas */
+@media (min-width: 768px) and (max-width: 1023px) {
     .cotizaciones-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+    
+    .cotizaciones-container {
+        padding: 32px 24px;
     }
 }
 
-@media (min-width: 1200px) {
+/* Laptops y Desktops - 3 columnas */
+@media (min-width: 1024px) {
     .cotizaciones-grid {
         grid-template-columns: repeat(3, 1fr);
+        gap: 32px;
     }
 }
 
-@media (min-width: 1600px) {
+/* Pantallas muy grandes - mantener 3 columnas con mayor gap */
+@media (min-width: 1920px) {
     .cotizaciones-grid {
-        grid-template-columns: repeat(4, 1fr);
+        gap: 40px;
+    }
+    
+    .cotizaciones-container {
+        padding: 56px 64px;
     }
 }
 
