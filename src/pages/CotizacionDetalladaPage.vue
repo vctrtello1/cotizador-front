@@ -12,23 +12,22 @@
                 <div v-for="detalle in detalles" :key="detalle.id" class="cotizacion-card"
                     @click="goToCotizacionDetallada(detalle.id)">
                     <div class="card-header">
-                        <h3 class="modulo-name">
-                            Modulo: {{ detalle.modulo ? detalle.modulo.nombre : 'Sin Módulo' }}
-                            Descripcion: {{ detalle.modulo ? detalle.modulo.descripcion : 'Sin Módulo' }}
-                        </h3>
+                        
                     </div>
                     <div class="card-body">
                         
-                        <p class="description"> Articulo: {{ detalle.descripcion || detalle.description || 'Sin descripción' }}</p>
+                        <p class="articulo-label"><strong>Artículo:</strong></p>
+                        <p class="description">{{ detalle.descripcion || detalle.description || 'Sin descripción' }}</p>
                     </div>
                     <div class="card-footer">
-                        <span class="label">Precio Unitario:</span>
-                        <span class="amount">${{ typeof detalle.precio_unitario === 'number' ? detalle.precio_unitario.toFixed(2) :
-                            detalle.precio_unitario }}</span>
+                        <div class="footer-item">
+                            <span class="label">Precio Unitario:</span>
+                            <span class="amount">${{ typeof detalle.precio_unitario === 'number' ? detalle.precio_unitario.toFixed(2) : detalle.precio_unitario }}</span>
+                        </div>
+                        <div class="footer-item">
                             <span class="label">Cantidad:</span>
-                        <span class="amount">{{ typeof detalle.cantidad === 'number' ?
-                            detalle.cantidad :
-                            detalle.cantidad }}</span>
+                            <span class="amount">{{ detalle.cantidad }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
