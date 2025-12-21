@@ -7,22 +7,31 @@
             <p><strong>Cliente:</strong> {{ cotizacion.cliente ? cotizacion.cliente.nombre : 'Sin Cliente' }}</p>
             <p><strong>Detalles:</strong> </p>
 
-
             <div v-if="detalles.length" class="cotizaciones-grid">
-                <div v-for="detalle in detalles" :key="detalle.id" class="cotizacion-card"
-                    @click="goToCotizacionDetallada(detalle.id)">
+                <div v-for="detalle in detalles" :key="detalle.id" class="cotizacion-card">
                     <div class="card-header">
-                        
+                        <span class="cotizacion-id">Detalle #{{ detalle.modulo.nombre }}</span>
+                        <span class="cotizacion-id">Detalle #{{ detalle.modulo.descripcion }}</span>
+
+                    </div>
+
+                </div>
+            </div>
+            <div v-if="detalles.length" class="cotizaciones-grid">
+                <div v-for="detalle in detalles" :key="detalle.id" class="cotizacion-card">
+                    <div class="card-header">
+
                     </div>
                     <div class="card-body">
-                        
+
                         <p class="articulo-label"><strong>Artículo:</strong></p>
                         <p class="description">{{ detalle.descripcion || detalle.description || 'Sin descripción' }}</p>
                     </div>
                     <div class="card-footer">
                         <div class="footer-item">
                             <span class="label">Precio Unitario:</span>
-                            <span class="amount">${{ typeof detalle.precio_unitario === 'number' ? detalle.precio_unitario.toFixed(2) : detalle.precio_unitario }}</span>
+                            <span class="amount">${{ typeof detalle.precio_unitario === 'number' ?
+                                detalle.precio_unitario.toFixed(2) : detalle.precio_unitario }}</span>
                         </div>
                         <div class="footer-item">
                             <span class="label">Cantidad:</span>
@@ -31,9 +40,10 @@
                     </div>
                 </div>
             </div>
-  
 
-            <p><strong>Total:</strong> ${{ typeof cotizacion.total === 'number' ? cotizacion.total.toFixed(2) : cotizacion.total }}</p>
+
+            <p><strong>Total:</strong> ${{ typeof cotizacion.total === 'number' ? cotizacion.total.toFixed(2) :
+                cotizacion.total }}</p>
             <!-- Agrega más detalles según la estructura de tu cotización -->
         </div>
     </div>
