@@ -5,9 +5,6 @@
             <button class="btn-primary">Nueva Cotización</button>
         </header>
         
-        <div v-if="usingMockData" class="warning-banner">
-            <span class="icon">⚠️</span> Backend no disponible. Mostrando datos de prueba.
-        </div>
 
         <div v-if="cotizaciones.length" class="cotizaciones-grid">
             <div v-for="cotizacion in cotizaciones" :key="cotizacion.id" class="cotizacion-card">
@@ -40,7 +37,7 @@
     import { useCotizacionesStore } from '@/stores/cotizaciones';
 
     const store = useCotizacionesStore();
-    const { cotizaciones, usingMockData } = storeToRefs(store);
+    const { cotizaciones } = storeToRefs(store);
     const { fetchCotizaciones } = store;
 
     onMounted(() => {
