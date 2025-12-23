@@ -108,6 +108,7 @@ onMounted(async () => {
     margin: 0 auto;
     padding: 40px 32px;
     font-family: 'Georgia', 'Garamond', serif;
+    background: transparent;
 }
 
 .page-header {
@@ -115,13 +116,15 @@ onMounted(async () => {
     align-items: center;
     gap: 24px;
     margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 3px solid var(--color-border, #E5DFD0);
+    padding: 24px;
+    background: var(--cream, #F5F1E8);
+    border-radius: 12px;
+    border: 2px solid var(--color-border, #E5DFD0);
 }
 
 .btn-back {
-    background: linear-gradient(135deg, var(--wood-medium, #6B4423) 0%, var(--wood-light, #8B5A3C) 100%);
-    color: var(--cream, #F5F1E8);
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    color: #F5F1E8;
     border: none;
     padding: 12px 24px;
     border-radius: 8px;
@@ -129,6 +132,7 @@ onMounted(async () => {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(44, 24, 16, 0.1);
+    flex-shrink: 0;
 }
 
 .btn-back:hover {
@@ -138,9 +142,11 @@ onMounted(async () => {
 
 .page-title {
     font-size: 2.5rem;
-    color: var(--wood-darkest, #2C1810);
+    color: #2C1810;
     margin: 0;
     font-weight: 700;
+    line-height: 1.2;
+    text-shadow: none;
 }
 
 .info-card {
@@ -154,11 +160,12 @@ onMounted(async () => {
 
 .section-title {
     font-size: 1.75rem;
-    color: var(--wood-dark, #4A3020);
+    color: #4A3020;
     margin: 0 0 24px 0;
     font-weight: 700;
     padding-bottom: 16px;
-    border-bottom: 2px solid var(--accent-gold, #C9A961);
+    border-bottom: 2px solid #C9A961;
+    line-height: 1.2;
 }
 
 .info-grid {
