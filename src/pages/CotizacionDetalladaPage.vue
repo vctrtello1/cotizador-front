@@ -205,7 +205,15 @@ onMounted(async () => {
 }
 
 .modulos-section > .section-title {
-    margin-bottom: 24px;
+    font-size: 1.75rem;
+    color: #2C1810;
+    margin: 0 0 24px 0;
+    font-weight: 700;
+    padding: 20px 24px;
+    background: #F5F1E8;
+    border-radius: 8px;
+    border-left: 4px solid #C9A961;
+    line-height: 1.2;
 }
 
 .modulo-card {
