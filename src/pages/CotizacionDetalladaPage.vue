@@ -8,19 +8,20 @@
             <p><strong>Detalles:</strong> </p>
 
             <div v-if="detalles.length" class="modulos-container">
-                <div v-for="(grupo, index) in detalles" :key="index" class="modulo-section">
+                
+                <div v-for="(modulo, index) in detalles" :key="index" class="modulo-section">
                     <!-- Encabezado del módulo -->
-                    <div v-if="grupo.modulo" class="modulo-header">
-                        <h2 class="modulo-nombre">{{ grupo.modulo.nombre }}</h2>
-                        <p class="modulo-descripcion">{{ grupo.modulo.descripcion }}</p>
+                    <div class="modulo-header">
+                        <h2 class="modulo-nombre">{{ modulo.nombre }}</h2>
+                        <p class="modulo-descripcion">{{ modulo.descripcion }}</p>
                     </div>
                     
                     <!-- Artículos del módulo -->
                     <div class="articulos-grid">
-                        <div v-for="articulo in grupo.articulos" :key="articulo.id" class="articulo-card">
+                        <div v-for="articulo in modulo.detalles" :key="articulo.id" class="articulo-card">
                             <div class="card-body">
                                 <p class="articulo-label"><strong>Artículo:</strong></p>
-                                <p class="description">{{ articulo.descripcion || articulo.description || 'Sin descripción' }}</p>
+                                <p class="description">{{ articulo.descripcion || 'Sin descripción' }}</p>
                             </div>
                             <div class="card-footer">
                                 <div class="footer-item">
@@ -31,21 +32,22 @@
                                     <span class="label">Cantidad:</span>
                                     <span class="amount">{{ articulo.cantidad }}</span>
                                 </div>
+                                <div class="footer-item">
+                                    <span class="label">Subtotal:</span>
+                                    <span class="amount">${{ typeof articulo.subtotal === 'number' ? articulo.subtotal : articulo.subtotal }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-
-            <p><strong>Total:</strong> ${{ typeof cotizacion.total === 'number' ? cotizacion.total.toFixed(2) :
-                cotizacion.total }}</p>
-            <!-- Agrega más detalles según la estructura de tu cotización -->
+            <p><strong>Total:</strong> ${{ typeof cotizacion.total === 'number' ? cotizacion.total.toFixed(2) : cotizacion.total }}</p>
         </div>
     </div>
-    <div v-else class="loading-state">
-        <p>Cargando cotización...</p>
-    </div>
+
+
+
 </template>
 
 
@@ -62,35 +64,8 @@ const { fecthCotizacionById } = store;
 const cotizacion = ref(null);
 
 const detalles = computed(() => {
-    const allDetalles = cotizacion.value?.detalles || [];
-    
-    // Agrupar detalles por módulo para evitar duplicados
-    const modulosMap = new Map();
-    
-    allDetalles.forEach(detalle => {
-        const moduloId = detalle.modulo?.id;
-        
-        if (!moduloId) {
-            // Si no tiene módulo, agregar directamente
-            modulosMap.set(`sin-modulo-${detalle.id}`, {
-                modulo: null,
-                articulos: [detalle]
-            });
-        } else {
-            // Si el módulo ya existe, agregar artículo
-            if (modulosMap.has(moduloId)) {
-                modulosMap.get(moduloId).articulos.push(detalle);
-            } else {
-                // Si es nuevo módulo, crear entrada
-                modulosMap.set(moduloId, {
-                    modulo: detalle.modulo,
-                    articulos: [detalle]
-                });
-            }
-        }
-    });
-    
-    return Array.from(modulosMap.values());
+    // La estructura correcta es cotizacion.modulos, no cotizacion.detalles
+    return cotizacion.value?.modulos || [];
 });
 
 const goToCotizacionDetallada = (id) => {
