@@ -52,8 +52,8 @@
                     <div v-for="articulo in modulo.detalles" :key="articulo.id" class="table-row">
                         <div class="col-descripcion">{{ articulo.descripcion }}</div>
                         <div class="col-cantidad">{{ articulo.cantidad }}</div>
-                        <div class="col-precio">${{ Number(articulo.precio_unitario).toFixed(2) }}</div>
-                        <div class="col-subtotal">${{ Number(articulo.subtotal).toFixed(2) }}</div>
+                        <div class="col-precio">${{ formatCurrency(articulo.precio_unitario) }}</div>
+                        <div class="col-subtotal">${{ formatCurrency(articulo.subtotal) }}</div>
                     </div>
                 </div>
             </div>
@@ -63,7 +63,7 @@
         <div class="total-card">
             <div class="total-content">
                 <span class="total-label">Total de la Cotización</span>
-                <span class="total-amount">${{ Number(cotizacion.total).toFixed(2) }}</span>
+                <span class="total-amount">${{ formatCurrency(cotizacion.total) }}</span>
             </div>
         </div>
     </div>
@@ -91,6 +91,11 @@ const detalles = computed(() => {
     // La estructura correcta es cotizacion.modulos, no cotizacion.detalles
     return cotizacion.value?.modulos || [];
 });
+
+const formatCurrency = (value) => {
+    const num = Number(value);
+    return num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const goToCotizacionDetallada = (id) => {
     router.push({ name: 'CotizacionDetallada', params: { id } });
