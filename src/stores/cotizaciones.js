@@ -9,12 +9,16 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
   const fetchCotizaciones = async () => {
     try {
       const response = await fetchCotizacionesApi();
+      console.log("Response from API:", response);
       
-      const data = Array.isArray(response) ? response : (response.data || []);
+      // La respuesta debería ser { data: [...] }
+      const data = Array.isArray(response) ? response : (response.data || response || []);
+      console.log("Final data to store:", data);
+      
       cotizaciones.value = data;
-      console.log("Cotizaciones fetched:", data);
     } catch (error) {
-      console.warn("⚠️ Backend no disponible");
+      console.error("⚠️ Error fetching cotizaciones:", error);
+      cotizaciones.value = [];
     }
   };
 

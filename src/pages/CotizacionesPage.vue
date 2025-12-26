@@ -19,9 +19,9 @@
                 </div>
                 <div class="card-body">
                     <h3 class="client-name">
-                        {{ cotizacion.cliente ? cotizacion.cliente.nombre : 'Sin Cliente' }}
+                        {{ cotizacion.cliente?.nombre || 'Sin Cliente' }}
                     </h3>
-                    <p class="description">{{ cotizacion.description }}</p>
+                    <p class="description">{{ cotizacion.modulos && cotizacion.modulos.length > 0 ? cotizacion.modulos.map(m => m.nombre).join(', ') : 'Sin módulos' }}</p>
                 </div>
                 <div class="card-footer">
                     <span class="label">Total:</span>
