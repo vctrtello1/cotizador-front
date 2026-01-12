@@ -46,8 +46,6 @@
                     <div class="table-header">
                         
                         <div class="col-nombre">Nombre</div>
-    
-                        <div class="col-codigo">Código</div>
                         <div class="col-cantidad">Cantidad</div>
                         <div class="col-precio">Precio Unit.</div>
                         <div class="col-subtotal">Subtotal</div>
@@ -105,10 +103,14 @@ const formatCurrency = (value) => {
 };
 
 const calcularSubtotal = (componente) => {
-    // Si existe subtotal en los datos, usarlo; si no, calcular cantidad * precio_unitario
-    if (componente.subtotal && componente.subtotal !== 0) {
-        return componente.subtotal;
+    // Intentar usar subtotal si existe y no es null/undefined
+    if (componente.subtotal !== null && componente.subtotal !== undefined && componente.subtotal !== '') {
+        const subtotal = Number(componente.subtotal);
+        if (!isNaN(subtotal)) {
+            return subtotal;
+        }
     }
+    // Si no hay subtotal válido, calcular: cantidad * precio_unitario
     const cantidad = Number(componente.cantidad) || 0;
     const precio = Number(componente.precio_unitario) || 0;
     return cantidad * precio;
