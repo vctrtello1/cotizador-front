@@ -14,9 +14,9 @@
                     <span class="info-label">Cliente:</span>
                     <span class="info-value">{{ cotizacion.cliente?.nombre || 'Sin Cliente' }}</span>
                 </div>
-                <div class="info-item">
+                <div v-if="cotizacion.cliente?.nombre !== 'Publico En Geneal' && cotizacion.cliente?.empresa" class="info-item">
                     <span class="info-label">Empresa:</span>
-                    <span class="info-value">{{ cotizacion.cliente?.empresa || 'N/A' }}</span>
+                    <span class="info-value">{{ cotizacion.cliente?.empresa }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Fecha:</span>
@@ -24,9 +24,9 @@
                         year:
                             'numeric', month: 'long', day: 'numeric' }) }}</span>
                 </div>
-                <div class="info-item">
+                <div v-if="cotizacion.cliente?.nombre !== 'Publico En Geneal' && cotizacion.cliente?.email" class="info-item">
                     <span class="info-label">Email:</span>
-                    <span class="info-value">{{ cotizacion.cliente?.email || 'N/A' }}</span>
+                    <span class="info-value">{{ cotizacion.cliente?.email }}</span>
                 </div>
             </div>
         </div>

@@ -28,13 +28,13 @@
                         <button v-if="!formData.cliente_id" class="btn-new-cliente" @click="mostrarModalCliente = true">+ Nuevo</button>
                     </div>
                 </div>
-                <div class="form-group">
+                <div v-if="clienteSeleccionado?.nombre !== 'Publico En Geneal' && clienteSeleccionado?.empresa" class="form-group">
                     <label class="form-label">Empresa</label>
-                    <input type="text" :value="clienteSeleccionado?.empresa || ''" disabled class="form-input" placeholder="Se llena automáticamente">
+                    <input type="text" :value="clienteSeleccionado?.empresa" disabled class="form-input" placeholder="Se llena automáticamente">
                 </div>
-                <div class="form-group">
+                <div v-if="clienteSeleccionado?.nombre !== 'Publico En Geneal' && clienteSeleccionado?.email" class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" :value="clienteSeleccionado?.email || ''" disabled class="form-input" placeholder="Se llena automáticamente">
+                    <input type="email" :value="clienteSeleccionado?.email" disabled class="form-input" placeholder="Se llena automáticamente">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Fecha</label>
