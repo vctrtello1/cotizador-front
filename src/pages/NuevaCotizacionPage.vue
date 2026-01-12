@@ -25,7 +25,7 @@
                                 {{ cliente.nombre }}
                             </option>
                         </select>
-                        <button class="btn-new-cliente" @click="mostrarModalCliente = true">+ Nuevo</button>
+                        <button v-if="!formData.cliente_id" class="btn-new-cliente" @click="mostrarModalCliente = true">+ Nuevo</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -164,6 +164,7 @@ import { useCotizacionesStore } from '../stores/cotizaciones';
 import { useClientesStore } from '../stores/clientes';
 import { crearCotizacion } from '../http/cotizaciones-api';
 import { crearCliente } from '../http/clientes-api';
+import { obtenerTokenCsrf } from '../http/apl';
 
 const router = useRouter();
 const storeC = useCotizacionesStore();
@@ -348,6 +349,7 @@ const crearNuevoCliente = async () => {
 };
 
 onMounted(() => {
+    obtenerTokenCsrf();
     cargarClientes();
 });
 </script>

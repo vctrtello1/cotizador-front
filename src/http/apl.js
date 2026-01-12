@@ -6,19 +6,68 @@ const api = axios.create({
     "Content-Type": "application/json",
     "Accept": "application/json",
   },
+  withCredentials: true,
 });
+
+// Función para obtener token CSRF del servidor
+export async function obtenerTokenCsrf() {
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  
+  try {
+    // Intentar con sanctum csrf-cookie (sin baseURL duplicado)
+    const response = await axios.get(
+      baseUrl.replace('/api/v1', '') + "/sanctum/csrf-cookie",
+      { withCredentials: true }
+    );
+    console.log('Token CSRF obtenido via /sanctum/csrf-cookie');
+    return true;
+  } catch (err) {
+    console.warn('Sanctum CSRF no disponible en /sanctum/csrf-cookie');
+    
+    try {
+      // Intentar endpoint sin /api/v1
+      const response = await axios.get(
+        baseUrl.replace('/api/v1', '') + "/api/sanctum/csrf-cookie",
+        { withCredentials: true }
+      );
+      console.log('Token CSRF obtenido via /api/sanctum/csrf-cookie');
+      return true;
+    } catch (err2) {
+      console.warn('Sanctum CSRF no disponible');
+      
+      try {
+        // Intentar endpoint personalizado sin baseURL duplicado
+        const response = await axios.get(
+          baseUrl.replace('/api/v1', '') + "/api/v1/csrf-token",
+          { withCredentials: true }
+        );
+        if (response.data?.token) {
+          localStorage.setItem('csrf_token', response.data.token);
+          console.log('Token CSRF obtenido del servidor personalizado');
+        }
+        return true;
+      } catch (err3) {
+        console.warn('No se pudo obtener token CSRF automáticamente');
+        return false;
+      }
+    }
+  }
+}
 
 // Request interceptor para agregar token CSRF
 api.interceptors.request.use(
   (config) => {
-    // Obtener token CSRF del localStorage, cookie o meta tag
-    const csrfToken = 
-      localStorage.getItem('csrf_token') ||
-      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-      getCsrfFromCookie();
-    
-    if (csrfToken) {
-      config.headers['X-CSRF-Token'] = csrfToken;
+    // Para operaciones POST/PUT/DELETE, enviar token CSRF si está disponible
+    if (['post', 'put', 'patch', 'delete'].includes(config.method)) {
+      const csrfToken = getCsrfFromCookie();
+      
+      if (csrfToken) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+        config.headers['X-XSRF-TOKEN'] = csrfToken;
+        console.log('Token CSRF enviado en header:', csrfToken.substring(0, 20) + '...');
+      } else {
+        console.warn('No se encontró token CSRF en cookies para enviar');
+      }
     }
     
     return config;
@@ -34,9 +83,11 @@ function getCsrfFromCookie() {
   for (let cookie of cookies) {
     const [name, value] = cookie.trim().split('=');
     if (name === 'XSRF-TOKEN') {
+      console.log('Token XSRF encontrado en cookie:', value.substring(0, 20) + '...');
       return decodeURIComponent(value);
     }
   }
+  console.warn('Token XSRF no encontrado en cookies');
   return null;
 }
 
