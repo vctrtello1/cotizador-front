@@ -37,8 +37,6 @@
                 <h2 class="section-title">Detalles de la Cotización</h2>
                 <div class="modulos-stats">
                     <span class="stat-badge">{{ totalModulosOrdenados }} módulo{{ totalModulosOrdenados !== 1 ? 's' : '' }}</span>
-                    <span class="stat-separator">•</span>
-                    <span class="stat-badge">{{ totalComponentes }} componente{{ totalComponentes !== 1 ? 's' : '' }}</span>
                 </div>
             </div>
 
