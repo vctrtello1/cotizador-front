@@ -18,12 +18,15 @@
             <div class="info-grid">
                 <div class="form-group">
                     <label class="form-label">Cliente</label>
-                    <select v-model="formData.cliente_id" class="form-input">
-                        <option value="">Seleccionar cliente...</option>
-                        <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
-                            {{ cliente.nombre }}
-                        </option>
-                    </select>
+                    <div class="cliente-selector">
+                        <select v-model="formData.cliente_id" class="form-input">
+                            <option value="">Seleccionar cliente...</option>
+                            <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
+                                {{ cliente.nombre }}
+                            </option>
+                        </select>
+                        <button class="btn-new-cliente" @click="mostrarModalCliente = true">+ Nuevo</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Empresa</label>
@@ -117,6 +120,40 @@
                 {{ loading ? 'Guardando...' : 'Guardar Cotización' }}
             </button>
         </div>
+
+        <!-- Modal Nuevo Cliente -->
+        <div v-if="mostrarModalCliente" class="modal-overlay" @click.self="mostrarModalCliente = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Nuevo Cliente</h3>
+                    <button class="btn-close" @click="mostrarModalCliente = false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Nombre</label>
+                        <input v-model="nuevoCliente.nombre" type="text" class="form-input" placeholder="Nombre del cliente">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Empresa</label>
+                        <input v-model="nuevoCliente.empresa" type="text" class="form-input" placeholder="Nombre de la empresa">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input v-model="nuevoCliente.email" type="email" class="form-input" placeholder="email@ejemplo.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Teléfono (opcional)</label>
+                        <input v-model="nuevoCliente.telefono" type="tel" class="form-input" placeholder="+1 (555) 000-0000">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" @click="mostrarModalCliente = false" :disabled="creandoCliente">Cancelar</button>
+                    <button class="btn-save" @click="crearNuevoCliente" :disabled="creandoCliente">
+                        {{ creandoCliente ? 'Creando...' : 'Crear Cliente' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -124,11 +161,13 @@
 import { reactive, computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCotizacionesStore } from '../stores/cotizaciones';
+import { useClientesStore } from '../stores/clientes';
 import { crearCotizacion } from '../http/cotizaciones-api';
-import { fetchClientes } from '../http/clientes-api';
+import { crearCliente } from '../http/clientes-api';
 
 const router = useRouter();
-const store = useCotizacionesStore();
+const storeC = useCotizacionesStore();
+const storeClientes = useClientesStore();
 
 const formData = reactive({
     cliente_id: '',
@@ -136,9 +175,18 @@ const formData = reactive({
     modulos: []
 });
 
-const clientes = ref([]);
+const clientes = computed(() => storeClientes.clientes);
 const loading = ref(false);
 const error = ref(null);
+const mostrarModalCliente = ref(false);
+const creandoCliente = ref(false);
+
+const nuevoCliente = reactive({
+    nombre: '',
+    empresa: '',
+    email: '',
+    telefono: ''
+});
 
 const clienteSeleccionado = computed(() => {
     if (!formData.cliente_id) return null;
@@ -239,7 +287,7 @@ const guardarCotizacion = async () => {
         console.log('Cotización guardada:', response);
         
         // Recargar cotizaciones en el store
-        await store.fetchCotizaciones();
+        await storeC.fetchCotizaciones();
         
         router.push(`/cotizaciones/${response.id}`);
     } catch (err) {
@@ -252,18 +300,50 @@ const guardarCotizacion = async () => {
 
 const cargarClientes = async () => {
     try {
-        const response = await fetchClientes();
-        console.log('Respuesta de clientes:', response);
-        
-        // Si la respuesta viene envuelta en {data: ...}, extraer data
-        const datos = Array.isArray(response) ? response : (response.data || response || []);
-        console.log('Clientes procesados:', datos);
-        
-        clientes.value = datos;
+        await storeClientes.fetchClientes();
     } catch (err) {
         console.error('Error cargando clientes:', err);
         error.value = 'Error al cargar los clientes';
-        clientes.value = [];
+    }
+};
+
+const crearNuevoCliente = async () => {
+    if (!nuevoCliente.nombre || !nuevoCliente.empresa || !nuevoCliente.email) {
+        error.value = 'Por favor completa los campos obligatorios: Nombre, Empresa, Email';
+        return;
+    }
+
+    creandoCliente.value = true;
+    error.value = null;
+
+    try {
+        const datosCliente = {
+            nombre: nuevoCliente.nombre,
+            empresa: nuevoCliente.empresa,
+            email: nuevoCliente.email,
+            ...(nuevoCliente.telefono && { telefono: nuevoCliente.telefono })
+        };
+
+        const response = await crearCliente(datosCliente);
+        console.log('Cliente creado:', response);
+
+        // Recargar lista de clientes
+        await storeClientes.fetchClientes();
+
+        // Seleccionar el nuevo cliente automáticamente
+        formData.cliente_id = response.id || response.data?.id;
+
+        // Limpiar formulario y cerrar modal
+        nuevoCliente.nombre = '';
+        nuevoCliente.empresa = '';
+        nuevoCliente.email = '';
+        nuevoCliente.telefono = '';
+        mostrarModalCliente.value = false;
+    } catch (err) {
+        console.error('Error creando cliente:', err);
+        error.value = err.response?.data?.message || 'Error al crear el cliente';
+    } finally {
+        creandoCliente.value = false;
     }
 };
 
@@ -386,6 +466,16 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.cliente-selector {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.cliente-selector .form-input {
+    flex: 1;
 }
 
 .form-label {
@@ -789,5 +879,101 @@ onMounted(() => {
     .acciones-footer {
         flex-direction: column;
     }
+}
+
+.btn-new-cliente {
+    background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-size: 0.95rem;
+}
+
+.btn-new-cliente:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.4);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--cream, #F5F1E8);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    color: #F5F1E8;
+    padding: 24px 32px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.btn-close {
+    background: transparent;
+    border: none;
+    color: #F5F1E8;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+}
+
+.btn-close:hover {
+    color: #FFC9C9;
+}
+
+.modal-body {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.modal-footer {
+    padding: 24px 32px;
+    border-top: 2px solid var(--color-border, #E5DFD0);
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+}
+
+.modal-footer .btn-cancel,
+.modal-footer .btn-save {
+    padding: 10px 24px;
 }
 </style>
