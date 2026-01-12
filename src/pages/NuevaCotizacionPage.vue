@@ -202,7 +202,6 @@ import { useClientesStore } from '../stores/clientes';
 import { useModulosStore } from '../stores/modulos';
 import { crearCotizacion } from '../http/cotizaciones-api';
 import { crearCliente } from '../http/clientes-api';
-import { getComponentesByModulo } from '../http/modulos-api';
 import { obtenerTokenCsrf } from '../http/apl';
 
 const router = useRouter();
@@ -264,24 +263,26 @@ const agregarModulo = () => {
     mostrarModalModulo.value = true;
 };
 
-const seleccionarModulo = async (modulo) => {
+const seleccionarModulo = (modulo) => {
     if (modulo.id) {
-        // Intentar cargar componentes del módulo
+        // Usar los componentes que ya vienen en el módulo
         let componentes = [];
-        try {
-            const componentesData = await getComponentesByModulo(modulo.id);
-            // Manejar diferentes formatos de respuesta
-            if (Array.isArray(componentesData)) {
-                componentes = componentesData;
-            } else if (componentesData?.data && Array.isArray(componentesData.data)) {
-                componentes = componentesData.data;
-            } else if (componentesData?.componentes && Array.isArray(componentesData.componentes)) {
-                componentes = componentesData.componentes;
-            }
-            console.log('Componentes cargados para módulo:', modulo.nombre, componentes);
-        } catch (err) {
-            console.warn('No se pudieron cargar componentes para el módulo:', modulo.nombre, err);
-            // Continuar sin componentes si la API falla
+        
+        if (modulo.componentes && Array.isArray(modulo.componentes) && modulo.componentes.length > 0) {
+            componentes = modulo.componentes.map(comp => {
+                // Calcular precio unitario: costo_total / cantidad
+                const cantidad = comp.cantidad || 1;
+                const costoTotal = comp.costo_total || 0;
+                const precioUnitario = cantidad > 0 ? costoTotal / cantidad : 0;
+                
+                return {
+                    nombre: comp.nombre || '',
+                    descripcion: comp.descripcion || '',
+                    cantidad: cantidad, // mantener la cantidad original del módulo
+                    precio_unitario: precioUnitario
+                };
+            });
+            console.log('Componentes del módulo:', modulo.nombre, componentes);
         }
 
         formData.modulos.push({
@@ -290,14 +291,7 @@ const seleccionarModulo = async (modulo) => {
             codigo: modulo.codigo,
             descripcion: modulo.descripcion,
             cantidad: 1,
-            componentes: componentes.length > 0 
-                ? componentes.map(comp => ({
-                    nombre: comp.nombre || '',
-                    descripcion: comp.descripcion || '',
-                    cantidad: comp.cantidad || 1,
-                    precio_unitario: comp.precio_unitario || comp.precio || 0
-                  }))
-                : []
+            componentes: componentes
         });
         mostrarModalModulo.value = false;
     }
