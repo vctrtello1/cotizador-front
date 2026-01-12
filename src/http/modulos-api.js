@@ -19,3 +19,13 @@ export const crearModulo = async (datos) => {
   const response = await api.post("/modulos", datos);
   return response.data;
 };
+
+export const actualizarModulo = async (id, datos) => {
+  const response = await api.put(`/modulos/${id}`, datos);
+  return response.data;
+};
+
+export const eliminarModulo = async (id) => {
+  const response = await api.delete(`/modulos/${id}`);
+  return response.data;
+};
