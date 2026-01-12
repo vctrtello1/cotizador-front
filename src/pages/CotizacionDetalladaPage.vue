@@ -63,7 +63,7 @@
         <div class="total-card">
             <div class="total-content">
                 <span class="total-label">Total de la Cotización</span>
-                <span class="total-amount">${{ formatCurrency(cotizacion.total) }}</span>
+                <span class="total-amount">${{ formatCurrency(totalCotizacion) }}</span>
             </div>
         </div>
     </div>
@@ -90,6 +90,28 @@ const cotizacion = ref(null);
 const detalles = computed(() => {
     // La estructura correcta es cotizacion.modulos, no cotizacion.detalles
     return cotizacion.value?.modulos || [];
+});
+
+const totalCotizacion = computed(() => {
+    // Calcular el total sumando todos los subtotales de todos los componentes
+    let total = 0;
+    const modulos = detalles.value;
+    
+    if (modulos && modulos.length > 0) {
+        modulos.forEach(modulo => {
+            if (modulo.componentes && modulo.componentes.length > 0) {
+                modulo.componentes.forEach(componente => {
+                    total += calcularSubtotal(componente);
+                });
+            }
+        });
+    }
+    
+    // Si el cálculo manual es mayor a 0, usarlo; si no, usar el total del API
+    if (total > 0) {
+        return total;
+    }
+    return cotizacion.value?.total || 0;
 });
 
 const formatCurrency = (value) => {
