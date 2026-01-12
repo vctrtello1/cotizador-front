@@ -44,16 +44,21 @@
                 
                 <div class="articulos-table">
                     <div class="table-header">
-                        <div class="col-descripcion">Descripción</div>
+                        
+                        <div class="col-nombre">Nombre</div>
+    
+                        <div class="col-codigo">Código</div>
                         <div class="col-cantidad">Cantidad</div>
                         <div class="col-precio">Precio Unit.</div>
                         <div class="col-subtotal">Subtotal</div>
+                
                     </div>
-                    <div v-for="articulo in modulo.detalles" :key="articulo.id" class="table-row">
-                        <div class="col-descripcion">{{ articulo.descripcion }}</div>
-                        <div class="col-cantidad">{{ articulo.cantidad }}</div>
-                        <div class="col-precio">${{ formatCurrency(articulo.precio_unitario) }}</div>
-                        <div class="col-subtotal">${{ formatCurrency(articulo.subtotal) }}</div>
+                    <div v-for="componente in modulo.componentes" :key="componente.id" class="table-row">
+                        <div class="col-nombre">{{ componente.nombre }}</div>                        
+                        <div class="col-cantidad">{{ componente.cantidad }}</div>
+                        <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
+                        <div class="col-subtotal">${{ formatCurrency(calcularSubtotal(componente)) }}</div>
+                        
                     </div>
                 </div>
             </div>
@@ -93,8 +98,20 @@ const detalles = computed(() => {
 });
 
 const formatCurrency = (value) => {
+    if (value === null || value === undefined || value === '') return '0.00';
     const num = Number(value);
+    if (isNaN(num)) return '0.00';
     return num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const calcularSubtotal = (componente) => {
+    // Si existe subtotal en los datos, usarlo; si no, calcular cantidad * precio_unitario
+    if (componente.subtotal && componente.subtotal !== 0) {
+        return componente.subtotal;
+    }
+    const cantidad = Number(componente.cantidad) || 0;
+    const precio = Number(componente.precio_unitario) || 0;
+    return cantidad * precio;
 };
 
 const goToCotizacionDetallada = (id) => {
@@ -268,24 +285,26 @@ onMounted(async () => {
 
 .table-header {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: 0.5fr 1.2fr 1.5fr 1.2fr 0.8fr 1.1fr 1.1fr 1fr 1.2fr;
+    gap: 12px;
     padding: 20px 32px;
     background: var(--cream-soft, #EDE8DC);
     font-weight: 700;
     color: var(--wood-dark, #4A3020);
     text-transform: uppercase;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     letter-spacing: 0.5px;
+    overflow-x: auto;
 }
 
 .table-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: 0.5fr 1.2fr 1.5fr 1.2fr 0.8fr 1.1fr 1.1fr 1fr 1.2fr;
+    gap: 12px;
     padding: 20px 32px;
     border-top: 1px solid var(--color-border, #E5DFD0);
     transition: background 0.2s ease;
+    overflow-x: auto;
 }
 
 .table-row:hover {
@@ -297,11 +316,27 @@ onMounted(async () => {
     font-weight: 500;
 }
 
+.col-id,
+.col-nombre,
+.col-codigo,
 .col-cantidad,
 .col-precio,
-.col-subtotal {
-    text-align: right;
+.col-subtotal,
+.col-acabado,
+.col-mano-obra {
     color: var(--wood-dark, #4A3020);
+}
+
+.col-nombre {
+    font-weight: 600;
+}
+
+.col-cantidad,
+.col-precio,
+.col-subtotal,
+.col-acabado,
+.col-mano-obra {
+    text-align: right;
 }
 
 .col-subtotal {
@@ -316,9 +351,15 @@ onMounted(async () => {
         gap: 12px;
     }
     
+    .col-id,
+    .col-nombre,
+    .col-descripcion,
+    .col-codigo,
     .col-cantidad,
     .col-precio,
-    .col-subtotal {
+    .col-subtotal,
+    .col-acabado,
+    .col-mano-obra {
         text-align: left;
     }
 }
