@@ -1,5 +1,6 @@
 import CotizacionesPage from "@/pages/CotizacionesPage.vue";
 import CotizacionDetalladaPage from "@/pages/CotizacionDetalladaPage.vue";
+import NuevaCotizacionPage from "@/pages/NuevaCotizacionPage.vue";
 
 export const routes = [
     {
@@ -10,6 +11,11 @@ export const routes = [
         path: "/cotizaciones",
         name: "Cotizaciones",
         component: CotizacionesPage,
+    },
+    {
+        path: "/nueva-cotizacion",
+        name: "NuevaCotizacion",
+        component: NuevaCotizacionPage,
     },
     {
         path: "/cotizacion-detallada/:id",

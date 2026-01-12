@@ -8,4 +8,9 @@ export const fetchCotizaciones = async () => {
 export const getCotizacionById = async (id) => {
   const response = await api.get(`/cotizaciones/${id}`);
   return response.data;
-}
+};
+
+export const crearCotizacion = async (datos) => {
+  const response = await api.post("/cotizaciones", datos);
+  return response.data;
+};

@@ -2,7 +2,7 @@
     <div class="cotizaciones-container">
         <header class="page-header">
             <h1>Cotizaciones Activas</h1>
-            <button class="btn-primary">Nueva Cotización</button>
+            <button class="btn-primary" @click="router.push('/nueva-cotizacion')">Nueva Cotización</button>
         </header>
         
 
