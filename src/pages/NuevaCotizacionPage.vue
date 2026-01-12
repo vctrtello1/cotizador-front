@@ -302,6 +302,18 @@ const guardarCotizacion = async () => {
 const cargarClientes = async () => {
     try {
         await storeClientes.fetchClientes();
+        
+        // Seleccionar automáticamente "Público General" si existe
+        const clientePublicoGeneral = storeClientes.clientes.find(c => 
+            c.nombre?.toLowerCase().includes('público') || 
+            c.nombre?.toLowerCase().includes('publico') ||
+            c.nombre?.toLowerCase().includes('general')
+        );
+        
+        if (clientePublicoGeneral) {
+            formData.cliente_id = clientePublicoGeneral.id;
+            console.log('Cliente "Público General" seleccionado automáticamente');
+        }
     } catch (err) {
         console.error('Error cargando clientes:', err);
         error.value = 'Error al cargar los clientes';
