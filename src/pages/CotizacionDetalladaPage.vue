@@ -44,19 +44,16 @@
                 
                 <div class="articulos-table">
                     <div class="table-header">
-                        
                         <div class="col-nombre">Nombre</div>
                         <div class="col-cantidad">Cantidad</div>
                         <div class="col-precio">Precio Unit.</div>
                         <div class="col-subtotal">Subtotal</div>
-                
                     </div>
                     <div v-for="componente in modulo.componentes" :key="componente.id" class="table-row">
-                        <div class="col-nombre">{{ componente.nombre }}</div>                        
+                        <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
                         <div class="col-cantidad">{{ componente.cantidad }}</div>
                         <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
-                        <div class="col-subtotal">${{ formatCurrency(calcularSubtotal(componente)) }}</div>
-                        
+                        <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
                     </div>
                 </div>
             </div>
@@ -283,39 +280,45 @@ onMounted(async () => {
 
 .articulos-table {
     padding: 0;
+    overflow-x: auto;
 }
 
 .table-header {
     display: grid;
-    grid-template-columns: 0.5fr 1.2fr 1.5fr 1.2fr 0.8fr 1.1fr 1.1fr 1fr 1.2fr;
-    gap: 12px;
-    padding: 20px 32px;
-    background: var(--cream-soft, #EDE8DC);
+    grid-template-columns: 2fr 0.8fr 1fr 1fr;
+    gap: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #8B6F47 0%, #A88860 100%);
+    color: #F5F1E8;
     font-weight: 700;
-    color: var(--wood-dark, #4A3020);
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    overflow-x: auto;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    border-radius: 8px 8px 0 0;
+    word-wrap: break-word;
 }
 
 .table-row {
     display: grid;
-    grid-template-columns: 0.5fr 1.2fr 1.5fr 1.2fr 0.8fr 1.1fr 1.1fr 1fr 1.2fr;
-    gap: 12px;
-    padding: 20px 32px;
-    border-top: 1px solid var(--color-border, #E5DFD0);
-    transition: background 0.2s ease;
-    overflow-x: auto;
+    grid-template-columns: 2fr 0.8fr 1fr 1fr;
+    gap: 16px;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--color-border, #E5DFD0);
+    transition: all 0.2s ease;
+    align-items: center;
+    background: var(--warm-white, #FAF8F3);
+    word-wrap: break-word;
 }
 
 .table-row:hover {
-    background: var(--cream, #F5F1E8);
+    background: #F5F1E8;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
 .col-descripcion {
     color: var(--wood-darkest, #2C1810);
-    font-weight: 500;
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
 
 .col-id,
@@ -330,39 +333,68 @@ onMounted(async () => {
 }
 
 .col-nombre {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--wood-darkest, #2C1810);
+}
+
+.col-codigo {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #6B4423;
+}
+
+.col-cantidad {
+    text-align: center;
     font-weight: 600;
 }
 
-.col-cantidad,
 .col-precio,
-.col-subtotal,
-.col-acabado,
-.col-mano-obra {
+.col-subtotal {
     text-align: right;
 }
 
 .col-subtotal {
     font-weight: 700;
     color: var(--accent-gold, #C9A961);
+    font-size: 1.05rem;
+}
+
+@media (max-width: 1024px) {
+    .table-header,
+    .table-row {
+        grid-template-columns: 1.5fr 0.7fr 0.9fr 0.9fr;
+        gap: 12px;
+        padding: 16px 20px;
+    }
+    
+    .table-header {
+        font-size: 0.75rem;
+    }
 }
 
 @media (max-width: 768px) {
-    .table-header,
+    .table-header {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 16px 16px;
+    }
+    
     .table-row {
         grid-template-columns: 1fr;
         gap: 12px;
+        padding: 16px 16px;
     }
     
-    .col-id,
-    .col-nombre,
-    .col-descripcion,
-    .col-codigo,
+    .col-nombre {
+        grid-column: 1 / -1;
+        font-size: 0.95rem;
+    }
+    
     .col-cantidad,
     .col-precio,
-    .col-subtotal,
-    .col-acabado,
-    .col-mano-obra {
-        text-align: left;
+    .col-subtotal {
+        text-align: left !important;
     }
 }
 
