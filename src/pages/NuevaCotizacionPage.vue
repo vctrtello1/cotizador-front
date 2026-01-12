@@ -154,6 +154,35 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Seleccionar Módulo -->
+        <div v-if="mostrarModalModulo" class="modal-overlay" @click.self="mostrarModalModulo = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Seleccionar Módulo</h3>
+                    <button class="btn-close" @click="mostrarModalModulo = false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="modulos.length === 0" class="empty-state-small">
+                        <p>No hay módulos disponibles</p>
+                    </div>
+                    <div v-else class="modulos-list">
+                        <div 
+                            v-for="modulo in modulos" 
+                            :key="modulo.id" 
+                            class="modulo-item"
+                            @click="seleccionarModulo(modulo)"
+                        >
+                            <div class="modulo-item-header">
+                                <h4>{{ modulo.nombre }}</h4>
+                                <span class="modulo-codigo">{{ modulo.codigo }}</span>
+                            </div>
+                            <p v-if="modulo.descripcion" class="modulo-descripcion">{{ modulo.descripcion }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -162,6 +191,7 @@ import { reactive, computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCotizacionesStore } from '../stores/cotizaciones';
 import { useClientesStore } from '../stores/clientes';
+import { useModulosStore } from '../stores/modulos';
 import { crearCotizacion } from '../http/cotizaciones-api';
 import { crearCliente } from '../http/clientes-api';
 import { obtenerTokenCsrf } from '../http/apl';
@@ -169,6 +199,7 @@ import { obtenerTokenCsrf } from '../http/apl';
 const router = useRouter();
 const storeC = useCotizacionesStore();
 const storeClientes = useClientesStore();
+const storeModulos = useModulosStore();
 
 const formData = reactive({
     cliente_id: '',
@@ -177,9 +208,17 @@ const formData = reactive({
 });
 
 const clientes = computed(() => storeClientes.clientes);
+const modulos = computed(() => storeModulos.modulos);
+
+const clienteSeleccionado = computed(() => {
+    if (!formData.cliente_id) return null;
+    return clientes.value.find(c => c.id === Number(formData.cliente_id));
+});
+
 const loading = ref(false);
 const error = ref(null);
 const mostrarModalCliente = ref(false);
+const mostrarModalModulo = ref(false);
 const creandoCliente = ref(false);
 
 const nuevoCliente = reactive({
@@ -187,11 +226,6 @@ const nuevoCliente = reactive({
     empresa: '',
     email: '',
     telefono: ''
-});
-
-const clienteSeleccionado = computed(() => {
-    if (!formData.cliente_id) return null;
-    return clientes.value.find(c => c.id === Number(formData.cliente_id));
 });
 
 const totalCotizacion = computed(() => {
@@ -217,13 +251,22 @@ const calcularSubtotal = (componente) => {
 };
 
 const agregarModulo = () => {
-    formData.modulos.push({
-        nombre: '',
-        codigo: '',
-        descripcion: '',
-        cantidad: 1,
-        componentes: []
-    });
+    // Mostrar modal para seleccionar módulo
+    mostrarModalModulo.value = true;
+};
+
+const seleccionarModulo = (modulo) => {
+    if (modulo.id) {
+        formData.modulos.push({
+            modulo_id: modulo.id,
+            nombre: modulo.nombre,
+            codigo: modulo.codigo,
+            descripcion: modulo.descripcion,
+            cantidad: 1,
+            componentes: []
+        });
+        mostrarModalModulo.value = false;
+    }
 };
 
 const eliminarModulo = (index) => {
@@ -363,7 +406,17 @@ const crearNuevoCliente = async () => {
 onMounted(() => {
     obtenerTokenCsrf();
     cargarClientes();
+    cargarModulos();
 });
+
+const cargarModulos = async () => {
+    try {
+        await storeModulos.fetchModulos();
+    } catch (err) {
+        console.error('Error cargando módulos:', err);
+        error.value = 'Error al cargar los módulos';
+    }
+};
 </script>
 
 <style scoped>
@@ -989,5 +1042,57 @@ onMounted(() => {
 .modal-footer .btn-cancel,
 .modal-footer .btn-save {
     padding: 10px 24px;
+}
+
+.modulos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modulo-item {
+    padding: 16px;
+    border: 2px solid var(--color-border, #E5DFD0);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--warm-white, #FAF8F3);
+}
+
+.modulo-item:hover {
+    border-color: #C9A961;
+    background: var(--cream, #F5F1E8);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.2);
+}
+
+.modulo-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.modulo-item-header h4 {
+    margin: 0;
+    color: #4A3020;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.modulo-codigo {
+    background: #8B6F47;
+    color: #F5F1E8;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.modulo-descripcion {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
 </style>
