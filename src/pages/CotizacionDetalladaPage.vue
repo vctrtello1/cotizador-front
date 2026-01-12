@@ -20,7 +20,9 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Fecha:</span>
-                    <span class="info-value">{{ new Date(cotizacion.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) }}</span>
+                    <span class="info-value">{{ new Date(cotizacion.fecha).toLocaleDateString('es-ES', {
+                        year:
+                            'numeric', month: 'long', day: 'numeric' }) }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Email:</span>
@@ -31,12 +33,13 @@
 
         <!-- Módulos y detalles -->
         <div v-if="detalles.length" class="modulos-section">
-            <div class="modulos-header">
-                <h2 class="section-title">Detalles de la Cotización</h2>
-                <span class="modulos-count">{{ totalModulosOrdenados }} módulo{{ totalModulosOrdenados !== 1 ? 's' : '' }} · {{ totalComponentes }} componente{{ totalComponentes !== 1 ? 's' : '' }}</span>
-            </div>
-            
+
+
             <div v-for="(modulo, index) in detalles" :key="index" class="modulo-card">
+                <div class="modulos-header">
+                    <span class="modulos-count">{{ modulo.cantidad }} módulo{{ modulo.cantidad !== 1 ? 's' :
+                        '' }} </span>
+                </div>
                 <div class="modulo-header">
                     <div class="modulo-info">
                         <h3 class="modulo-nombre">{{ modulo.nombre }}</h3>
@@ -44,7 +47,7 @@
                     </div>
                     <p class="modulo-descripcion">{{ modulo.descripcion }}</p>
                 </div>
-                
+
                 <div class="articulos-table">
                     <div class="table-header">
                         <div class="col-nombre">Nombre</div>
@@ -56,7 +59,8 @@
                         <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
                         <div class="col-cantidad">{{ componente.cantidad }}</div>
                         <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
-                        <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
+                        <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -70,7 +74,7 @@
             </div>
         </div>
     </div>
-    
+
     <div v-else class="loading-state">
         <div class="spinner"></div>
         <p>Cargando cotización...</p>
@@ -102,21 +106,21 @@ const detalles = computed(() => {
 const totalModulosOrdenados = computed(() => {
     let total = 0;
     const modulos = detalles.value;
-    
+
     if (modulos && modulos.length > 0) {
         modulos.forEach(modulo => {
             const cantidad = Number(modulo.cantidad) || 1;
             total += cantidad;
         });
     }
-    
+
     return total;
 });
 
 const totalComponentes = computed(() => {
     let cantidad = 0;
     const modulos = detalles.value;
-    
+
     if (modulos && modulos.length > 0) {
         modulos.forEach(modulo => {
             if (modulo.componentes && Array.isArray(modulo.componentes)) {
@@ -124,7 +128,7 @@ const totalComponentes = computed(() => {
             }
         });
     }
-    
+
     return cantidad;
 });
 
@@ -132,22 +136,22 @@ const totalCotizacion = computed(() => {
     // Usar el total directamente del API
     const total = cotizacion.value?.total;
     console.log('Total del API:', total, 'Tipo:', typeof total);
-    
+
     if (total !== null && total !== undefined && total !== '') {
         // Si viene como string con formato "3,220.00", limpiar
         const totalLimpio = String(total).replace(/,/g, '');
         const numTotal = Number(totalLimpio);
         console.log('Total limpio:', totalLimpio, 'Número:', numTotal);
-        
+
         if (!isNaN(numTotal)) {
             return numTotal;
         }
     }
-    
+
     // Si no hay total en API, calcular sumando subtotales
     let calculated = 0;
     const modulos = detalles.value;
-    
+
     if (modulos && modulos.length > 0) {
         modulos.forEach(modulo => {
             if (modulo.componentes && modulo.componentes.length > 0) {
@@ -157,7 +161,7 @@ const totalCotizacion = computed(() => {
             }
         });
     }
-    
+
     console.log('Total calculado:', calculated);
     return calculated || 0;
 });
@@ -322,7 +326,7 @@ onMounted(async () => {
     letter-spacing: 0.5px;
 }
 
-.modulos-section > .section-title {
+.modulos-section>.section-title {
     font-size: 1.75rem;
     color: #2C1810;
     margin: 0 0 24px 0;
@@ -458,13 +462,14 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
+
     .table-header,
     .table-row {
         grid-template-columns: 1.5fr 0.7fr 0.9fr 0.9fr;
         gap: 12px;
         padding: 16px 20px;
     }
-    
+
     .table-header {
         font-size: 0.75rem;
     }
@@ -476,18 +481,18 @@ onMounted(async () => {
         gap: 12px;
         padding: 16px 16px;
     }
-    
+
     .table-row {
         grid-template-columns: 1fr;
         gap: 12px;
         padding: 16px 16px;
     }
-    
+
     .col-nombre {
         grid-column: 1 / -1;
         font-size: 0.95rem;
     }
-    
+
     .col-cantidad,
     .col-precio,
     .col-subtotal {
@@ -542,7 +547,9 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-state p {
