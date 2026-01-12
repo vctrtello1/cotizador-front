@@ -288,8 +288,14 @@ const eliminarComponente = (moduloIdx, compIdx) => {
 };
 
 const guardarCotizacion = async () => {
+    // Validaciones
     if (!formData.cliente_id) {
         error.value = 'Por favor selecciona un cliente';
+        return;
+    }
+
+    if (!formData.fecha) {
+        error.value = 'Por favor selecciona una fecha';
         return;
     }
 
@@ -298,11 +304,44 @@ const guardarCotizacion = async () => {
         return;
     }
 
-    // Validar que cada módulo tenga al menos un componente
-    const modulosSinComponentes = formData.modulos.some(m => m.componentes.length === 0);
-    if (modulosSinComponentes) {
-        error.value = 'Cada módulo debe tener al menos un componente';
-        return;
+    // Validar que cada módulo tenga al menos un componente y cantidad válida
+    for (let i = 0; i < formData.modulos.length; i++) {
+        const modulo = formData.modulos[i];
+        
+        if (!modulo.nombre || modulo.nombre.trim() === '') {
+            error.value = `El módulo ${i + 1} debe tener un nombre`;
+            return;
+        }
+        
+        if (!modulo.cantidad || modulo.cantidad < 1) {
+            error.value = `El módulo "${modulo.nombre}" debe tener cantidad mayor a 0`;
+            return;
+        }
+        
+        if (modulo.componentes.length === 0) {
+            error.value = `El módulo "${modulo.nombre}" debe tener al menos un componente`;
+            return;
+        }
+        
+        // Validar componentes
+        for (let j = 0; j < modulo.componentes.length; j++) {
+            const comp = modulo.componentes[j];
+            
+            if (!comp.nombre || comp.nombre.trim() === '') {
+                error.value = `El componente ${j + 1} del módulo "${modulo.nombre}" debe tener un nombre`;
+                return;
+            }
+            
+            if (!comp.cantidad || comp.cantidad < 1) {
+                error.value = `El componente "${comp.nombre}" debe tener cantidad mayor a 0`;
+                return;
+            }
+            
+            if (!comp.precio_unitario || comp.precio_unitario < 0) {
+                error.value = `El componente "${comp.nombre}" debe tener un precio unitario válido`;
+                return;
+            }
+        }
     }
 
     loading.value = true;
@@ -314,29 +353,50 @@ const guardarCotizacion = async () => {
             fecha: formData.fecha,
             total: totalCotizacion.value,
             modulos: formData.modulos.map(modulo => ({
-                nombre: modulo.nombre,
-                codigo: modulo.codigo,
-                descripcion: modulo.descripcion,
-                cantidad: modulo.cantidad,
+                modulo_id: modulo.modulo_id || null,
+                nombre: modulo.nombre.trim(),
+                codigo: modulo.codigo?.trim() || '',
+                descripcion: modulo.descripcion?.trim() || '',
+                cantidad: Number(modulo.cantidad),
                 componentes: modulo.componentes.map(comp => ({
-                    nombre: comp.nombre,
-                    cantidad: comp.cantidad,
-                    precio_unitario: comp.precio_unitario,
+                    nombre: comp.nombre.trim(),
+                    cantidad: Number(comp.cantidad),
+                    precio_unitario: Number(comp.precio_unitario),
                     subtotal: calcularSubtotal(comp)
                 }))
             }))
         };
 
+        console.log('Enviando cotización:', datosParaEnviar);
         const response = await crearCotizacion(datosParaEnviar);
         console.log('Cotización guardada:', response);
         
         // Recargar cotizaciones en el store
         await storeC.fetchCotizaciones();
         
-        router.push(`/cotizaciones/${response.id}`);
+        // Redirigir a la cotización creada o a la lista
+        const cotizacionId = response.id || response.data?.id;
+        if (cotizacionId) {
+            router.push(`/cotizaciones/${cotizacionId}`);
+        } else {
+            router.push('/cotizaciones');
+        }
     } catch (err) {
         console.error('Error guardando cotización:', err);
-        error.value = err.response?.data?.message || 'Error al guardar la cotización';
+        
+        // Mostrar mensaje de error más detallado
+        let mensaje = 'Error al guardar la cotización';
+        if (err.response?.data?.message) {
+            mensaje = err.response.data.message;
+        } else if (err.response?.data?.errors) {
+            // Capturar errores de validación
+            const errores = Object.values(err.response.data.errors).flat();
+            mensaje = errores.join(', ');
+        } else if (err.message) {
+            mensaje = err.message;
+        }
+        
+        error.value = mensaje;
     } finally {
         loading.value = false;
     }
