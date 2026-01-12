@@ -125,7 +125,7 @@ import { reactive, computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCotizacionesStore } from '../stores/cotizaciones';
 import { crearCotizacion } from '../http/cotizaciones-api';
-import api from '../http/apl';
+import { fetchClientes } from '../http/clientes-api';
 
 const router = useRouter();
 const store = useCotizacionesStore();
@@ -252,8 +252,14 @@ const guardarCotizacion = async () => {
 
 const cargarClientes = async () => {
     try {
-        const response = await api.get('/clientes');
-        clientes.value = response.data || [];
+        const response = await fetchClientes();
+        console.log('Respuesta de clientes:', response);
+        
+        // Si la respuesta viene envuelta en {data: ...}, extraer data
+        const datos = Array.isArray(response) ? response : (response.data || response || []);
+        console.log('Clientes procesados:', datos);
+        
+        clientes.value = datos;
     } catch (err) {
         console.error('Error cargando clientes:', err);
         error.value = 'Error al cargar los clientes';
