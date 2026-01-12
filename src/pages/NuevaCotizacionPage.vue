@@ -74,12 +74,12 @@
                 <!-- Componentes -->
                 <div class="componentes-section">
                     <div class="componentes-header">
-                        <h4>Componentes</h4>
+                        <h4>Componentes ({{ modulo.componentes.length }})</h4>
                         <button class="btn-secondary" @click="agregarComponente(moduloIdx)">+ Agregar Componente</button>
                     </div>
 
                     <div v-if="modulo.componentes.length === 0" class="empty-state-small">
-                        <p>Sin componentes</p>
+                        <p>Sin componentes - Haz clic en "Agregar Componente" para empezar</p>
                     </div>
 
                     <div v-else class="articulos-table">
@@ -178,6 +178,14 @@
                                 <span class="modulo-codigo">{{ modulo.codigo }}</span>
                             </div>
                             <p v-if="modulo.descripcion" class="modulo-descripcion">{{ modulo.descripcion }}</p>
+                            <div v-if="modulo.componentes && modulo.componentes.length > 0" class="modulo-componentes-preview">
+                                <span class="componentes-label">Componentes:</span>
+                                <div class="componentes-list">
+                                    <div v-for="(comp, idx) in modulo.componentes" :key="idx" class="componente-tag">
+                                        {{ comp.nombre }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -194,6 +202,7 @@ import { useClientesStore } from '../stores/clientes';
 import { useModulosStore } from '../stores/modulos';
 import { crearCotizacion } from '../http/cotizaciones-api';
 import { crearCliente } from '../http/clientes-api';
+import { getComponentesByModulo } from '../http/modulos-api';
 import { obtenerTokenCsrf } from '../http/apl';
 
 const router = useRouter();
@@ -255,15 +264,40 @@ const agregarModulo = () => {
     mostrarModalModulo.value = true;
 };
 
-const seleccionarModulo = (modulo) => {
+const seleccionarModulo = async (modulo) => {
     if (modulo.id) {
+        // Intentar cargar componentes del módulo
+        let componentes = [];
+        try {
+            const componentesData = await getComponentesByModulo(modulo.id);
+            // Manejar diferentes formatos de respuesta
+            if (Array.isArray(componentesData)) {
+                componentes = componentesData;
+            } else if (componentesData?.data && Array.isArray(componentesData.data)) {
+                componentes = componentesData.data;
+            } else if (componentesData?.componentes && Array.isArray(componentesData.componentes)) {
+                componentes = componentesData.componentes;
+            }
+            console.log('Componentes cargados para módulo:', modulo.nombre, componentes);
+        } catch (err) {
+            console.warn('No se pudieron cargar componentes para el módulo:', modulo.nombre, err);
+            // Continuar sin componentes si la API falla
+        }
+
         formData.modulos.push({
             modulo_id: modulo.id,
             nombre: modulo.nombre,
             codigo: modulo.codigo,
             descripcion: modulo.descripcion,
             cantidad: 1,
-            componentes: []
+            componentes: componentes.length > 0 
+                ? componentes.map(comp => ({
+                    nombre: comp.nombre || '',
+                    descripcion: comp.descripcion || '',
+                    cantidad: comp.cantidad || 1,
+                    precio_unitario: comp.precio_unitario || comp.precio || 0
+                  }))
+                : []
         });
         mostrarModalModulo.value = false;
     }
@@ -1154,5 +1188,38 @@ const cargarModulos = async () => {
     color: #666;
     font-size: 0.9rem;
     line-height: 1.4;
+}
+
+.modulo-componentes-preview {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #E5DFD0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.componentes-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4A3020;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.componentes-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.componente-tag {
+    background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 </style>
