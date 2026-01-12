@@ -6,7 +6,7 @@ export const fetchModulos = async () => {
 };
 
 export const getModuloById = async (id) => {
-  const response = await api.get(`/modulos/${id}`);
+  const response = await api.get(`/modulos/${id}?include=componentes`);
   return response.data;
 };
 
@@ -27,5 +27,15 @@ export const actualizarModulo = async (id, datos) => {
 
 export const eliminarModulo = async (id) => {
   const response = await api.delete(`/modulos/${id}`);
+  return response.data;
+};
+
+export const fetchAcabados = async () => {
+  const response = await api.get("/acabados");
+  return response.data;
+};
+
+export const fetchManosDeObra = async () => {
+  const response = await api.get("/mano-de-obras");
   return response.data;
 };

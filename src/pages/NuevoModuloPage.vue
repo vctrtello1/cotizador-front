@@ -18,7 +18,12 @@
             <button @click="exito = null" class="error-close">✕</button>
         </div>
 
-        <!-- Información del Módulo -->
+        <!-- Estado de carga de catálogos -->
+        <div v-if="cargandoCatalogos" class="loading-state">
+            <p>Cargando catálogos...</p>
+        </div>
+
+        <template v-if="!cargandoCatalogos">
         <div class="info-card">
             <h2 class="section-title">Información del Módulo</h2>
             <div class="info-grid">
@@ -169,13 +174,14 @@
                 {{ cargando ? 'Guardando...' : 'Guardar Módulo' }}
             </button>
         </div>
+        </template>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { crearModulo } from '@/http/modulos-api';
+import { crearModulo, fetchAcabados, fetchManosDeObra } from '@/http/modulos-api';
 
 const router = useRouter();
 
@@ -195,6 +201,7 @@ const manosDeObra = ref([]);
 const error = ref(null);
 const exito = ref(null);
 const cargando = ref(false);
+const cargandoCatalogos = ref(true);
 const erroresValidacion = ref({
     nombre: null,
     codigo: null
@@ -344,20 +351,20 @@ const guardarModulo = async () => {
 // Cargar catálogos
 const cargarCatalogos = async () => {
     try {
-        // Simulamos obtener los datos, en producción serían desde la API
-        // Esto es un placeholder que debería reemplazarse con llamadas a la API real
-        acabados.value = [
-            { id: 1, nombre: 'Roble Natural', costo: 150 },
-            { id: 2, nombre: 'Nogal', costo: 200 },
-            { id: 3, nombre: 'Caoba', costo: 250 }
-        ];
-        manosDeObra.value = [
-            { id: 1, nombre: 'Carpintería Básica', costo_total: 100 },
-            { id: 2, nombre: 'Carpintería Intermedia', costo_total: 200 },
-            { id: 3, nombre: 'Carpintería Avanzada', costo_total: 350 }
-        ];
+        cargandoCatalogos.value = true;
+        
+        const [acabadosRes, manosDeObraRes] = await Promise.all([
+            fetchAcabados(),
+            fetchManosDeObra()
+        ]);
+
+        acabados.value = acabadosRes.data || [];
+        manosDeObra.value = manosDeObraRes.data || [];
     } catch (err) {
         console.error('Error cargando catálogos:', err);
+        error.value = 'No se pudieron cargar los catálogos. Intenta nuevamente.';
+    } finally {
+        cargandoCatalogos.value = false;
     }
 };
 
@@ -429,6 +436,16 @@ onMounted(() => {
     background: #efe;
     color: #3c3;
     border-left: 4px solid #3c3;
+}
+
+.loading-state {
+    background: #f0f4f8;
+    color: #5a4037;
+    border-left: 4px solid #d4a574;
+    padding: 16px 24px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-weight: 500;
 }
 
 .error-close {

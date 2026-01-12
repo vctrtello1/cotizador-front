@@ -183,7 +183,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getModuloById, actualizarModulo } from '@/http/modulos-api';
+import { getModuloById, actualizarModulo, fetchAcabados, fetchManosDeObra } from '@/http/modulos-api';
 
 const router = useRouter();
 const route = useRoute();
@@ -204,6 +204,8 @@ const manosDeObra = ref([]);
 const error = ref(null);
 const exito = ref(null);
 const cargando = ref(true);
+const cargandoModulo = ref(true);
+const cargandoCatalogos = ref(true);
 const erroresValidacion = ref({
     nombre: null,
     codigo: null
@@ -353,6 +355,7 @@ const guardarModulo = async () => {
 // Cargar módulo
 const cargarModulo = async () => {
     try {
+        cargandoModulo.value = true;
         const response = await getModuloById(route.params.id);
         const modulo = response.data;
         
@@ -364,35 +367,42 @@ const cargarModulo = async () => {
             nombre: comp.nombre,
             codigo: comp.codigo,
             descripcion: comp.descripcion,
-            cantidad: comp.pivot?.cantidad || comp.cantidad || 1,
-            acabado_id: comp.acabado_id,
-            mano_de_obra_id: comp.mano_de_obra_id
+            cantidad: comp.cantidad || 1,
+            acabado_id: typeof comp.acabado_id === 'object' ? comp.acabado_id.id : comp.acabado_id,
+            mano_de_obra_id: typeof comp.mano_de_obra_id === 'object' ? comp.mano_de_obra_id.id : comp.mano_de_obra_id
         }));
     } catch (err) {
         console.error('Error cargando módulo:', err);
         error.value = err.response?.data?.message || 'Error al cargar el módulo';
     } finally {
-        cargando.value = false;
+        cargandoModulo.value = false;
+        actualizarEstadoCargando();
     }
 };
 
 // Cargar catálogos
 const cargarCatalogos = async () => {
     try {
-        // Simulamos obtener los datos, en producción serían desde la API
-        acabados.value = [
-            { id: 1, nombre: 'Roble Natural', costo: 150 },
-            { id: 2, nombre: 'Nogal', costo: 200 },
-            { id: 3, nombre: 'Caoba', costo: 250 }
-        ];
-        manosDeObra.value = [
-            { id: 1, nombre: 'Carpintería Básica', costo_total: 100 },
-            { id: 2, nombre: 'Carpintería Intermedia', costo_total: 200 },
-            { id: 3, nombre: 'Carpintería Avanzada', costo_total: 350 }
-        ];
+        cargandoCatalogos.value = true;
+        const [acabadosRes, manosDeObraRes] = await Promise.all([
+            fetchAcabados(),
+            fetchManosDeObra()
+        ]);
+
+        acabados.value = acabadosRes.data || [];
+        manosDeObra.value = manosDeObraRes.data || [];
     } catch (err) {
         console.error('Error cargando catálogos:', err);
+        error.value = 'No se pudieron cargar los catálogos. Intenta nuevamente.';
+    } finally {
+        cargandoCatalogos.value = false;
+        actualizarEstadoCargando();
     }
+};
+
+// Actualizar estado de carga general
+const actualizarEstadoCargando = () => {
+    cargando.value = cargandoModulo.value || cargandoCatalogos.value;
 };
 
 // Lifecycle
