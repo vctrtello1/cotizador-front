@@ -1,0 +1,16 @@
+import api from "./apl";
+
+export const fetchClientes = async () => {
+  const response = await api.get("/mano-de-obras");
+  return response.data;
+};
+
+export const getClienteById = async (id) => {
+  const response = await api.get(`/mano-de-obras/${id}`);
+  return response.data;
+};
+
+export const crearCliente = async (datos) => {
+  const response = await api.post("/mano-de-obras", datos);
+  return response.data;
+};
