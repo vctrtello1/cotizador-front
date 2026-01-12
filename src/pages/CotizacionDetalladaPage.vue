@@ -33,18 +33,22 @@
 
         <!-- Módulos y detalles -->
         <div v-if="detalles.length" class="modulos-section">
-
+            <div class="modulos-header">
+                <h2 class="section-title">Detalles de la Cotización</h2>
+                <div class="modulos-stats">
+                    <span class="stat-badge">{{ totalModulosOrdenados }} módulo{{ totalModulosOrdenados !== 1 ? 's' : '' }}</span>
+                    <span class="stat-separator">•</span>
+                    <span class="stat-badge">{{ totalComponentes }} componente{{ totalComponentes !== 1 ? 's' : '' }}</span>
+                </div>
+            </div>
 
             <div v-for="(modulo, index) in detalles" :key="index" class="modulo-card">
-                <div class="modulos-header">
-                    <span class="modulos-count">{{ modulo.cantidad }} módulo{{ modulo.cantidad !== 1 ? 's' :
-                        '' }} </span>
-                </div>
                 <div class="modulo-header">
                     <div class="modulo-info">
                         <h3 class="modulo-nombre">{{ modulo.nombre }}</h3>
-                        <p class="modulo-codigo">Código: {{ modulo.codigo }}</p>
+                        <span class="modulo-cantidad-badge">{{ modulo.cantidad }} unidad{{ modulo.cantidad !== 1 ? 'es' : '' }}</span>
                     </div>
+                    <p class="modulo-codigo">Código: {{ modulo.codigo }}</p>
                     <p class="modulo-descripcion">{{ modulo.descripcion }}</p>
                 </div>
 
@@ -95,96 +99,57 @@ const { fecthCotizacionById } = store;
 const cotizacion = ref(null);
 
 const detalles = computed(() => {
-    // La estructura correcta es cotizacion.modulos, no cotizacion.detalles
-    const mods = cotizacion.value?.modulos || [];
-    console.log('Cotización completa:', cotizacion.value);
-    console.log('Array modulos:', cotizacion.value?.modulos);
-    console.log('Cantidad de módulos en array:', mods.length);
-    return mods;
+    return cotizacion.value?.modulos || [];
 });
 
 const totalModulosOrdenados = computed(() => {
-    let total = 0;
-    const modulos = detalles.value;
-
-    if (modulos && modulos.length > 0) {
-        modulos.forEach(modulo => {
-            const cantidad = Number(modulo.cantidad) || 1;
-            total += cantidad;
-        });
-    }
-
-    return total;
+    return detalles.value.reduce((total, modulo) => {
+        return total + (Number(modulo.cantidad) || 1);
+    }, 0);
 });
 
 const totalComponentes = computed(() => {
-    let cantidad = 0;
-    const modulos = detalles.value;
-
-    if (modulos && modulos.length > 0) {
-        modulos.forEach(modulo => {
-            if (modulo.componentes && Array.isArray(modulo.componentes)) {
-                cantidad += modulo.componentes.length;
-            }
-        });
-    }
-
-    return cantidad;
+    return detalles.value.reduce((total, modulo) => {
+        return total + (Array.isArray(modulo.componentes) ? modulo.componentes.length : 0);
+    }, 0);
 });
 
 const totalCotizacion = computed(() => {
-    // Usar el total directamente del API
     const total = cotizacion.value?.total;
-    console.log('Total del API:', total, 'Tipo:', typeof total);
-
+    
     if (total !== null && total !== undefined && total !== '') {
-        // Si viene como string con formato "3,220.00", limpiar
-        const totalLimpio = String(total).replace(/,/g, '');
-        const numTotal = Number(totalLimpio);
-        console.log('Total limpio:', totalLimpio, 'Número:', numTotal);
-
-        if (!isNaN(numTotal)) {
-            return numTotal;
-        }
+        // Si viene como string con formato "3,220.00", limpiar comas
+        const numTotal = Number(String(total).replace(/,/g, ''));
+        if (!isNaN(numTotal)) return numTotal;
     }
-
-    // Si no hay total en API, calcular sumando subtotales
-    let calculated = 0;
-    const modulos = detalles.value;
-
-    if (modulos && modulos.length > 0) {
-        modulos.forEach(modulo => {
-            if (modulo.componentes && modulo.componentes.length > 0) {
-                modulo.componentes.forEach(componente => {
-                    calculated += calcularSubtotal(componente);
-                });
-            }
-        });
-    }
-
-    console.log('Total calculado:', calculated);
-    return calculated || 0;
+    
+    // Fallback: calcular sumando subtotales de componentes
+    return detalles.value.reduce((sum, modulo) => {
+        if (!Array.isArray(modulo.componentes)) return sum;
+        return sum + modulo.componentes.reduce((subtotal, comp) => 
+            subtotal + calcularSubtotal(comp), 0
+        );
+    }, 0);
 });
 
 const formatCurrency = (value) => {
     if (value === null || value === undefined || value === '') return '0.00';
     const num = Number(value);
     if (isNaN(num)) return '0.00';
-    return num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return num.toLocaleString('es-MX', { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+    });
 };
 
 const calcularSubtotal = (componente) => {
-    // Intentar usar subtotal si existe y no es null/undefined
+    // Si existe subtotal válido, usarlo
     if (componente.subtotal !== null && componente.subtotal !== undefined && componente.subtotal !== '') {
         const subtotal = Number(componente.subtotal);
-        if (!isNaN(subtotal)) {
-            return subtotal;
-        }
+        if (!isNaN(subtotal)) return subtotal;
     }
-    // Si no hay subtotal válido, calcular: cantidad * precio_unitario
-    const cantidad = Number(componente.cantidad) || 0;
-    const precio = Number(componente.precio_unitario) || 0;
-    return cantidad * precio;
+    // Si no, calcular: cantidad × precio_unitario
+    return (Number(componente.cantidad) || 0) * (Number(componente.precio_unitario) || 0);
 };
 
 const goToCotizacionDetallada = (id) => {
@@ -304,26 +269,43 @@ onMounted(async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    padding: 20px 24px;
-    background: #F5F1E8;
-    border-radius: 8px;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, #F5F1E8 0%, #FAF8F3 100%);
+    border-radius: 12px;
     border-left: 4px solid #C9A961;
+    box-shadow: 0 2px 8px rgba(44, 24, 16, 0.08);
 }
 
 .modulos-header .section-title {
     margin: 0;
     flex: 1;
+    font-size: 1.75rem;
+    color: #2C1810;
 }
 
-.modulos-count {
+.modulos-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-badge {
     background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 10px 18px;
+    border-radius: 25px;
     font-size: 0.9rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+    white-space: nowrap;
+}
+
+.stat-separator {
+    color: #C9A961;
+    font-size: 1.5rem;
+    font-weight: 300;
 }
 
 .modulos-section>.section-title {
@@ -358,12 +340,27 @@ onMounted(async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+    gap: 16px;
 }
 
 .modulo-nombre {
     font-size: 1.5rem;
     margin: 0;
     font-weight: 700;
+    flex: 1;
+}
+
+.modulo-cantidad-badge {
+    background: rgba(245, 241, 232, 0.2);
+    border: 1px solid rgba(245, 241, 232, 0.4);
+    color: #F5F1E8;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    white-space: nowrap;
+    backdrop-filter: blur(10px);
 }
 
 .modulo-codigo {
