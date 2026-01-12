@@ -31,9 +31,15 @@
 
         <!-- Módulos y detalles -->
         <div v-if="detalles.length" class="modulos-section">
-            <h2 class="section-title">Detalles de la Cotización</h2>
+            
             
             <div v-for="(modulo, index) in detalles" :key="index" class="modulo-card">
+
+                <div class="modulos-header">
+                    <h2 class="section-title">Detalles de la Cotización</h2>
+                    <span class="modulos-count">{{ modulo.cantidad }} módulo{{ modulo.cantidad !== 1 ? 's' : ''
+                        }}</span>
+                </div> 
                 <div class="modulo-header">
                     <div class="modulo-info">
                         <h3 class="modulo-nombre">{{ modulo.nombre }}</h3>
@@ -89,7 +95,9 @@ const cotizacion = ref(null);
 
 const detalles = computed(() => {
     // La estructura correcta es cotizacion.modulos, no cotizacion.detalles
-    return cotizacion.value?.modulos || [];
+    const mods = cotizacion.value?.modulos || [];
+    console.log('Módulos:', mods, 'Cantidad:', mods.length);
+    return mods;
 });
 
 const totalCotizacion = computed(() => {
@@ -245,6 +253,33 @@ onMounted(async () => {
 
 .modulos-section {
     margin-bottom: 32px;
+}
+
+.modulos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 20px 24px;
+    background: #F5F1E8;
+    border-radius: 8px;
+    border-left: 4px solid #C9A961;
+}
+
+.modulos-header .section-title {
+    margin: 0;
+    flex: 1;
+}
+
+.modulos-count {
+    background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .modulos-section > .section-title {
