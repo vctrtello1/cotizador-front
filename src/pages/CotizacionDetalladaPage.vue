@@ -31,15 +31,12 @@
 
         <!-- Módulos y detalles -->
         <div v-if="detalles.length" class="modulos-section">
-            
+            <div class="modulos-header">
+                <h2 class="section-title">Detalles de la Cotización</h2>
+                <span class="modulos-count">{{ totalModulosOrdenados }} módulo{{ totalModulosOrdenados !== 1 ? 's' : '' }} · {{ totalComponentes }} componente{{ totalComponentes !== 1 ? 's' : '' }}</span>
+            </div>
             
             <div v-for="(modulo, index) in detalles" :key="index" class="modulo-card">
-
-                <div class="modulos-header">
-                    <h2 class="section-title">Detalles de la Cotización</h2>
-                    <span class="modulos-count">{{ modulo.cantidad }} módulo{{ modulo.cantidad !== 1 ? 's' : ''
-                        }}</span>
-                </div> 
                 <div class="modulo-header">
                     <div class="modulo-info">
                         <h3 class="modulo-nombre">{{ modulo.nombre }}</h3>
@@ -96,30 +93,73 @@ const cotizacion = ref(null);
 const detalles = computed(() => {
     // La estructura correcta es cotizacion.modulos, no cotizacion.detalles
     const mods = cotizacion.value?.modulos || [];
-    console.log('Módulos:', mods, 'Cantidad:', mods.length);
+    console.log('Cotización completa:', cotizacion.value);
+    console.log('Array modulos:', cotizacion.value?.modulos);
+    console.log('Cantidad de módulos en array:', mods.length);
     return mods;
 });
 
-const totalCotizacion = computed(() => {
-    // Calcular el total sumando todos los subtotales de todos los componentes
+const totalModulosOrdenados = computed(() => {
     let total = 0;
+    const modulos = detalles.value;
+    
+    if (modulos && modulos.length > 0) {
+        modulos.forEach(modulo => {
+            const cantidad = Number(modulo.cantidad) || 1;
+            total += cantidad;
+        });
+    }
+    
+    return total;
+});
+
+const totalComponentes = computed(() => {
+    let cantidad = 0;
+    const modulos = detalles.value;
+    
+    if (modulos && modulos.length > 0) {
+        modulos.forEach(modulo => {
+            if (modulo.componentes && Array.isArray(modulo.componentes)) {
+                cantidad += modulo.componentes.length;
+            }
+        });
+    }
+    
+    return cantidad;
+});
+
+const totalCotizacion = computed(() => {
+    // Usar el total directamente del API
+    const total = cotizacion.value?.total;
+    console.log('Total del API:', total, 'Tipo:', typeof total);
+    
+    if (total !== null && total !== undefined && total !== '') {
+        // Si viene como string con formato "3,220.00", limpiar
+        const totalLimpio = String(total).replace(/,/g, '');
+        const numTotal = Number(totalLimpio);
+        console.log('Total limpio:', totalLimpio, 'Número:', numTotal);
+        
+        if (!isNaN(numTotal)) {
+            return numTotal;
+        }
+    }
+    
+    // Si no hay total en API, calcular sumando subtotales
+    let calculated = 0;
     const modulos = detalles.value;
     
     if (modulos && modulos.length > 0) {
         modulos.forEach(modulo => {
             if (modulo.componentes && modulo.componentes.length > 0) {
                 modulo.componentes.forEach(componente => {
-                    total += calcularSubtotal(componente);
+                    calculated += calcularSubtotal(componente);
                 });
             }
         });
     }
     
-    // Si el cálculo manual es mayor a 0, usarlo; si no, usar el total del API
-    if (total > 0) {
-        return total;
-    }
-    return cotizacion.value?.total || 0;
+    console.log('Total calculado:', calculated);
+    return calculated || 0;
 });
 
 const formatCurrency = (value) => {
