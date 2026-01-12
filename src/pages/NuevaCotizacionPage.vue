@@ -376,23 +376,26 @@ const guardarCotizacion = async () => {
     error.value = null;
 
     try {
+        // Transformar la estructura de modulos con componentes a detalles planos
+        const detalles = [];
+        
+        formData.modulos.forEach(modulo => {
+            modulo.componentes.forEach(comp => {
+                detalles.push({
+                    modulo_id: modulo.modulo_id || null,
+                    descripcion: `${modulo.nombre} - ${comp.nombre}`,
+                    cantidad: Number(comp.cantidad),
+                    precio_unitario: Number(comp.precio_unitario),
+                    subtotal: Number(comp.cantidad) * Number(comp.precio_unitario)
+                });
+            });
+        });
+
         const datosParaEnviar = {
             cliente_id: Number(formData.cliente_id),
             fecha: formData.fecha,
             total: totalCotizacion.value,
-            modulos: formData.modulos.map(modulo => ({
-                modulo_id: modulo.modulo_id || null,
-                nombre: modulo.nombre.trim(),
-                codigo: modulo.codigo?.trim() || '',
-                descripcion: modulo.descripcion?.trim() || '',
-                cantidad: Number(modulo.cantidad),
-                componentes: modulo.componentes.map(comp => ({
-                    nombre: comp.nombre.trim(),
-                    cantidad: Number(comp.cantidad),
-                    precio_unitario: Number(comp.precio_unitario),
-                    subtotal: calcularSubtotal(comp)
-                }))
-            }))
+            detalles: detalles
         };
 
         console.log('Enviando cotización:', datosParaEnviar);
@@ -405,7 +408,7 @@ const guardarCotizacion = async () => {
         // Redirigir a la cotización creada o a la lista
         const cotizacionId = response.id || response.data?.id;
         if (cotizacionId) {
-            router.push(`/cotizaciones/${cotizacionId}`);
+            router.push(`/cotizacion-detallada/${cotizacionId}`);
         } else {
             router.push('/cotizaciones');
         }
