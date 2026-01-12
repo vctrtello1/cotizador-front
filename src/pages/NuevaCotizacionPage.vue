@@ -378,15 +378,27 @@ const guardarCotizacion = async () => {
     try {
         // Transformar la estructura de modulos con componentes a detalles planos
         const detalles = [];
+        const modulosCantidad = [];
         
-        formData.modulos.forEach(modulo => {
+        formData.modulos.forEach((modulo, index) => {
+            const cantidadModulo = Number(modulo.cantidad) || 1;
+            
+            // Guardar la cantidad de cada módulo con su índice para evitar sobrescritura
+            if (modulo.modulo_id) {
+                modulosCantidad.push({
+                    modulo_id: modulo.modulo_id,
+                    cantidad: cantidadModulo,
+                    index: index
+                });
+            }
+            
             modulo.componentes.forEach(comp => {
                 detalles.push({
                     modulo_id: modulo.modulo_id || null,
                     descripcion: `${modulo.nombre} - ${comp.nombre}`,
-                    cantidad: Number(comp.cantidad),
+                    cantidad: Number(comp.cantidad) * cantidadModulo,
                     precio_unitario: Number(comp.precio_unitario),
-                    subtotal: Number(comp.cantidad) * Number(comp.precio_unitario)
+                    subtotal: (Number(comp.cantidad) * cantidadModulo) * Number(comp.precio_unitario)
                 });
             });
         });
@@ -395,7 +407,8 @@ const guardarCotizacion = async () => {
             cliente_id: Number(formData.cliente_id),
             fecha: formData.fecha,
             total: totalCotizacion.value,
-            detalles: detalles
+            detalles: detalles,
+            modulos_cantidad: modulosCantidad
         };
 
         console.log('Enviando cotización:', datosParaEnviar);
