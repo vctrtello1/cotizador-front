@@ -1,3 +1,148 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { crearMaterial } from '@/http/materiales-api';
+import { useTiposDeMaterial } from '@/stores/tipo-de-material';
+
+const router = useRouter();
+const tiposDeMaterialStore = useTiposDeMaterial();
+
+// ============ ESTADO DEL FORMULARIO ============
+const formData = ref({
+    nombre: '',
+    codigo: '',
+    tipo: '',
+    tipo_de_material_id: null,
+    descripcion: '',
+    unidad_medida: '',
+    alto: 0,
+    ancho: 0,
+    largo: 0,
+    precio_unitario: 0
+});
+
+// ============ ESTADO DE UI ============
+const error = ref(null);
+const exito = ref(null);
+const cargando = ref(false);
+const modalTiposVisible = ref(false);
+const tiposLoading = ref(false);
+const tiposDeMaterial = ref([]);
+
+const erroresValidacion = ref({
+    nombre: null,
+    codigo: null,
+    unidad_medida: null,
+    precio_unitario: null
+});
+
+// ============ COMPUTED PROPERTIES ============
+const hasErrors = computed(() => Object.values(erroresValidacion.value).some(e => e !== null));
+
+// ============ MÉTODOS DE VALIDACIÓN ============
+const reglas = {
+    nombre: (valor) => valor.trim() ? null : 'El nombre es requerido',
+    codigo: (valor) => valor.trim() ? null : 'El código es requerido',
+    unidad_medida: (valor) => valor.trim() ? null : 'La unidad de medida es requerida',
+    precio_unitario: (valor) => valor < 0 ? 'El precio debe ser mayor o igual a 0' : null
+};
+
+const validarCampo = (campo) => {
+    if (reglas[campo]) {
+        erroresValidacion.value[campo] = reglas[campo](formData.value[campo]);
+    }
+};
+
+const validarFormulario = () => {
+    Object.keys(reglas).forEach(campo => validarCampo(campo));
+    return !hasErrors.value;
+};
+
+// ============ MÉTODOS DE FORMATO ============
+const formatCurrency = (value) => {
+    if (!value) return '0.00';
+    return parseFloat(value).toLocaleString('es-MX', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+};
+
+const limpiarMensajes = () => {
+    error.value = null;
+    exito.value = null;
+};
+
+// ============ MÉTODOS DE FORMULARIO ============
+const guardarMaterial = async () => {
+    limpiarMensajes();
+
+    if (!validarFormulario()) {
+        error.value = 'Por favor, completa todos los campos requeridos correctamente';
+        return;
+    }
+
+    cargando.value = true;
+
+    try {
+        const datosMaterial = {
+            nombre: formData.value.nombre.trim(),
+            codigo: formData.value.codigo.trim(),
+            tipo_de_material_id: formData.value.tipo_de_material_id,
+            descripcion: formData.value.descripcion.trim(),
+            unidad_medida: formData.value.unidad_medida.trim(),
+            alto: parseFloat(formData.value.alto) || 0,
+            ancho: parseFloat(formData.value.ancho) || 0,
+            largo: parseFloat(formData.value.largo) || 0,
+            precio_unitario: parseFloat(formData.value.precio_unitario) || 0
+        };
+
+        const response = await crearMaterial(datosMaterial);
+        exito.value = '✓ Material guardado exitosamente';
+        
+        setTimeout(() => router.push('/materiales'), 1500);
+    } catch (err) {
+        error.value = err.response?.data?.message || err.response?.data?.error || 'Error al guardar el material';
+    } finally {
+        cargando.value = false;
+    }
+};
+
+// ============ MÉTODOS DEL MODAL DE TIPOS ============
+const cargarTiposDeMaterial = async () => {
+    try {
+        tiposLoading.value = true;
+        await tiposDeMaterialStore.fetchTiposDeMaterialAction();
+        tiposDeMaterial.value = tiposDeMaterialStore.tiposDeMaterial;
+    } catch (err) {
+        error.value = 'Error al cargar los tipos de material';
+    } finally {
+        tiposLoading.value = false;
+    }
+};
+
+const mostrarModalTipos = async () => {
+    modalTiposVisible.value = true;
+    if (tiposDeMaterial.value.length === 0) {
+        await cargarTiposDeMaterial();
+    }
+};
+
+const cerrarModalTipos = () => {
+    modalTiposVisible.value = false;
+};
+
+const seleccionarTipo = (tipo) => {
+    formData.value.tipo = tipo.nombre;
+    formData.value.tipo_de_material_id = tipo.id;
+    cerrarModalTipos();
+};
+
+// ============ LIFECYCLE HOOKS ============
+onMounted(() => {
+    cargarTiposDeMaterial();
+});
+</script>
+
 <template>
     <div class="nuevo-material-container">
         <!-- Header -->
@@ -82,10 +227,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Costo Unitario *</label>
-                    <input v-model.number="formData.costo_unitario" type="number" min="0" step="0.01" class="form-input"
-                        placeholder="Ej: 250.75" @blur="validarCampo('costo_unitario')">
-                    <span v-if="erroresValidacion.costo_unitario" class="error-text">{{ erroresValidacion.costo_unitario
+                    <label class="form-label">Precio Unitario *</label>
+                    <input v-model.number="formData.precio_unitario" type="number" min="0" step="0.01" class="form-input"
+                        placeholder="Ej: 250.75" @blur="validarCampo('precio_unitario')">
+                    <span v-if="erroresValidacion.precio_unitario" class="error-text">{{ erroresValidacion.precio_unitario
                     }}</span>
                 </div>
             </div>
@@ -108,8 +253,8 @@
                     <span class="resumen-valor">{{ formData.tipo || 'Sin definir' }}</span>
                 </div>
                 <div class="resumen-item">
-                    <label>Costo Unitario</label>
-                    <span class="resumen-valor">${{ formatCurrency(formData.costo_unitario) }}</span>
+                    <label>Precio Unitario</label>
+                    <span class="resumen-valor">${{ formatCurrency(formData.precio_unitario) }}</span>
                 </div>
                 
             </div>
@@ -159,192 +304,6 @@
         </div>
     </div>
 </template>
-
-<script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { crearMaterial } from '@/http/materiales-api';
-import { useTiposDeMaterial } from '@/stores/tipo-de-material';
-
-const router = useRouter();
-const tiposDeMaterialStore = useTiposDeMaterial();
-
-// Estado del formulario
-const formData = ref({
-    nombre: '',
-    codigo: '',
-    tipo: '',
-    descripcion: '',
-    unidad_medida: '',
-    cantidad_disponible: 0,
-    costo_unitario: 0
-});
-
-// Estado de UI
-const error = ref(null);
-const exito = ref(null);
-const cargando = ref(false);
-const modalTiposVisible = ref(false);
-const tiposLoading = ref(false);
-const tiposDeMaterial = ref([]);
-const erroresValidacion = ref({
-    nombre: null,
-    codigo: null,
-    unidad_medida: null,
-    cantidad_disponible: null,
-    costo_unitario: null
-});
-
-// Métodos de validación
-const validarCampo = (campo) => {
-    switch (campo) {
-        case 'nombre':
-            if (!formData.value.nombre.trim()) {
-                erroresValidacion.value.nombre = 'El nombre es requerido';
-            } else {
-                erroresValidacion.value.nombre = null;
-            }
-            break;
-        case 'codigo':
-            if (!formData.value.codigo.trim()) {
-                erroresValidacion.value.codigo = 'El código es requerido';
-            } else {
-                erroresValidacion.value.codigo = null;
-            }
-            break;
-        case 'unidad_medida':
-            if (!formData.value.unidad_medida.trim()) {
-                erroresValidacion.value.unidad_medida = 'La unidad de medida es requerida';
-            } else {
-                erroresValidacion.value.unidad_medida = null;
-            }
-            break;
-        case 'cantidad_disponible':
-            if (formData.value.cantidad_disponible < 0) {
-                erroresValidacion.value.cantidad_disponible = 'La cantidad debe ser mayor o igual a 0';
-            } else {
-                erroresValidacion.value.cantidad_disponible = null;
-            }
-            break;
-        case 'costo_unitario':
-            if (formData.value.costo_unitario < 0) {
-                erroresValidacion.value.costo_unitario = 'El costo debe ser mayor o igual a 0';
-            } else {
-                erroresValidacion.value.costo_unitario = null;
-            }
-            break;
-    }
-};
-
-const validarFormulario = () => {
-    let valido = true;
-
-    if (!formData.value.nombre.trim()) {
-        erroresValidacion.value.nombre = 'El nombre es requerido';
-        valido = false;
-    }
-    if (!formData.value.codigo.trim()) {
-        erroresValidacion.value.codigo = 'El código es requerido';
-        valido = false;
-    }
-    if (!formData.value.unidad_medida.trim()) {
-        erroresValidacion.value.unidad_medida = 'La unidad de medida es requerida';
-        valido = false;
-    }
-    if (formData.value.cantidad_disponible < 0) {
-        erroresValidacion.value.cantidad_disponible = 'La cantidad debe ser mayor o igual a 0';
-        valido = false;
-    }
-    if (formData.value.costo_unitario < 0) {
-        erroresValidacion.value.costo_unitario = 'El costo debe ser mayor o igual a 0';
-        valido = false;
-    }
-
-    return valido;
-};
-
-const formatCurrency = (value) => {
-    if (!value) return '0.00';
-    return parseFloat(value).toLocaleString('es-MX', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-};
-
-// Guardar material
-const guardarMaterial = async () => {
-    error.value = null;
-    exito.value = null;
-
-    if (!validarFormulario()) {
-        error.value = 'Por favor, completa todos los campos requeridos correctamente';
-        return;
-    }
-
-    cargando.value = true;
-
-    try {
-        const datosMaterial = {
-            nombre: formData.value.nombre,
-            codigo: formData.value.codigo,
-            tipo: formData.value.tipo,
-            descripcion: formData.value.descripcion,
-            unidad_medida: formData.value.unidad_medida,
-            cantidad_disponible: formData.value.cantidad_disponible,
-            costo_unitario: formData.value.costo_unitario
-        };
-
-        console.log('Guardando material:', datosMaterial);
-        const response = await crearMaterial(datosMaterial);
-        console.log('Material guardado:', response);
-
-        exito.value = '✓ Material guardado exitosamente';
-        setTimeout(() => {
-            router.push('/materiales');
-        }, 1500);
-    } catch (err) {
-        console.error('Error guardando material:', err);
-        error.value = err.response?.data?.message || 'Error al guardar el material';
-    } finally {
-        cargando.value = false;
-    }
-};
-
-onMounted(() => {
-    console.log('NuevoMaterial mounted');
-    cargarTiposDeMaterial();
-});
-
-// Métodos para modal de tipos
-const cargarTiposDeMaterial = async () => {
-    try {
-        tiposLoading.value = true;
-        await tiposDeMaterialStore.fetchTiposDeMaterialAction();
-        tiposDeMaterial.value = tiposDeMaterialStore.tiposDeMaterial;
-    } catch (err) {
-        console.error('Error cargando tipos de material:', err);
-        error.value = 'Error al cargar los tipos de material';
-    } finally {
-        tiposLoading.value = false;
-    }
-};
-
-const mostrarModalTipos = async () => {
-    modalTiposVisible.value = true;
-    if (tiposDeMaterial.value.length === 0) {
-        await cargarTiposDeMaterial();
-    }
-};
-
-const cerrarModalTipos = () => {
-    modalTiposVisible.value = false;
-};
-
-const seleccionarTipo = (tipo) => {
-    formData.value.tipo = tipo.nombre;
-    cerrarModalTipos();
-};
-</script>
 
 <style scoped>
 .nuevo-material-container {
