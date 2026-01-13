@@ -5,7 +5,7 @@ import NuevoModuloPage from "@/pages/NuevoModuloPage.vue";
 import EditarModuloPage from "@/pages/EditarModuloPage.vue";
 import ModulosPage from "@/pages/ModulosPage.vue";
 import ComponentesPage from "@/pages/ComponentesPage.vue";
-import NuevoComponentePage from "@/pages/NuevoComponentePage.vue";
+import NuevoComponente from "@/pages/NuevoComponente.vue";
 
 export const routes = [
     {
@@ -50,7 +50,7 @@ export const routes = [
     {
         path: "/nuevo-componente",
         name: "NuevoComponente",
-        component: NuevoComponentePage,
+        component: NuevoComponente,
     }
 
 ];
