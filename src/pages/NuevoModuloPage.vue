@@ -219,28 +219,108 @@
 
                     <div class="modal-item">
                         <label class="modal-label">Acabado *</label>
-                        <select v-model="componenteActual.acabado_id" class="form-input">
-                            <option value="">Seleccionar acabado...</option>
-                            <option v-for="acabado in acabados" :key="acabado.id" :value="acabado.id">
-                                {{ acabado.nombre }} - ${{ formatCurrency(acabado.costo) }}
-                            </option>
-                        </select>
+                        <button 
+                            class="btn-select-modal"
+                            @click="mostrarModalSeleccionarAcabado = true"
+                        >
+                            {{ obtenerNombreAcabado(componenteActual.acabado_id) || 'Seleccionar acabado...' }}
+                        </button>
                     </div>
 
                     <div class="modal-item">
                         <label class="modal-label">Mano de Obra *</label>
-                        <select v-model="componenteActual.mano_de_obra_id" class="form-input">
-                            <option value="">Seleccionar mano de obra...</option>
-                            <option v-for="mano in manosDeObra" :key="mano.id" :value="mano.id">
-                                {{ mano.nombre }} - ${{ formatCurrency(mano.costo_total) }}
-                            </option>
-                        </select>
+                        <button 
+                            class="btn-select-modal"
+                            @click="mostrarModalSeleccionarManoDeObra = true"
+                        >
+                            {{ obtenerNombreManodeObra(componenteActual.mano_de_obra_id) || 'Seleccionar mano de obra...' }}
+                        </button>
                     </div>
                 </div>
 
                 <div class="modal-footer">
                     <button class="btn-secondary" @click="cerrarModal">Cancelar</button>
                     <button class="btn-primary" @click="guardarComponente">Guardar Componente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para seleccionar Acabado -->
+        <div v-if="mostrarModalSeleccionarAcabado" class="modal-overlay" @click.self="mostrarModalSeleccionarAcabado = false">
+            <div class="modal-content modal-seleccion">
+                <div class="modal-header">
+                    <h3>Seleccionar Acabado</h3>
+                    <button class="modal-close" @click="mostrarModalSeleccionarAcabado = false">✕</button>
+                </div>
+
+                <div class="modal-body modal-seleccion-body">
+                    <div v-if="acabados.length === 0" class="empty-state">
+                        <p>No hay acabados disponibles</p>
+                    </div>
+
+                    <div v-else class="items-lista">
+                        <div 
+                            v-for="acabado in acabados" 
+                            :key="acabado.id" 
+                            class="item-seleccion"
+                            :class="{ 'item-seleccionado': componenteActual.acabado_id == acabado.id }"
+                            @click="seleccionarAcabado(acabado)"
+                        >
+                            <div class="item-info">
+                                <h4>{{ acabado.nombre }}</h4>
+                                <p class="item-codigo">{{ acabado.codigo }}</p>
+                                <p v-if="acabado.descripcion" class="item-descripcion">{{ acabado.descripcion }}</p>
+                                <p class="item-precio">Costo: <strong>${{ formatCurrency(acabado.costo) }}</strong></p>
+                            </div>
+                            <div v-if="componenteActual.acabado_id == acabado.id" class="item-checkmark">✓</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarModalSeleccionarAcabado = false">Cancelar</button>
+                    <button class="btn-primary" @click="mostrarModalSeleccionarAcabado = false" :disabled="!componenteActual.acabado_id">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para seleccionar Mano de Obra -->
+        <div v-if="mostrarModalSeleccionarManoDeObra" class="modal-overlay" @click.self="mostrarModalSeleccionarManoDeObra = false">
+            <div class="modal-content modal-seleccion">
+                <div class="modal-header">
+                    <h3>Seleccionar Mano de Obra</h3>
+                    <button class="modal-close" @click="mostrarModalSeleccionarManoDeObra = false">✕</button>
+                </div>
+
+                <div class="modal-body modal-seleccion-body">
+                    <div v-if="manosDeObra.length === 0" class="empty-state">
+                        <p>No hay manos de obra disponibles</p>
+                    </div>
+
+                    <div v-else class="items-lista">
+                        <div 
+                            v-for="mano in manosDeObra" 
+                            :key="mano.id" 
+                            class="item-seleccion"
+                            :class="{ 'item-seleccionado': componenteActual.mano_de_obra_id == mano.id }"
+                            @click="seleccionarManoDeObra(mano)"
+                        >
+                            <div class="item-info">
+                                <h4>{{ mano.nombre }}</h4>
+                                <p class="item-codigo">{{ mano.codigo }}</p>
+                                <p v-if="mano.descripcion" class="item-descripcion">{{ mano.descripcion }}</p>
+                                <p v-if="mano.horas" class="item-horas">Horas: <strong>{{ mano.horas }} hrs</strong></p>
+                                <p v-if="mano.costo_hora" class="item-costo-hora">Costo/hora: <strong>${{ formatCurrency(mano.costo_hora) }}</strong></p>
+                                <p class="item-precio">Costo Total: <strong>${{ formatCurrency(mano.costo_total) }}</strong></p>
+                            </div>
+                            <div v-if="componenteActual.mano_de_obra_id == mano.id" class="item-checkmark">✓</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarModalSeleccionarManoDeObra = false">Cancelar</button>
+                    <button class="btn-primary" @click="mostrarModalSeleccionarManoDeObra = false" :disabled="!componenteActual.mano_de_obra_id">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -271,6 +351,8 @@ const componenteSeleccionado = ref('');
 // Modal
 const mostrarModal = ref(false);
 const mostrarModalComponentes = ref(false);
+const mostrarModalSeleccionarAcabado = ref(false);
+const mostrarModalSeleccionarManoDeObra = ref(false);
 const componenteActual = ref({
     id: null,
     nombre: '',
@@ -544,6 +626,16 @@ const cerrarModal = () => {
         acabado_id: '',
         mano_de_obra_id: ''
     };
+};
+
+// Seleccionar acabado
+const seleccionarAcabado = (acabado) => {
+    componenteActual.value.acabado_id = acabado.id;
+};
+
+// Seleccionar mano de obra
+const seleccionarManoDeObra = (mano) => {
+    componenteActual.value.mano_de_obra_id = mano.id;
 };
 
 // Lifecycle
@@ -1159,5 +1251,97 @@ onMounted(() => {
     border-radius: 4px;
     font-size: 12px;
     font-weight: 500;
+}
+
+.btn-select-modal {
+    padding: 10px 16px;
+    background: white;
+    border: 1px solid #d4a574;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #5a4037;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s;
+}
+
+.btn-select-modal:hover {
+    background: #faf7f2;
+    border-color: #c89564;
+}
+
+.modal-seleccion {
+    max-width: 600px;
+}
+
+.modal-seleccion-body {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.items-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item-seleccion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #faf7f2;
+    border: 2px solid #e0d7d0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.item-seleccion:hover {
+    background: #f5f1ed;
+    border-color: #d4a574;
+}
+
+.item-seleccion.item-seleccionado {
+    background: #fff9f0;
+    border-color: #d4a574;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-info h4 {
+    margin: 0;
+    color: #5a4037;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.item-codigo {
+    margin: 4px 0 0 0;
+    color: #999;
+    font-size: 12px;
+}
+
+.item-descripcion {
+    margin: 6px 0 0 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.item-horas,
+.item-costo-hora,
+.item-precio {
+    margin: 4px 0 0 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.item-checkmark {
+    margin-left: 16px;
+    color: #d4a574;
+    font-size: 20px;
+    font-weight: bold;
 }
 </style>
