@@ -32,27 +32,32 @@
         <!-- Materiales Grid -->
         <div v-else class="materiales-grid">
             <div v-for="material in materiales" :key="material.id" class="material-card">
+                <!-- Linea decorativa superior -->
+                <div class="card-top-line"></div>
+
                 <div class="material-header">
-                    <h3 class="material-nombre">{{ material.nombre }}</h3>
-                    <span class="material-codigo">{{ material.codigo }}</span>
+                    <div class="header-content">
+                        <h3 class="material-nombre">{{ material.nombre }}</h3>
+                        <p class="material-descripcion">{{ material.descripcion || 'Sin descripción' }}</p>
+                    </div>
+                    <span class="tipo-badge">{{ material.tipo_de_material?.nombre || material.tipo || '-' }}</span>
                 </div>
 
-                <p class="material-descripcion">{{ material.descripcion || 'Sin descripción' }}</p>
-
-                <div class="material-info">
-                    <div class="info-item">
-                        <label>Tipo</label>
-                        <span class="tipo-badge">{{ material.tipo_de_material?.nombre || material.tipo || '-' }}</span>
+                <div class="material-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Precio</span>
+                        <span class="stat-value precio-value">${{ formatCurrency(material.precio_unitario || material.costo_unitario) }}</span>
                     </div>
-                    <div class="info-item">
-                        <label>Precio</label>
-                        <span>${{ formatCurrency(material.precio_unitario || material.costo_unitario) }}</span>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-label">Código</span>
+                        <span class="stat-value codigo-value">{{ material.codigo }}</span>
                     </div>
                 </div>
 
                 <div class="card-actions">
-                    <button class="btn-edit" @click="editarMaterial(material.id)">Editar</button>
-                    <button class="btn-delete" @click="confirmarEliminar(material.id)">Eliminar</button>
+                    <button class="btn-edit" @click="editarMaterial(material.id)" title="Editar material">✏️ Editar</button>
+                    <button class="btn-delete" @click="confirmarEliminar(material.id)" title="Eliminar material">🗑️ Eliminar</button>
                 </div>
             </div>
         </div>
@@ -249,19 +254,25 @@ onMounted(() => {
 .material-card {
     background: white;
     border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid #ede7e0;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    overflow: hidden;
+    position: relative;
 }
 
 .material-card:hover {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
     border-color: #d4a574;
+}
+
+.card-top-line {
+    height: 4px;
+    background: linear-gradient(90deg, #d4a574 0%, #c89564 50%, #a67c52 100%);
 }
 
 .material-header {
@@ -269,111 +280,156 @@ onMounted(() => {
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
+    padding: 16px 20px 8px;
+}
+
+.header-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .material-nombre {
     margin: 0;
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 700;
     color: #5a4037;
-}
-
-.material-codigo {
-    background: #d4a574;
-    color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
+    line-height: 1.3;
 }
 
 .material-descripcion {
     color: #999;
-    font-size: 14px;
+    font-size: 13px;
     margin: 0;
     line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.material-info {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 16px;
-    background: #faf7f2;
-    border-radius: 8px;
+.tipo-badge {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.2);
 }
 
-.info-item {
+.material-stats {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #faf7f2 0%, #f5f1ed 100%);
+    border-top: 1px solid #ede7e0;
+    border-bottom: 1px solid #ede7e0;
+}
+
+.stat-item {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
     text-align: center;
 }
 
-.info-item label {
+.stat-label {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     color: #999;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.info-item span {
-    font-size: 15px;
-    font-weight: 600;
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
     color: #5a4037;
 }
 
-.tipo-badge {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    display: inline-block;
+.precio-value {
+    color: #d4a574;
+    font-size: 18px;
 }
 
-.stock-bajo {
-    color: #e67e22;
+.codigo-value {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #666;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 40px;
+    background: #d4a574;
+    opacity: 0.2;
 }
 
 .card-actions {
     display: flex;
-    gap: 12px;
-    margin-top: auto;
+    gap: 8px;
+    padding: 16px 20px;
+    background: #faf7f2;
 }
 
 .btn-edit,
 .btn-delete {
     flex: 1;
-    padding: 10px 16px;
+    padding: 12px 16px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
 }
 
 .btn-edit {
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.2);
 }
 
 .btn-edit:hover {
-    background: #c89564;
+    background: linear-gradient(135deg, #c89564 0%, #b5874a 100%);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-edit:active {
+    transform: translateY(0);
 }
 
 .btn-delete {
-    background: #fee;
+    background: #fff5f5;
     color: #c33;
-    border: 1px solid #c33;
+    border: 1.5px solid #e89;
+    box-shadow: 0 2px 8px rgba(204, 51, 51, 0.1);
 }
 
 .btn-delete:hover {
-    background: #fdd;
+    background: #fee;
+    border-color: #c33;
+    box-shadow: 0 4px 12px rgba(204, 51, 51, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-delete:active {
+    transform: translateY(0);
 }
 
 /* Modal */
