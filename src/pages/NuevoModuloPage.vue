@@ -156,6 +156,63 @@
             </button>
         </div>
         </template>
+
+        <!-- Modal para agregar/editar componente -->
+        <div v-if="mostrarModal" class="modal-overlay" @click.self="cerrarModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Agregar Componente</h3>
+                    <button class="modal-close" @click="cerrarModal">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="modal-item">
+                        <label class="modal-label">Componente:</label>
+                        <div class="modal-value">{{ componenteActual?.nombre }}</div>
+                    </div>
+
+                    <div class="modal-item">
+                        <label class="modal-label">Código:</label>
+                        <div class="modal-value">{{ componenteActual?.codigo }}</div>
+                    </div>
+
+                    <div class="modal-item">
+                        <label class="modal-label">Cantidad *</label>
+                        <input 
+                            v-model.number="componenteActual.cantidad" 
+                            type="number" 
+                            min="1" 
+                            class="form-input"
+                        >
+                    </div>
+
+                    <div class="modal-item">
+                        <label class="modal-label">Acabado *</label>
+                        <select v-model="componenteActual.acabado_id" class="form-input">
+                            <option value="">Seleccionar acabado...</option>
+                            <option v-for="acabado in acabados" :key="acabado.id" :value="acabado.id">
+                                {{ acabado.nombre }} - ${{ formatCurrency(acabado.costo) }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="modal-item">
+                        <label class="modal-label">Mano de Obra *</label>
+                        <select v-model="componenteActual.mano_de_obra_id" class="form-input">
+                            <option value="">Seleccionar mano de obra...</option>
+                            <option v-for="mano in manosDeObra" :key="mano.id" :value="mano.id">
+                                {{ mano.nombre }} - ${{ formatCurrency(mano.costo_total) }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="cerrarModal">Cancelar</button>
+                    <button class="btn-primary" @click="guardarComponente">Guardar Componente</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -179,6 +236,17 @@ const acabados = ref([]);
 const manosDeObra = ref([]);
 const todosLosComponentes = ref([]);
 const componenteSeleccionado = ref('');
+
+// Modal
+const mostrarModal = ref(false);
+const componenteActual = ref({
+    id: null,
+    nombre: '',
+    codigo: '',
+    cantidad: 1,
+    acabado_id: '',
+    mano_de_obra_id: ''
+});
 
 // Estado de UI
 const error = ref(null);
@@ -393,12 +461,45 @@ watch(componenteSeleccionado, (nuevoComponenteId) => {
             // Verificar si el componente ya está agregado
             const yaAgregado = formData.value.componentes.some(c => c.id == nuevoComponenteId);
             if (!yaAgregado) {
-                formData.value.componentes.push({...componente});
-                componenteSeleccionado.value = '';
+                // Abre el modal para configurar el componente
+                componenteActual.value = {
+                    id: componente.id,
+                    nombre: componente.nombre,
+                    codigo: componente.codigo,
+                    cantidad: 1,
+                    acabado_id: '',
+                    mano_de_obra_id: ''
+                };
+                mostrarModal.value = true;
             }
         }
     }
 });
+
+// Guardar componente del modal
+const guardarComponente = () => {
+    if (!componenteActual.value.acabado_id || !componenteActual.value.mano_de_obra_id) {
+        error.value = 'Debe seleccionar acabado y mano de obra';
+        return;
+    }
+    
+    formData.value.componentes.push({...componenteActual.value});
+    cerrarModal();
+};
+
+// Cerrar modal
+const cerrarModal = () => {
+    mostrarModal.value = false;
+    componenteSeleccionado.value = '';
+    componenteActual.value = {
+        id: null,
+        nombre: '',
+        codigo: '',
+        cantidad: 1,
+        acabado_id: '',
+        mano_de_obra_id: ''
+    };
+};
 
 // Lifecycle
 onMounted(() => {
@@ -816,5 +917,113 @@ onMounted(() => {
     .btn-secondary {
         width: 100%;
     }
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #e0d7d0;
+    background: #faf7f2;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #5a4037;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: #e0d7d0;
+    color: #5a4037;
+}
+
+.modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a4037;
+}
+
+.modal-value {
+    padding: 10px 12px;
+    background: #faf7f2;
+    border: 1px solid #e0d7d0;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #5a4037;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 24px;
+    border-top: 1px solid #e0d7d0;
+    background: #faf7f2;
+}
+
+.modal-footer button {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
 }
 </style>
