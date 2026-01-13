@@ -38,11 +38,10 @@
 
                 <div class="form-group">
                     <label class="form-label">Tipo de Material</label>
-                    <div class="tipo-selector">
-                        <input v-model="formData.tipo" type="text" class="form-input"
-                            placeholder="Ej: Madera, Metal, Plástico" readonly>
+                    <div class="tipo-display">
+                        <span class="tipo-label">{{ formData.tipo || 'Seleccionar tipo...' }}</span>
                         <button type="button" class="btn-select-tipo" @click="mostrarModalTipos">
-                            Seleccionar
+                            Cambiar
                         </button>
                     </div>
                 </div>
@@ -112,11 +111,7 @@
                     <label>Costo Unitario</label>
                     <span class="resumen-valor">${{ formatCurrency(formData.costo_unitario) }}</span>
                 </div>
-                <div class="resumen-item">
-                    <label>Stock Disponible</label>
-                    <span class="resumen-valor">{{ formData.cantidad_disponible || 0 }} {{ formData.unidad_medida ||
-                        'unidades' }}</span>
-                </div>
+                
             </div>
         </div>
 
@@ -581,6 +576,23 @@ const seleccionarTipo = (tipo) => {
 .tipo-selector .form-input {
     flex: 1;
     cursor: not-allowed;
+}
+
+.tipo-display {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tipo-label {
+    flex: 1;
+    padding: 12px 16px;
+    background: #faf7f2;
+    border: 1px solid #d4a574;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #5a4037;
+    font-weight: 500;
 }
 
 .btn-select-tipo {
