@@ -81,6 +81,14 @@
                             <strong>{{ componente.nombre }}</strong>
                             <span class="componente-codigo">{{ componente.codigo }}</span>
                         </div>
+                        <div class="componente-detalles">
+                            <span v-if="componente.acabado_id" class="detalle-badge">
+                                Acabado: {{ obtenerNombreAcabado(componente.acabado_id) }}
+                            </span>
+                            <span v-if="componente.mano_de_obra_id" class="detalle-badge">
+                                M.O: {{ obtenerNombreManodeObra(componente.mano_de_obra_id) }}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="componente-controls">
@@ -373,6 +381,16 @@ const calcularCostoTotal = () => {
         const costUnit = costoAcabado + costoMano;
         return total + (costUnit * (comp.cantidad || 0));
     }, 0);
+};
+
+const obtenerNombreAcabado = (acabadoId) => {
+    const acabado = acabados.value.find(a => a.id === Number(acabadoId));
+    return acabado?.nombre || 'Sin seleccionar';
+};
+
+const obtenerNombreManodeObra = (manoId) => {
+    const mano = manosDeObra.value.find(m => m.id === Number(manoId));
+    return mano?.nombre || 'Sin seleccionar';
 };
 
 const formatCurrency = (value) => {
@@ -1124,5 +1142,22 @@ onMounted(() => {
     background: #ccc;
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+.componente-detalles {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.detalle-badge {
+    display: inline-block;
+    background: #f0e6d8;
+    color: #5a4037;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
 }
 </style>
