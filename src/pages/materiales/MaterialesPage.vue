@@ -58,6 +58,11 @@
                 <div class="card-actions">
                     <button class="btn-edit" @click="editarMaterial(material.id)" title="Editar material">✏️ Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(material.id)" title="Eliminar material">🗑️ Eliminar</button>
+                    
+                </div>
+                <div class="card-actions">
+                    <button class="btn-details" @click="verDetalles(material.id)" title="Ver detalles">👁️
+                        Detalles</button>
                 </div>
             </div>
         </div>
@@ -109,6 +114,11 @@ const cargarMateriales = async () => {
 
 // Editar material
 const editarMaterial = (id) => {
+    router.push({ name: 'EditarMaterial', params: { id } });
+};
+
+// Ver detalles del material
+const verDetalles = (id) => {
     router.push({ name: 'EditarMaterial', params: { id } });
 };
 
@@ -382,7 +392,8 @@ onMounted(() => {
 }
 
 .btn-edit,
-.btn-delete {
+.btn-delete,
+.btn-details {
     flex: 1;
     padding: 12px 16px;
     border: none;
@@ -396,6 +407,22 @@ onMounted(() => {
     justify-content: center;
     gap: 6px;
     letter-spacing: 0.3px;
+}
+
+.btn-details {
+    background: linear-gradient(135deg, #8b7aa5 0%, #6d5b8c 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(139, 122, 165, 0.2);
+}
+
+.btn-details:hover {
+    background: linear-gradient(135deg, #6d5b8c 0%, #554975 100%);
+    box-shadow: 0 4px 12px rgba(139, 122, 165, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-details:active {
+    transform: translateY(0);
 }
 
 .btn-edit {
