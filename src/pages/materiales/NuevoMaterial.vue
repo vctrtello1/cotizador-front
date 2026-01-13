@@ -24,22 +24,27 @@
             <div class="info-grid">
                 <div class="form-group">
                     <label class="form-label">Nombre del Material *</label>
-                    <input v-model="formData.nombre" type="text" class="form-input" placeholder="Ej: Madera Pino"
+                    <input v-model="formData.nombre" type="text" class="form-input" placeholder="Ej: Pata De Mesa"
                         @blur="validarCampo('nombre')">
                     <span v-if="erroresValidacion.nombre" class="error-text">{{ erroresValidacion.nombre }}</span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Código del Material *</label>
-                    <input v-model="formData.codigo" type="text" class="form-input" placeholder="Ej: MAD_PINO_1"
+                    <input v-model="formData.codigo" type="text" class="form-input" placeholder="Ej: PAT_MES_1"
                         @blur="validarCampo('codigo')">
                     <span v-if="erroresValidacion.codigo" class="error-text">{{ erroresValidacion.codigo }}</span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Tipo de Material</label>
-                    <input v-model="formData.tipo" type="text" class="form-input"
-                        placeholder="Ej: Madera, Metal, Plástico">
+                    <div class="tipo-selector">
+                        <input v-model="formData.tipo" type="text" class="form-input"
+                            placeholder="Ej: Madera, Metal, Plástico" readonly>
+                        <button type="button" class="btn-select-tipo" @click="mostrarModalTipos">
+                            Seleccionar
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group full-width">
@@ -122,6 +127,41 @@
                 {{ cargando ? 'Guardando...' : 'Guardar Material' }}
             </button>
         </div>
+
+        <!-- Modal de Tipos de Material -->
+        <div v-if="modalTiposVisible" class="modal-overlay" @click.self="cerrarModalTipos">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Seleccionar Tipo de Material</h2>
+                    <button class="modal-close" @click="cerrarModalTipos">✕</button>
+                </div>
+
+                <!-- Loading -->
+                <div v-if="tiposLoading" class="modal-loading">
+                    <p>Cargando tipos de material...</p>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else-if="tiposDeMaterial.length === 0" class="modal-empty">
+                    <p>No hay tipos de material disponibles</p>
+                </div>
+
+                <!-- Lista de Tipos -->
+                <div v-else class="tipos-list">
+                    <div v-for="tipo in tiposDeMaterial" :key="tipo.id" class="tipo-item" @click="seleccionarTipo(tipo)">
+                        <div class="tipo-info">
+                            <h3>{{ tipo.nombre }}</h3>
+                            <p v-if="tipo.descripcion" class="tipo-descripcion">{{ tipo.descripcion }}</p>
+                        </div>
+                        <div class="tipo-codigo">{{ tipo.codigo }}</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="cerrarModalTipos">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -129,8 +169,10 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { crearMaterial } from '@/http/materiales-api';
+import { useTiposDeMaterial } from '@/stores/tipo-de-material';
 
 const router = useRouter();
+const tiposDeMaterialStore = useTiposDeMaterial();
 
 // Estado del formulario
 const formData = ref({
@@ -147,6 +189,9 @@ const formData = ref({
 const error = ref(null);
 const exito = ref(null);
 const cargando = ref(false);
+const modalTiposVisible = ref(false);
+const tiposLoading = ref(false);
+const tiposDeMaterial = ref([]);
 const erroresValidacion = ref({
     nombre: null,
     codigo: null,
@@ -272,7 +317,38 @@ const guardarMaterial = async () => {
 
 onMounted(() => {
     console.log('NuevoMaterial mounted');
+    cargarTiposDeMaterial();
 });
+
+// Métodos para modal de tipos
+const cargarTiposDeMaterial = async () => {
+    try {
+        tiposLoading.value = true;
+        await tiposDeMaterialStore.fetchTiposDeMaterialAction();
+        tiposDeMaterial.value = tiposDeMaterialStore.tiposDeMaterial;
+    } catch (err) {
+        console.error('Error cargando tipos de material:', err);
+        error.value = 'Error al cargar los tipos de material';
+    } finally {
+        tiposLoading.value = false;
+    }
+};
+
+const mostrarModalTipos = async () => {
+    modalTiposVisible.value = true;
+    if (tiposDeMaterial.value.length === 0) {
+        await cargarTiposDeMaterial();
+    }
+};
+
+const cerrarModalTipos = () => {
+    modalTiposVisible.value = false;
+};
+
+const seleccionarTipo = (tipo) => {
+    formData.value.tipo = tipo.nombre;
+    cerrarModalTipos();
+};
 </script>
 
 <style scoped>
@@ -494,6 +570,151 @@ onMounted(() => {
 .btn-secondary:hover {
     background: #ede7e0;
     border-color: #c89564;
+}
+
+/* Selector de Tipo */
+.tipo-selector {
+    display: flex;
+    gap: 8px;
+}
+
+.tipo-selector .form-input {
+    flex: 1;
+    cursor: not-allowed;
+}
+
+.btn-select-tipo {
+    padding: 10px 16px;
+    background: #d4a574;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-select-tipo:hover {
+    background: #c89564;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    border-bottom: 1px solid #ede7e0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #5a4037;
+    font-size: 20px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.3s;
+}
+
+.modal-close:hover {
+    color: #5a4037;
+}
+
+.modal-loading,
+.modal-empty {
+    padding: 40px 30px;
+    text-align: center;
+    color: #999;
+}
+
+.tipos-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 30px;
+}
+
+.tipo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: #faf7f2;
+    border: 1px solid #ede7e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tipo-item:hover {
+    background: #f0e8df;
+    border-color: #d4a574;
+    transform: translateX(4px);
+}
+
+.tipo-info h3 {
+    margin: 0 0 4px 0;
+    color: #5a4037;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tipo-descripcion {
+    margin: 0;
+    color: #999;
+    font-size: 13px;
+}
+
+.tipo-codigo {
+    background: #d4a574;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #ede7e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
 }
 
 @keyframes slideDown {
