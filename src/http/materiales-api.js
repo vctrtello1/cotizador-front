@@ -7,7 +7,8 @@ export const fetchMateriales = async () => {
 
 export const getMaterialById = async (id) => {
   const response = await api.get(`/materiales/${id}`);
-  return response.data;
+  // La API devuelve { data: { ...material } }, extraer solo el material
+  return response.data.data || response.data;
 };
 
 export const crearMaterial = async (datos) => {

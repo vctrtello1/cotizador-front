@@ -158,7 +158,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getMaterialById, actualizarMaterial } from '@/http/materiales-api';
 
@@ -267,24 +267,44 @@ const formatCurrency = (value) => {
 
 // Cargar material
 const cargarMaterial = async () => {
+    cargando.value = true;
+    error.value = null;
+    
     try {
         const id = route.params.id;
+        
+        if (!id) {
+            error.value = 'ID del material no disponible';
+            console.error('No hay ID disponible');
+            return;
+        }
+        
         console.log('Cargando material con ID:', id);
         const material = await getMaterialById(id);
-        console.log('Material cargado:', material);
-
-        formData.value = {
-            nombre: material.nombre || '',
-            codigo: material.codigo || '',
-            tipo: material.tipo || '',
-            descripcion: material.descripcion || '',
-            unidad_medida: material.unidad_medida || '',
-            cantidad_disponible: material.cantidad_disponible || 0,
-            costo_unitario: material.costo_unitario || 0
-        };
+        console.log('Material cargado correctamente:', material);
+        
+        if (!material || Object.keys(material).length === 0) {
+            error.value = 'El material no fue encontrado';
+            console.error('Material vacío recibido');
+            return;
+        }
+        
+        // Usar Object.assign para mantener reactivity
+        Object.assign(formData.value, {
+            nombre: String(material.nombre || '').trim(),
+            codigo: String(material.codigo || '').trim(),
+            tipo: material.tipo_de_material?.nombre || material.tipo || '',
+            descripcion: String(material.descripcion || '').trim(),
+            unidad_medida: String(material.unidad_medida || '').trim(),
+            cantidad_disponible: Number(material.cantidad_disponible) || 0,
+            costo_unitario: Number(material.precio_unitario || material.costo_unitario) || 0
+        });
+        
+        console.log('Datos cargados en el formulario:', formData.value);
+        
     } catch (err) {
         console.error('Error cargando material:', err);
-        error.value = 'Error al cargar el material';
+        error.value = 'Error al cargar el material: ' + (err.response?.data?.message || err.message);
     } finally {
         cargando.value = false;
     }
@@ -331,9 +351,22 @@ const guardarMaterial = async () => {
 };
 
 onMounted(() => {
-    console.log('EditarMaterial mounted');
+    console.log('EditarMaterial mounted, route params:', route.params);
     cargarMaterial();
 });
+
+// Watch para cuando cambia el ID de la ruta
+watch(() => route.params.id, (newId, oldId) => {
+    if (newId && newId !== oldId) {
+        console.log('ID cambió de', oldId, 'a', newId, '- Recargando material');
+        cargarMaterial();
+    }
+});
+
+// Watch para monitorear cambios en formData (para debugging)
+watch(() => formData.value, (newVal) => {
+    console.log('FormData cambió:', newVal);
+}, { deep: true });
 </script>
 
 <style scoped>

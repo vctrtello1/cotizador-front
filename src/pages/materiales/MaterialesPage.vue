@@ -198,7 +198,12 @@ const cargarMateriales = async () => {
 
 // ==================== Métodos de Navegación ====================
 const editarMaterial = (id) => {
-    router.push({ name: 'EditarMaterial', params: { id } });
+    // Cerrar el modal de detalles si está abierto
+    if (modalDetalles.value) {
+        cerrarModalDetalles();
+    }
+    // Navegar a la página de edición con el ID como número
+    router.push({ name: 'EditarMaterial', params: { id: Number(id) } });
 };
 
 const irAlNuevoMaterial = () => {
