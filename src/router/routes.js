@@ -4,6 +4,8 @@ import NuevaCotizacionPage from "@/pages/NuevaCotizacionPage.vue";
 import NuevoModuloPage from "@/pages/NuevoModuloPage.vue";
 import EditarModuloPage from "@/pages/EditarModuloPage.vue";
 import ModulosPage from "@/pages/ModulosPage.vue";
+import ComponentesPage from "@/pages/ComponentesPage.vue";
+import NuevoComponentePage from "@/pages/NuevoComponentePage.vue";
 
 export const routes = [
     {
@@ -39,6 +41,16 @@ export const routes = [
         path: "/editar-modulo/:id",
         name: "EditarModulo",
         component: EditarModuloPage,
+    },
+    {
+        path: "/componentes",
+        name: "Componentes",
+        component: ComponentesPage,
+    },
+    {
+        path: "/nuevo-componente",
+        name: "NuevoComponente",
+        component: NuevoComponentePage,
     }
 
 ];
