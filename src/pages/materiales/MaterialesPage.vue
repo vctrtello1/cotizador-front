@@ -58,11 +58,7 @@
                 <div class="card-actions">
                     <button class="btn-edit" @click="editarMaterial(material.id)" title="Editar material">✏️ Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(material.id)" title="Eliminar material">🗑️ Eliminar</button>
-                    
-                </div>
-                <div class="card-actions">
-                    <button class="btn-details" @click="verDetalles(material.id)" title="Ver detalles">👁️
-                        Detalles</button>
+                    <button class="btn-details" @click="verDetalles(material.id)" title="Ver detalles">👁️ Detalles</button>
                 </div>
             </div>
         </div>
@@ -75,6 +71,74 @@
                 <div class="modal-actions">
                     <button class="btn-secondary" @click="modalEliminar = false">Cancelar</button>
                     <button class="btn-delete" @click="eliminarMaterial">Eliminar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de detalles del material -->
+        <div v-if="modalDetalles" class="modal-overlay" @click.self="modalDetalles = false">
+            <div class="modal-content modal-detalles">
+                <div class="modal-header">
+                    <h2>{{ materialSeleccionado?.nombre }}</h2>
+                    <button @click="modalDetalles = false" class="modal-close">✕</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="detalle-section">
+                        <h3>Información General</h3>
+                        <div class="detalle-grid">
+                            <div class="detalle-item">
+                                <label>Código</label>
+                                <span>{{ materialSeleccionado?.codigo }}</span>
+                            </div>
+                            <div class="detalle-item">
+                                <label>Tipo de Material</label>
+                                <span>{{ materialSeleccionado?.tipo_de_material?.nombre || materialSeleccionado?.tipo || '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detalle-section">
+                        <h3>Descripción</h3>
+                        <p class="detalle-descripcion">{{ materialSeleccionado?.descripcion || 'Sin descripción' }}</p>
+                    </div>
+
+                    <div class="detalle-section">
+                        <h3>Detalles de Precio</h3>
+                        <div class="detalle-grid">
+                            <div class="detalle-item">
+                                <label>Precio Unitario</label>
+                                <span class="precio-destacado">${{ formatCurrency(materialSeleccionado?.precio_unitario || materialSeleccionado?.costo_unitario) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detalle-section">
+                        <h3>Medidas</h3>
+                        <div class="detalle-grid">
+                            <div class="detalle-item">
+                                <label>Largo</label>
+                                <span>{{ materialSeleccionado?.largo || '-' }} {{ materialSeleccionado?.unidad_largo || '' }}</span>
+                            </div>
+                            <div class="detalle-item">
+                                <label>Ancho</label>
+                                <span>{{ materialSeleccionado?.ancho || '-' }} {{ materialSeleccionado?.unidad_ancho || '' }}</span>
+                            </div>
+                            <div class="detalle-item">
+                                <label>Alto</label>
+                                <span>{{ materialSeleccionado?.alto || '-' }} {{ materialSeleccionado?.unidad_alto || '' }}</span>
+                            </div>
+                            <div class="detalle-item">
+                                <label>Unidad de medida</label>
+                                <span>{{ materialSeleccionado?.unidad_medida || '-' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-primary" @click="editarMaterial(materialSeleccionado?.id)">Editar Material</button>
+                    <button class="btn-secondary" @click="modalDetalles = false">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -95,6 +159,8 @@ const error = ref(null);
 const exito = ref(null);
 const modalEliminar = ref(false);
 const materialAEliminar = ref(null);
+const modalDetalles = ref(false);
+const materialSeleccionado = ref(null);
 
 // Cargar materiales
 const cargarMateriales = async () => {
@@ -119,7 +185,8 @@ const editarMaterial = (id) => {
 
 // Ver detalles del material
 const verDetalles = (id) => {
-    router.push({ name: 'EditarMaterial', params: { id } });
+    materialSeleccionado.value = materiales.value.find(m => m.id === id) || null;
+    modalDetalles.value = true;
 };
 
 // Confirmar eliminación
@@ -479,6 +546,132 @@ onMounted(() => {
     padding: 32px;
     max-width: 400px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content.modal-detalles {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 2px solid #d4a574;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #5a4037;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.modal-close:hover {
+    color: #5a4037;
+    background: #f5f1ed;
+    border-radius: 6px;
+}
+
+.modal-body {
+    padding: 32px;
+    flex: 1;
+}
+
+.detalle-section {
+    margin-bottom: 32px;
+}
+
+.detalle-section:last-child {
+    margin-bottom: 0;
+}
+
+.detalle-section h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #5a4037;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #d4a574;
+}
+
+.detalle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.detalle-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detalle-item label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detalle-item span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #5a4037;
+}
+
+.precio-destacado {
+    font-size: 20px;
+    color: #d4a574;
+    font-weight: 700;
+}
+
+.detalle-descripcion {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px;
+    background: #faf7f2;
+    border-radius: 8px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 24px 32px;
+    border-top: 2px solid #d4a574;
+    background: #faf7f2;
+}
+
+.modal-footer .btn-primary,
+.modal-footer .btn-secondary {
+    flex: 1;
 }
 
 .modal-content h3 {
