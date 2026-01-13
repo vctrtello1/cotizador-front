@@ -28,7 +28,7 @@
                         v-model="formData.nombre" 
                         type="text" 
                         class="form-input" 
-                        placeholder="Ej: Tablero MDF"
+                        placeholder="Ej: Pata de Madera"
                         @blur="validarCampo('nombre')"
                     >
                     <span v-if="erroresValidacion.nombre" class="error-text">{{ erroresValidacion.nombre }}</span>
@@ -40,7 +40,7 @@
                         v-model="formData.codigo" 
                         type="text" 
                         class="form-input" 
-                        placeholder="Ej: TAB_MDF_1"
+                        placeholder="Ej: PATA_MAD_1"
                         @blur="validarCampo('codigo')"
                     >
                     <span v-if="erroresValidacion.codigo" class="error-text">{{ erroresValidacion.codigo }}</span>
@@ -62,7 +62,7 @@
                         v-model="formData.unidad_medida" 
                         type="text" 
                         class="form-input" 
-                        placeholder="Ej: Pieza, Metro, Kg"
+                        placeholder="Ej: Metro, Kg, Unidad"
                         @blur="validarCampo('unidad_medida')"
                     >
                     <span v-if="erroresValidacion.unidad_medida" class="error-text">{{ erroresValidacion.unidad_medida }}</span>
@@ -75,7 +75,7 @@
                         type="number" 
                         min="0" 
                         class="form-input" 
-                        placeholder="Ej: 50"
+                        placeholder="Ej: 100"
                         @blur="validarCampo('cantidad_disponible')"
                     >
                     <span v-if="erroresValidacion.cantidad_disponible" class="error-text">{{ erroresValidacion.cantidad_disponible }}</span>
@@ -89,7 +89,7 @@
                         min="0" 
                         step="0.01"
                         class="form-input" 
-                        placeholder="Ej: 150.50"
+                        placeholder="Ej: 250.75"
                         @blur="validarCampo('costo_unitario')"
                     >
                     <span v-if="erroresValidacion.costo_unitario" class="error-text">{{ erroresValidacion.costo_unitario }}</span>
@@ -524,8 +524,7 @@ onMounted(() => {
         font-size: 24px;
     }
 
-    .info-grid,
-    .resumen-grid {
+    .info-grid {
         grid-template-columns: 1fr;
     }
 

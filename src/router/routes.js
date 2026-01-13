@@ -1,6 +1,6 @@
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage.vue";
 import CotizacionDetalladaPage from "@/pages/cotizaciones/CotizacionDetalladaPage.vue";
-import NuevaCotizacionPage from "@/pages/componentes/NuevaCotizacionPage.vue";
+import NuevaCotizacionPage from "@/pages/cotizaciones/NuevaCotizacionPage.vue";
 import NuevoModuloPage from "@/pages/modulos/NuevoModuloPage.vue";
 import EditarModuloPage from "@/pages/modulos/EditarModuloPage.vue";
 import ModulosPage from "@/pages/modulos/ModulosPage.vue";
