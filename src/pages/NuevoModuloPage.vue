@@ -368,7 +368,9 @@ const calcularCostoTotal = () => {
     return formData.value.componentes.reduce((total, comp) => {
         const acabado = acabados.value.find(a => a.id === Number(comp.acabado_id));
         const mano = manosDeObra.value.find(m => m.id === Number(comp.mano_de_obra_id));
-        const costUnit = (acabado?.costo || 0) + (mano?.costo_total || 0);
+        const costoAcabado = parseFloat(acabado?.costo || 0);
+        const costoMano = parseFloat(mano?.costo_total || 0);
+        const costUnit = costoAcabado + costoMano;
         return total + (costUnit * (comp.cantidad || 0));
     }, 0);
 };
