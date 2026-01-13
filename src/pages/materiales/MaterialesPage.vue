@@ -42,21 +42,11 @@
                 <div class="material-info">
                     <div class="info-item">
                         <label>Tipo</label>
-                        <span>{{ material.tipo || '-' }}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Unidad</label>
-                        <span>{{ material.unidad_medida }}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Stock</label>
-                        <span :class="{ 'stock-bajo': material.cantidad_disponible < 10 }">
-                            {{ material.cantidad_disponible }}
-                        </span>
+                        <span class="tipo-badge">{{ material.tipo_de_material?.nombre || material.tipo || '-' }}</span>
                     </div>
                     <div class="info-item">
                         <label>Precio</label>
-                        <span>${{ formatCurrency(material.costo_unitario) }}</span>
+                        <span>${{ formatCurrency(material.precio_unitario || material.costo_unitario) }}</span>
                     </div>
                 </div>
 
@@ -307,7 +297,7 @@ onMounted(() => {
 
 .material-info {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     padding: 16px;
     background: #faf7f2;
@@ -333,6 +323,16 @@ onMounted(() => {
     font-size: 15px;
     font-weight: 600;
     color: #5a4037;
+}
+
+.tipo-badge {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
 }
 
 .stock-bajo {
