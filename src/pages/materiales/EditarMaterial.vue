@@ -126,17 +126,17 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Costo Unitario *</label>
+                        <label class="form-label">Precio Unitario *</label>
                         <input 
-                            v-model.number="formData.costo_unitario" 
+                            v-model.number="formData.precio_unitario" 
                             type="number" 
                             min="0" 
                             step="0.01"
                             class="form-input" 
                             placeholder="Ej: 250.75"
-                            @blur="validarCampo('costo_unitario')"
+                            @blur="validarCampo('precio_unitario')"
                         >
-                        <span v-if="erroresValidacion.costo_unitario" class="error-text">{{ erroresValidacion.costo_unitario }}</span>
+                        <span v-if="erroresValidacion.precio_unitario" class="error-text">{{ erroresValidacion.precio_unitario }}</span>
                     </div>
                 </div>
             </div>
@@ -165,7 +165,7 @@
                     </div>
                     <div class="resumen-item">
                         <label>Costo Unitario</label>
-                        <span class="resumen-valor">${{ formatCurrency(formData.costo_unitario) }}</span>
+                        <span class="resumen-valor">${{ formatCurrency(formData.precio_unitario) }}</span>
                     </div>
                 
                 </div>
@@ -251,10 +251,11 @@ const formData = ref({
     nombre: '',
     codigo: '',
     tipo: '',
+    tipo_de_material_id: null,
     descripcion: '',
     unidad_medida: '',
-    
-    costo_unitario: 0,
+    cantidad_disponible: 0,
+    precio_unitario: 0,
     alto: 0,
     ancho: 0,
     largo: 0
@@ -270,7 +271,7 @@ const erroresValidacion = ref({
     codigo: null,
     unidad_medida: null,
     cantidad_disponible: null,
-    costo_unitario: null,
+    precio_unitario: null,
     alto: null,
     ancho: null,
     largo: null
@@ -299,11 +300,11 @@ const CAMPOS_CONFIG = {
         minimo: 0,
         mensaje: 'La cantidad debe ser mayor o igual a 0'
     },
-    costo_unitario: { 
+    precio_unitario: { 
         requerido: false, 
         tipo: 'numero',
         minimo: 0,
-        mensaje: 'El costo debe ser mayor o igual a 0'
+        mensaje: 'El precio debe ser mayor o igual a 0'
     },
     alto: { 
         requerido: false, 
@@ -409,10 +410,11 @@ const cargarMaterial = async () => {
             nombre: String(material.nombre || '').trim(),
             codigo: String(material.codigo || '').trim(),
             tipo: material.tipo_de_material?.nombre || material.tipo || '',
+            tipo_de_material_id: material.tipo_de_material?.id || material.tipo_de_material_id || null,
             descripcion: String(material.descripcion || '').trim(),
             unidad_medida: String(material.unidad_medida || '').trim(),
             cantidad_disponible: Number(material.cantidad_disponible) || 0,
-            costo_unitario: Number(material.precio_unitario || material.costo_unitario) || 0,
+            precio_unitario: Number(material.precio_unitario || material.costo_unitario) || 0,
             alto: Number(material.alto) || 0,
             ancho: Number(material.ancho) || 0,
             largo: Number(material.largo) || 0
@@ -442,11 +444,11 @@ const guardarMaterial = async () => {
         const datosMaterial = {
             nombre: formData.value.nombre,
             codigo: formData.value.codigo,
-            tipo: formData.value.tipo,
+            tipo_de_material_id: formData.value.tipo_de_material_id,
             descripcion: formData.value.descripcion,
             unidad_medida: formData.value.unidad_medida,
             cantidad_disponible: formData.value.cantidad_disponible,
-            costo_unitario: formData.value.costo_unitario,
+            precio_unitario: formData.value.precio_unitario,
             alto: formData.value.alto,
             ancho: formData.value.ancho,
             largo: formData.value.largo
@@ -468,6 +470,7 @@ const guardarMaterial = async () => {
 // Métodos del modal
 const seleccionarTipo = (tipo) => {
     formData.value.tipo = tipo.nombre;
+    formData.value.tipo_de_material_id = tipo.id;
     cerrarModalTipo();
 };
 
