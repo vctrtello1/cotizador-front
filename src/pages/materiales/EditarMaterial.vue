@@ -2,8 +2,14 @@
     <div class="editar-material-container">
         <!-- Header -->
         <div class="page-header">
-            <button class="btn-back" @click="$router.push('/materiales')">← Volver</button>
-            <h1 class="page-title">Editar Material</h1>
+            <button class="btn-back" @click="$router.push('/materiales')">
+                <span class="btn-back-icon">←</span>
+                <span>Volver a Materiales</span>
+            </button>
+            <div class="header-content">
+                <h1 class="page-title">✏️ Editar Material</h1>
+                <p class="page-subtitle">Modifica la información y características del material</p>
+            </div>
         </div>
 
         <!-- Cargando -->
@@ -28,7 +34,13 @@
 
             <!-- Formulario -->
             <div class="info-card">
-                <h2 class="section-title">Información del Material</h2>
+                <div class="card-header">
+                    <div class="card-header-icon">📋</div>
+                    <div class="card-header-title">
+                        <h2 class="section-title">Información del Material</h2>
+                        <p class="section-subtitle">Completa todos los campos requeridos (*)</p>
+                    </div>
+                </div>
                 <div class="info-grid">
                     <div class="form-group">
                         <label class="form-label">Nombre del Material *</label>
@@ -131,7 +143,13 @@
 
             <!-- Resumen -->
             <div class="resumen-card">
-                <h2 class="section-title">Resumen del Material</h2>
+                <div class="card-header">
+                    <div class="card-header-icon">📊</div>
+                    <div class="card-header-title">
+                        <h2 class="section-title">Resumen en Tiempo Real</h2>
+                        <p class="section-subtitle">Vista previa de los datos ingresados</p>
+                    </div>
+                </div>
                 <div class="resumen-grid">
                     <div class="resumen-item">
                         <label>Nombre</label>
@@ -155,13 +173,16 @@
 
             <!-- Botones de Acción -->
             <div class="action-buttons">
-                <button class="btn-secondary" @click="$router.push('/materiales')">Cancelar</button>
+                <button class="btn-secondary" @click="$router.push('/materiales')">
+                    <span>✕ Cancelar</span>
+                </button>
                 <button 
                     class="btn-primary" 
                     @click="guardarMaterial"
                     :disabled="cargandoGuardar"
                 >
-                    {{ cargandoGuardar ? 'Guardando...' : 'Guardar Cambios' }}
+                    <span v-if="cargandoGuardar" class="btn-spinner"></span>
+                    <span>{{ cargandoGuardar ? 'Guardando...' : '✓ Guardar Cambios' }}</span>
                 </button>
             </div>
         </div>
@@ -488,33 +509,58 @@ watch(() => route.params.id, (newId, oldId) => {
 
 .page-header {
     display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 30px;
+    align-items: flex-start;
+    gap: 30px;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(200, 149, 100, 0.05) 100%);
+    border-radius: 12px;
+    border-left: 4px solid #d4a574;
 }
 
 .btn-back {
-    padding: 8px 16px;
-    background: #d4a574;
-    color: white;
-    border: none;
-    border-radius: 4px;
+    padding: 12px 20px;
+    background: white;
+    color: #d4a574;
+    border: 2px solid #d4a574;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .btn-back:hover {
-    background: #c89564;
-    transform: translateX(-2px);
+    background: #d4a574;
+    color: white;
+    transform: translateX(-4px);
+}
+
+.btn-back-icon {
+    font-size: 18px;
+}
+
+.header-content {
+    flex: 1;
 }
 
 .page-title {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 700;
     color: #5a4037;
+    margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+    font-size: 15px;
+    color: #8d6e63;
     margin: 0;
+    font-weight: 400;
 }
 
 .loading-state {
@@ -545,8 +591,8 @@ watch(() => route.params.id, (newId, oldId) => {
 .error-message,
 .success-message {
     padding: 16px 20px;
+    margin-bottom: 24px;
     border-radius: 8px;
-    margin-bottom: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -558,12 +604,14 @@ watch(() => route.params.id, (newId, oldId) => {
     background: #fee;
     color: #c33;
     border-left: 4px solid #c33;
+    border: 2px solid #f8d7da;
 }
 
 .success-message {
     background: #efe;
     color: #3c3;
     border-left: 4px solid #3c3;
+    border: 2px solid #d4edda;
 }
 
 .error-close {
@@ -572,7 +620,9 @@ watch(() => route.params.id, (newId, oldId) => {
     color: inherit;
     font-size: 20px;
     cursor: pointer;
-    padding: 0 8px;
+    padding: 4px 8px;
+    transition: all 0.3s;
+    border-radius: 4px;
 }
 
 .info-card,
@@ -581,17 +631,46 @@ watch(() => route.params.id, (newId, oldId) => {
     border-radius: 12px;
     padding: 30px;
     margin-bottom: 30px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     border: 1px solid #ede7e0;
+    transition: all 0.3s;
+}
+
+.info-card:hover,
+.resumen-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f5f1ed;
+}
+
+.card-header-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.card-header-title {
+    flex: 1;
 }
 
 .section-title {
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 700;
     color: #5a4037;
-    margin: 0 0 20px 0;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f5f1ed;
+    margin: 0 0 6px 0;
+}
+
+.section-subtitle {
+    font-size: 13px;
+    color: #999;
+    margin: 0;
+    font-weight: 400;
 }
 
 .info-grid {
@@ -611,27 +690,40 @@ watch(() => route.params.id, (newId, oldId) => {
 }
 
 .form-label {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     color: #5a4037;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .form-input {
-    padding: 12px 16px;
-    border: 1px solid #d4a574;
-    border-radius: 6px;
+    padding: 14px 16px;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
     transition: all 0.3s;
+    background: #faf7f2;
+}
+
+.form-input::placeholder {
+    color: #bbb;
+}
+
+.form-input:hover {
     background: white;
+    border-color: #d4a574;
 }
 
 .form-input:focus {
     outline: none;
-    border-color: #b8860b;
-    box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
+    background: white;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.15);
 }
 
 .textarea-input {
@@ -648,31 +740,51 @@ watch(() => route.params.id, (newId, oldId) => {
 /* Resumen */
 .resumen-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px;
 }
 
 .resumen-item {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 16px;
-    background: #faf7f2;
-    border-radius: 8px;
-    border: 1px solid #ede7e0;
+    gap: 10px;
+    padding: 20px;
+    background: linear-gradient(135deg, #faf7f2 0%, #f5f1ed 100%);
+    border-radius: 10px;
+    border: 2px solid #e8ddd7;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.resumen-item:hover {
+    border-color: #d4a574;
+    background: linear-gradient(135deg, white 0%, #faf7f2 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.15);
+}
+
+.resumen-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #d4a574 0%, transparent 100%);
 }
 
 .resumen-item label {
     font-size: 12px;
-    font-weight: 600;
-    color: #999;
+    font-weight: 700;
     text-transform: uppercase;
+    color: #999;
     letter-spacing: 0.5px;
 }
 
 .resumen-valor {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     color: #5a4037;
 }
 
@@ -686,58 +798,77 @@ watch(() => route.params.id, (newId, oldId) => {
 
 .btn-primary,
 .btn-secondary {
-    padding: 12px 32px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
     border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
 }
 
 .btn-primary {
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.35);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #c89564;
+    background: linear-gradient(135deg, #c89564 0%, #b8854c 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.4);
 }
 
 .btn-primary:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
 .btn-secondary {
-    background: #f5f1ed;
-    color: #5a4037;
-    border: 1px solid #d4a574;
+    background: white;
+    color: #d4a574;
+    border: 2px solid #d4a574;
 }
 
 .btn-secondary:hover {
-    background: #ede7e0;
+    background: #f5f1ed;
     border-color: #c89564;
+    color: #c89564;
 }
 
-/* Estilos para el botón de selección */
+.btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 .btn-select {
     background: #f9f6f3;
     color: #5a4037;
-    border: 2px solid #d4a574;
+    border: 2px solid #e8ddd7;
     text-align: left;
-    padding: 12px 16px !important;
+    padding: 14px 16px !important;
     cursor: pointer;
     transition: all 0.3s;
     font-size: 14px;
+    font-weight: 500;
 }
 
 .btn-select:hover {
-    background: #f5f1ed;
-    border-color: #c89564;
+    background: white;
+    border-color: #d4a574;
 }
 
 /* Modal Overlay */
@@ -780,8 +911,8 @@ watch(() => route.params.id, (newId, oldId) => {
 }
 
 .modal-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     color: #3e2723;
     margin: 0;
 }
@@ -789,34 +920,42 @@ watch(() => route.params.id, (newId, oldId) => {
 .modal-close {
     background: none;
     border: none;
-    font-size: 24px;
-    color: #999;
+    font-size: 28px;
+    color: #ccc;
     cursor: pointer;
     padding: 0;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.3s;
+    transition: all 0.3s;
+    border-radius: 6px;
 }
 
 .modal-close:hover {
+    background: #f5f1ed;
+    color: #5a4037;
+}
+
+.modal-close:hover {
+    background: #f5f1ed;
     color: #5a4037;
 }
 
 .modal-body {
     flex: 1;
     overflow-y: auto;
-    padding: 16px 24px;
+    padding: 20px 24px;
 }
 
 .modal-footer {
-    padding: 16px 24px;
+    padding: 20px 24px;
     border-top: 1px solid #e8ddd7;
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+    background: #faf7f2;
 }
 
 /* Search Box */
@@ -847,8 +986,8 @@ watch(() => route.params.id, (newId, oldId) => {
 
 .tipo-item {
     padding: 16px;
-    border: 1px solid #e8ddd7;
-    border-radius: 6px;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
     background: #f9f6f3;
     color: #5a4037;
     cursor: pointer;
@@ -857,18 +996,21 @@ watch(() => route.params.id, (newId, oldId) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 500;
 }
 
 .tipo-item:hover {
-    background: #f5f1ed;
+    background: white;
     border-color: #d4a574;
+    transform: translateX(4px);
 }
 
 .tipo-item-selected {
-    background: #f5f1ed;
+    background: linear-gradient(135deg, #faf7f2 0%, white 100%);
     border-color: #d4a574;
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
 }
 
 .tipo-nombre {
@@ -877,7 +1019,9 @@ watch(() => route.params.id, (newId, oldId) => {
 
 .tipo-checkmark {
     color: #4caf50;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 18px;
+    margin-left: 8px;
 }
 
 @keyframes fadeIn {
@@ -915,13 +1059,42 @@ watch(() => route.params.id, (newId, oldId) => {
     .page-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 16px;
+        padding: 20px;
     }
 
     .page-title {
-        font-size: 24px;
+        font-size: 28px;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+    }
+
+    .btn-back {
+        width: 100%;
+        justify-content: center;
     }
 
     .info-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .form-label {
+        font-size: 12px;
+    }
+
+    .form-input {
+        padding: 12px 14px;
+        font-size: 16px;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+
+    .resumen-grid {
         grid-template-columns: 1fr;
     }
 
@@ -933,6 +1106,16 @@ watch(() => route.params.id, (newId, oldId) => {
     .btn-primary,
     .btn-secondary {
         width: 100%;
+        padding: 12px 24px;
+    }
+
+    .modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .tipos-list {
+        max-height: 50vh;
     }
 }
 </style>
