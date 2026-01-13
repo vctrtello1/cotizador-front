@@ -3,19 +3,19 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Materiales</h1>
-            <button class="btn-primary" @click="$router.push('/nuevo-material')">+ Nuevo Material</button>
+            <button class="btn-primary" @click="irAlNuevoMaterial">+ Nuevo Material</button>
         </div>
 
         <!-- Mensaje de error -->
-        <div v-if="error" class="error-message">
+        <div v-if="tieneErrores" class="error-message">
             <span>⚠️ {{ error }}</span>
-            <button @click="error = null" class="error-close">✕</button>
+            <button @click="cerrarAlerta('error')" class="error-close">✕</button>
         </div>
 
         <!-- Mensaje de éxito -->
-        <div v-if="exito" class="success-message">
+        <div v-if="tieneExito" class="success-message">
             <span>✓ {{ exito }}</span>
-            <button @click="exito = null" class="error-close">✕</button>
+            <button @click="cerrarAlerta('exito')" class="error-close">✕</button>
         </div>
 
         <!-- Loading -->
@@ -24,9 +24,9 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="materiales.length === 0" class="empty-state">
+        <div v-else-if="estaVacio" class="empty-state">
             <p>No hay materiales registrados.</p>
-            <button class="btn-primary" @click="$router.push('/nuevo-material')">Crear Primer Material</button>
+            <button class="btn-primary" @click="irAlNuevoMaterial">Crear Primer Material</button>
         </div>
 
         <!-- Materiales Grid -->
@@ -46,7 +46,8 @@
                 <div class="material-stats">
                     <div class="stat-item">
                         <span class="stat-label">Precio</span>
-                        <span class="stat-value precio-value">${{ formatCurrency(material.precio_unitario || material.costo_unitario) }}</span>
+                        <span class="stat-value precio-value">${{ formatCurrency(material.precio_unitario ||
+                            material.costo_unitario) }}</span>
                     </div>
                     <div class="stat-divider"></div>
                     <div class="stat-item">
@@ -56,12 +57,14 @@
                 </div>
 
                 <div class="card-actions">
-                    <button class="btn-edit" @click="editarMaterial(material.id)" title="Editar material">✏️ Editar</button>
-                    <button class="btn-delete" @click="confirmarEliminar(material.id)" title="Eliminar material">🗑️ Eliminar</button>
-                    
+                    <button class="btn-edit" @click="editarMaterial(material.id)" title="Editar material">✏️
+                        Editar</button>
+                    <button class="btn-delete" @click="confirmarEliminar(material.id)" title="Eliminar material">🗑️
+                        Eliminar</button>
+
                 </div>
                 <div class="card-actions">
-                    
+
                     <button class="btn-details" @click="verDetalles(material.id)" title="Ver detalles">👁️
                         Detalles</button>
                 </div>
@@ -69,25 +72,25 @@
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+        <div v-if="modalEliminar" class="modal-overlay" @click.self="cancelarEliminacion">
             <div class="modal-content">
                 <h3>Confirmar eliminación</h3>
                 <p>¿Estás seguro de que deseas eliminar este material?</p>
                 <div class="modal-actions">
-                    <button class="btn-secondary" @click="modalEliminar = false">Cancelar</button>
+                    <button class="btn-secondary" @click="cancelarEliminacion">Cancelar</button>
                     <button class="btn-delete" @click="eliminarMaterial">Eliminar</button>
                 </div>
             </div>
         </div>
 
         <!-- Modal de detalles del material -->
-        <div v-if="modalDetalles" class="modal-overlay" @click.self="modalDetalles = false">
+        <div v-if="modalDetalles" class="modal-overlay" @click.self="cerrarModalDetalles">
             <div class="modal-content modal-detalles">
                 <div class="modal-header">
                     <h2>{{ materialSeleccionado?.nombre }}</h2>
-                    <button @click="modalDetalles = false" class="modal-close">✕</button>
+                    <button @click="cerrarModalDetalles" class="modal-close">✕</button>
                 </div>
-                
+
                 <div class="modal-body">
                     <div class="detalle-section">
                         <h3>Información General</h3>
@@ -98,7 +101,8 @@
                             </div>
                             <div class="detalle-item">
                                 <label>Tipo de Material</label>
-                                <span>{{ materialSeleccionado?.tipo_de_material?.nombre || materialSeleccionado?.tipo || '-' }}</span>
+                                <span>{{ materialSeleccionado?.tipo_de_material?.nombre || materialSeleccionado?.tipo ||
+                                    '-' }}</span>
                             </div>
                         </div>
                     </div>
@@ -113,7 +117,8 @@
                         <div class="detalle-grid">
                             <div class="detalle-item">
                                 <label>Precio Unitario</label>
-                                <span class="precio-destacado">${{ formatCurrency(materialSeleccionado?.precio_unitario || materialSeleccionado?.costo_unitario) }}</span>
+                                <span class="precio-destacado">${{ formatCurrency(materialSeleccionado?.precio_unitario
+                                    || materialSeleccionado?.costo_unitario) }}</span>
                             </div>
                         </div>
                     </div>
@@ -123,15 +128,18 @@
                         <div class="detalle-grid">
                             <div class="detalle-item">
                                 <label>Largo</label>
-                                <span>{{ materialSeleccionado?.largo || '-' }} {{ materialSeleccionado?.unidad_largo || '' }}</span>
+                                <span>{{ materialSeleccionado?.largo || '-' }} {{ materialSeleccionado?.unidad_largo ||
+                                    '' }}</span>
                             </div>
                             <div class="detalle-item">
                                 <label>Ancho</label>
-                                <span>{{ materialSeleccionado?.ancho || '-' }} {{ materialSeleccionado?.unidad_ancho || '' }}</span>
+                                <span>{{ materialSeleccionado?.ancho || '-' }} {{ materialSeleccionado?.unidad_ancho ||
+                                    '' }}</span>
                             </div>
                             <div class="detalle-item">
                                 <label>Alto</label>
-                                <span>{{ materialSeleccionado?.alto || '-' }} {{ materialSeleccionado?.unidad_alto || '' }}</span>
+                                <span>{{ materialSeleccionado?.alto || '-' }} {{ materialSeleccionado?.unidad_alto || ''
+                                    }}</span>
                             </div>
                             <div class="detalle-item">
                                 <label>Unidad de medida</label>
@@ -142,8 +150,9 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn-primary" @click="editarMaterial(materialSeleccionado?.id)">Editar Material</button>
-                    <button class="btn-secondary" @click="modalDetalles = false">Cerrar</button>
+                    <button class="btn-primary" @click="editarMaterial(materialSeleccionado?.id)">Editar
+                        Material</button>
+                    <button class="btn-secondary" @click="cerrarModalDetalles">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -151,13 +160,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchMateriales, eliminarMaterial as deleteMaterialAPI } from '@/http/materiales-api';
 
 const router = useRouter();
 
-// Estado
+// ==================== Estado ====================
 const materiales = ref([]);
 const cargando = ref(true);
 const error = ref(null);
@@ -167,13 +176,17 @@ const materialAEliminar = ref(null);
 const modalDetalles = ref(false);
 const materialSeleccionado = ref(null);
 
-// Cargar materiales
+// ==================== Computed Properties ====================
+const tieneErrores = computed(() => error.value !== null);
+const tieneExito = computed(() => exito.value !== null);
+const estaVacio = computed(() => !cargando.value && materiales.value.length === 0);
+
+// ==================== Métodos de Carga ====================
 const cargarMateriales = async () => {
     cargando.value = true;
     error.value = null;
     try {
         const response = await fetchMateriales();
-        console.log('Materiales cargados:', response);
         materiales.value = Array.isArray(response) ? response : (response.data || []);
     } catch (err) {
         console.error('Error cargando materiales:', err);
@@ -183,37 +196,50 @@ const cargarMateriales = async () => {
     }
 };
 
-// Editar material
+// ==================== Métodos de Navegación ====================
 const editarMaterial = (id) => {
     router.push({ name: 'EditarMaterial', params: { id } });
 };
 
-// Ver detalles del material
+const irAlNuevoMaterial = () => {
+    router.push('/nuevo-material');
+};
+
+// ==================== Métodos de Modal Detalles ====================
 const verDetalles = (id) => {
     materialSeleccionado.value = materiales.value.find(m => m.id === id) || null;
     modalDetalles.value = true;
 };
 
-// Confirmar eliminación
+const cerrarModalDetalles = () => {
+    modalDetalles.value = false;
+    materialSeleccionado.value = null;
+};
+
+// ==================== Métodos de Eliminación ====================
 const confirmarEliminar = (id) => {
     materialAEliminar.value = id;
     modalEliminar.value = true;
 };
 
-// Eliminar material
+const cancelarEliminacion = () => {
+    modalEliminar.value = false;
+    materialAEliminar.value = null;
+};
+
 const eliminarMaterial = async () => {
     try {
         await deleteMaterialAPI(materialAEliminar.value);
         exito.value = '✓ Material eliminado exitosamente';
         cargarMateriales();
-        modalEliminar.value = false;
+        cancelarEliminacion();
     } catch (err) {
         console.error('Error eliminando material:', err);
         error.value = err.response?.data?.message || 'Error al eliminar el material';
     }
 };
 
-// Format currency
+// ==================== Métodos de Utilidad ====================
 const formatCurrency = (value) => {
     if (!value) return '0.00';
     return parseFloat(value).toLocaleString('es-MX', {
@@ -222,7 +248,12 @@ const formatCurrency = (value) => {
     });
 };
 
-// Lifecycle
+const cerrarAlerta = (tipo) => {
+    if (tipo === 'error') error.value = null;
+    if (tipo === 'exito') exito.value = null;
+};
+
+// ==================== Lifecycle ====================
 onMounted(() => {
     cargarMateriales();
 });
@@ -718,6 +749,7 @@ onMounted(() => {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
