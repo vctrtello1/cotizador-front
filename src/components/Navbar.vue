@@ -37,6 +37,13 @@ const isActive = (path) => {
         >
           Componentes
         </router-link>
+        <router-link 
+          to="/materiales" 
+          class="nav-link"
+          :class="{ active: isActive('/materiales') && !isActive('/nuevo-') }"
+        >
+          Materiales
+        </router-link>
       </nav>
     </div>
   </header>
