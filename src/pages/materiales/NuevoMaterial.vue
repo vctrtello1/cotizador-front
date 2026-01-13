@@ -24,85 +24,65 @@
             <div class="info-grid">
                 <div class="form-group">
                     <label class="form-label">Nombre del Material *</label>
-                    <input 
-                        v-model="formData.nombre" 
-                        type="text" 
-                        class="form-input" 
-                        placeholder="Ej: Madera Pino"
-                        @blur="validarCampo('nombre')"
-                    >
+                    <input v-model="formData.nombre" type="text" class="form-input" placeholder="Ej: Madera Pino"
+                        @blur="validarCampo('nombre')">
                     <span v-if="erroresValidacion.nombre" class="error-text">{{ erroresValidacion.nombre }}</span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Código del Material *</label>
-                    <input 
-                        v-model="formData.codigo" 
-                        type="text" 
-                        class="form-input" 
-                        placeholder="Ej: MAD_PINO_1"
-                        @blur="validarCampo('codigo')"
-                    >
+                    <input v-model="formData.codigo" type="text" class="form-input" placeholder="Ej: MAD_PINO_1"
+                        @blur="validarCampo('codigo')">
                     <span v-if="erroresValidacion.codigo" class="error-text">{{ erroresValidacion.codigo }}</span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Tipo de Material</label>
-                    <input 
-                        v-model="formData.tipo" 
-                        type="text" 
-                        class="form-input" 
-                        placeholder="Ej: Madera, Metal, Plástico"
-                    >
+                    <input v-model="formData.tipo" type="text" class="form-input"
+                        placeholder="Ej: Madera, Metal, Plástico">
                 </div>
 
                 <div class="form-group full-width">
                     <label class="form-label">Descripción del Material</label>
-                    <textarea 
-                        v-model="formData.descripcion" 
-                        class="form-input textarea-input" 
-                        placeholder="Descripción detallada del material"
-                        rows="3"
-                    ></textarea>
+                    <textarea v-model="formData.descripcion" class="form-input textarea-input"
+                        placeholder="Descripción detallada del material" rows="3"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Unidad de Medida *</label>
-                    <input 
-                        v-model="formData.unidad_medida" 
-                        type="text" 
-                        class="form-input" 
-                        placeholder="Ej: Metro, Kg, Unidad"
-                        @blur="validarCampo('unidad_medida')"
-                    >
-                    <span v-if="erroresValidacion.unidad_medida" class="error-text">{{ erroresValidacion.unidad_medida }}</span>
+                    <input v-model="formData.unidad_medida" type="text" class="form-input"
+                        placeholder="Ej: Metro, Kg, Unidad" @blur="validarCampo('unidad_medida')">
+                    <span v-if="erroresValidacion.unidad_medida" class="error-text">{{ erroresValidacion.unidad_medida
+                    }}</span>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Cantidad Disponible *</label>
-                    <input 
-                        v-model.number="formData.cantidad_disponible" 
-                        type="number" 
-                        min="0" 
-                        class="form-input" 
-                        placeholder="Ej: 100"
-                        @blur="validarCampo('cantidad_disponible')"
-                    >
-                    <span v-if="erroresValidacion.cantidad_disponible" class="error-text">{{ erroresValidacion.cantidad_disponible }}</span>
+                    <label class="form-label">Alto*</label>
+                    <input v-model.number="formData.alto" type="number" min="0" class="form-input" placeholder="Ej: 100"
+                        @blur="validarCampo('alto')">
+                    <span v-if="erroresValidacion.alto" class="error-text">{{ erroresValidacion.alto }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Ancho*</label>
+                    <input v-model.number="formData.ancho" type="number" min="0" class="form-input"
+                        placeholder="Ej: 100" @blur="validarCampo('ancho')">
+                    <span v-if="erroresValidacion.ancho" class="error-text">{{ erroresValidacion.ancho }}</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Largo*</label>
+                    <input v-model.number="formData.largo" type="number" min="0" class="form-input"
+                        placeholder="Ej: 100" @blur="validarCampo('largo')">
+                    <span v-if="erroresValidacion.largo" class="error-text">{{ erroresValidacion.largo }}</span>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Costo Unitario *</label>
-                    <input 
-                        v-model.number="formData.costo_unitario" 
-                        type="number" 
-                        min="0" 
-                        step="0.01"
-                        class="form-input" 
-                        placeholder="Ej: 250.75"
-                        @blur="validarCampo('costo_unitario')"
-                    >
-                    <span v-if="erroresValidacion.costo_unitario" class="error-text">{{ erroresValidacion.costo_unitario }}</span>
+                    <input v-model.number="formData.costo_unitario" type="number" min="0" step="0.01" class="form-input"
+                        placeholder="Ej: 250.75" @blur="validarCampo('costo_unitario')">
+                    <span v-if="erroresValidacion.costo_unitario" class="error-text">{{ erroresValidacion.costo_unitario
+                    }}</span>
                 </div>
             </div>
         </div>
@@ -129,7 +109,8 @@
                 </div>
                 <div class="resumen-item">
                     <label>Stock Disponible</label>
-                    <span class="resumen-valor">{{ formData.cantidad_disponible || 0 }} {{ formData.unidad_medida || 'unidades' }}</span>
+                    <span class="resumen-valor">{{ formData.cantidad_disponible || 0 }} {{ formData.unidad_medida ||
+                        'unidades' }}</span>
                 </div>
             </div>
         </div>
@@ -137,11 +118,7 @@
         <!-- Botones de Acción -->
         <div class="action-buttons">
             <button class="btn-secondary" @click="$router.push('/materiales')">Cancelar</button>
-            <button 
-                class="btn-primary" 
-                @click="guardarMaterial"
-                :disabled="cargando"
-            >
+            <button class="btn-primary" @click="guardarMaterial" :disabled="cargando">
                 {{ cargando ? 'Guardando...' : 'Guardar Material' }}
             </button>
         </div>
@@ -180,7 +157,7 @@ const erroresValidacion = ref({
 
 // Métodos de validación
 const validarCampo = (campo) => {
-    switch(campo) {
+    switch (campo) {
         case 'nombre':
             if (!formData.value.nombre.trim()) {
                 erroresValidacion.value.nombre = 'El nombre es requerido';
@@ -524,6 +501,7 @@ onMounted(() => {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
