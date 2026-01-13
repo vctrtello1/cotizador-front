@@ -69,16 +69,7 @@
             <div class="componentes-section">
                 <div class="componentes-header">
                     <h2 class="section-title">Componentes del Módulo</h2>
-                </div>
-
-                <div class="form-group full-width">
-                    <label class="form-label">Seleccionar Componentes *</label>
-                    <select v-model="componenteSeleccionado" class="form-input">
-                        <option value="">-- Seleccionar componente --</option>
-                        <option v-for="componente in todosLosComponentes" :key="componente.id" :value="componente.id">
-                            {{ componente.nombre }} ({{ componente.codigo }})
-                        </option>
-                    </select>
+                    <button class="btn-primary" @click="mostrarModalComponentes = true">+ Seleccionar Componentes</button>
                 </div>
 
                 <div v-if="formData.componentes.length === 0" class="empty-state">
@@ -158,6 +149,38 @@
                 </button>
             </div>
         </template>
+
+        <!-- Modal para seleccionar componentes -->
+        <div v-if="mostrarModalComponentes" class="modal-overlay" @click.self="mostrarModalComponentes = false">
+            <div class="modal-content modal-componentes">
+                <div class="modal-header">
+                    <h3>Seleccionar Componentes</h3>
+                    <button class="modal-close" @click="mostrarModalComponentes = false">✕</button>
+                </div>
+
+                <div class="modal-body modal-componentes-body">
+                    <div v-if="todosLosComponentes.length === 0" class="empty-state">
+                        <p>No hay componentes disponibles</p>
+                    </div>
+
+                    <div v-else class="componentes-lista">
+                        <div v-for="componente in todosLosComponentes" :key="componente.id" class="componente-item">
+                            <div class="componente-info-modal">
+                                <h4>{{ componente.nombre }}</h4>
+                                <p>{{ componente.codigo }}</p>
+                            </div>
+                            <button 
+                                class="btn-add-component"
+                                @click="abrirModalConfiguracion(componente)"
+                                :disabled="formData.componentes.some(c => c.id == componente.id)"
+                            >
+                                {{ formData.componentes.some(c => c.id == componente.id) ? 'Agregado' : 'Agregar' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal para agregar/editar componente -->
         <div v-if="mostrarModal" class="modal-overlay" @click.self="cerrarModal">
@@ -242,6 +265,7 @@ const componenteSeleccionado = ref('');
 
 // Modal
 const mostrarModal = ref(false);
+const mostrarModalComponentes = ref(false);
 const componenteActual = ref({
     id: null,
     nombre: '',
@@ -490,23 +514,24 @@ watch(componenteSeleccionado, (nuevoComponenteId) => {
     if (nuevoComponenteId) {
         const componente = todosLosComponentes.value.find(c => c.id == nuevoComponenteId);
         if (componente) {
-            // Verificar si el componente ya está agregado
-            const yaAgregado = formData.value.componentes.some(c => c.id == nuevoComponenteId);
-            if (!yaAgregado) {
-                // Abre el modal para configurar el componente
-                componenteActual.value = {
-                    id: componente.id,
-                    nombre: componente.nombre,
-                    codigo: componente.codigo,
-                    cantidad: 1,
-                    acabado_id: '',
-                    mano_de_obra_id: ''
-                };
-                mostrarModal.value = true;
-            }
+            abrirModalConfiguracion(componente);
         }
     }
 });
+
+// Abrir modal de configuración para agregar componente
+const abrirModalConfiguracion = (componente) => {
+    componenteActual.value = {
+        id: componente.id,
+        nombre: componente.nombre,
+        codigo: componente.codigo,
+        cantidad: 1,
+        acabado_id: '',
+        mano_de_obra_id: ''
+    };
+    mostrarModal.value = true;
+    mostrarModalComponentes.value = false;
+};
 
 // Guardar componente del modal
 const guardarComponente = () => {
@@ -1061,5 +1086,77 @@ onMounted(() => {
     cursor: pointer;
     transition: all 0.3s;
     border: none;
+}
+
+/* Modal de Componentes */
+.modal-componentes {
+    max-width: 700px;
+}
+
+.modal-componentes-body {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.componentes-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.componente-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #faf7f2;
+    border: 1px solid #e0d7d0;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.componente-item:hover {
+    background: #f5f1ed;
+    border-color: #d4a574;
+}
+
+.componente-info-modal {
+    flex: 1;
+}
+
+.componente-info-modal h4 {
+    margin: 0;
+    color: #5a4037;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.componente-info-modal p {
+    margin: 4px 0 0 0;
+    color: #999;
+    font-size: 12px;
+}
+
+.btn-add-component {
+    padding: 6px 16px;
+    background: #d4a574;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-add-component:hover:not(:disabled) {
+    background: #c5965c;
+}
+
+.btn-add-component:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 </style>
