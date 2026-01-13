@@ -58,7 +58,12 @@
                 <div class="card-actions">
                     <button class="btn-edit" @click="editarMaterial(material.id)" title="Editar material">✏️ Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(material.id)" title="Eliminar material">🗑️ Eliminar</button>
-                    <button class="btn-details" @click="verDetalles(material.id)" title="Ver detalles">👁️ Detalles</button>
+                    
+                </div>
+                <div class="card-actions">
+                    
+                    <button class="btn-details" @click="verDetalles(material.id)" title="Ver detalles">👁️
+                        Detalles</button>
                 </div>
             </div>
         </div>
