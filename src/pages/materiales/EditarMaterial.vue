@@ -87,16 +87,30 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Cantidad Disponible *</label>
+                        <label class="form-label">Alto *</label>
                         <input 
-                            v-model.number="formData.cantidad_disponible" 
+                            v-model.number="formData.alto" 
                             type="number" 
                             min="0" 
                             class="form-input" 
                             placeholder="Ej: 100"
-                            @blur="validarCampo('cantidad_disponible')"
+                            @blur="validarCampo('alto')"
                         >
-                        <span v-if="erroresValidacion.cantidad_disponible" class="error-text">{{ erroresValidacion.cantidad_disponible }}</span>
+                        <span v-if="erroresValidacion.alto" class="error-text">{{ erroresValidacion.alto }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ancho *</label>
+                        <input v-model.number="formData.ancho" type="number" min="0" class="form-input"
+                            placeholder="Ej: 100" @blur="validarCampo('ancho')">
+                        <span v-if="erroresValidacion.ancho" class="error-text">{{ erroresValidacion.ancho }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Largo *</label>
+                        <input v-model.number="formData.largo" type="number" min="0" class="form-input"
+                            placeholder="Ej: 100" @blur="validarCampo('largo')">
+                        <span v-if="erroresValidacion.largo" class="error-text">{{ erroresValidacion.largo }}</span>
                     </div>
 
                     <div class="form-group">
@@ -135,10 +149,7 @@
                         <label>Costo Unitario</label>
                         <span class="resumen-valor">${{ formatCurrency(formData.costo_unitario) }}</span>
                     </div>
-                    <div class="resumen-item">
-                        <label>Stock Disponible</label>
-                        <span class="resumen-valor">{{ formData.cantidad_disponible || 0 }} {{ formData.unidad_medida || 'unidades' }}</span>
-                    </div>
+                
                 </div>
             </div>
 
