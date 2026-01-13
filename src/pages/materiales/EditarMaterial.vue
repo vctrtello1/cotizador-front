@@ -169,7 +169,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getMaterialById, actualizarMaterial } from '@/http/materiales-api';
 
@@ -183,8 +183,11 @@ const formData = ref({
     tipo: '',
     descripcion: '',
     unidad_medida: '',
-    cantidad_disponible: 0,
-    costo_unitario: 0
+    
+    costo_unitario: 0,
+    alto: 0,
+    ancho: 0,
+    largo: 0
 });
 
 // Estado de UI
@@ -197,73 +200,101 @@ const erroresValidacion = ref({
     codigo: null,
     unidad_medida: null,
     cantidad_disponible: null,
-    costo_unitario: null
+    costo_unitario: null,
+    alto: null,
+    ancho: null,
+    largo: null
+});
+
+// Configuración de campos para validación
+const CAMPOS_CONFIG = {
+    nombre: { 
+        requerido: true, 
+        tipo: 'texto',
+        mensaje: 'El nombre es requerido'
+    },
+    codigo: { 
+        requerido: true, 
+        tipo: 'texto',
+        mensaje: 'El código es requerido'
+    },
+    unidad_medida: { 
+        requerido: true, 
+        tipo: 'texto',
+        mensaje: 'La unidad de medida es requerida'
+    },
+    cantidad_disponible: { 
+        requerido: false, 
+        tipo: 'numero',
+        minimo: 0,
+        mensaje: 'La cantidad debe ser mayor o igual a 0'
+    },
+    costo_unitario: { 
+        requerido: false, 
+        tipo: 'numero',
+        minimo: 0,
+        mensaje: 'El costo debe ser mayor o igual a 0'
+    },
+    alto: { 
+        requerido: false, 
+        tipo: 'numero',
+        minimo: 0,
+        mensaje: 'El alto debe ser mayor o igual a 0'
+    },
+    ancho: { 
+        requerido: false, 
+        tipo: 'numero',
+        minimo: 0,
+        mensaje: 'El ancho debe ser mayor o igual a 0'
+    },
+    largo: { 
+        requerido: false, 
+        tipo: 'numero',
+        minimo: 0,
+        mensaje: 'El largo debe ser mayor o igual a 0'
+    }
+};
+
+// Propiedades calculadas
+const tieneErrores = computed(() => {
+    return Object.values(erroresValidacion.value).some(error => error !== null);
+});
+
+const puedeGuardar = computed(() => {
+    return !cargando.value && !cargandoGuardar.value && !tieneErrores.value;
 });
 
 // Métodos de validación
 const validarCampo = (campo) => {
-    switch(campo) {
-        case 'nombre':
-            if (!formData.value.nombre.trim()) {
-                erroresValidacion.value.nombre = 'El nombre es requerido';
-            } else {
-                erroresValidacion.value.nombre = null;
-            }
-            break;
-        case 'codigo':
-            if (!formData.value.codigo.trim()) {
-                erroresValidacion.value.codigo = 'El código es requerido';
-            } else {
-                erroresValidacion.value.codigo = null;
-            }
-            break;
-        case 'unidad_medida':
-            if (!formData.value.unidad_medida.trim()) {
-                erroresValidacion.value.unidad_medida = 'La unidad de medida es requerida';
-            } else {
-                erroresValidacion.value.unidad_medida = null;
-            }
-            break;
-        case 'cantidad_disponible':
-            if (formData.value.cantidad_disponible < 0) {
-                erroresValidacion.value.cantidad_disponible = 'La cantidad debe ser mayor o igual a 0';
-            } else {
-                erroresValidacion.value.cantidad_disponible = null;
-            }
-            break;
-        case 'costo_unitario':
-            if (formData.value.costo_unitario < 0) {
-                erroresValidacion.value.costo_unitario = 'El costo debe ser mayor o igual a 0';
-            } else {
-                erroresValidacion.value.costo_unitario = null;
-            }
-            break;
+    const config = CAMPOS_CONFIG[campo];
+    if (!config) return;
+
+    const valor = formData.value[campo];
+
+    if (config.requerido && !String(valor).trim()) {
+        erroresValidacion.value[campo] = config.mensaje;
+        return;
     }
+
+    if (config.tipo === 'numero' && config.minimo !== undefined) {
+        if (Number(valor) < config.minimo) {
+            erroresValidacion.value[campo] = config.mensaje;
+            return;
+        }
+    }
+
+    erroresValidacion.value[campo] = null;
 };
 
 const validarFormulario = () => {
     let valido = true;
-
-    if (!formData.value.nombre.trim()) {
-        erroresValidacion.value.nombre = 'El nombre es requerido';
-        valido = false;
-    }
-    if (!formData.value.codigo.trim()) {
-        erroresValidacion.value.codigo = 'El código es requerido';
-        valido = false;
-    }
-    if (!formData.value.unidad_medida.trim()) {
-        erroresValidacion.value.unidad_medida = 'La unidad de medida es requerida';
-        valido = false;
-    }
-    if (formData.value.cantidad_disponible < 0) {
-        erroresValidacion.value.cantidad_disponible = 'La cantidad debe ser mayor o igual a 0';
-        valido = false;
-    }
-    if (formData.value.costo_unitario < 0) {
-        erroresValidacion.value.costo_unitario = 'El costo debe ser mayor o igual a 0';
-        valido = false;
-    }
+    
+    Object.keys(CAMPOS_CONFIG).forEach(campo => {
+        validarCampo(campo);
+        if (erroresValidacion.value[campo] !== null) {
+            valido = false;
+        }
+    });
 
     return valido;
 };
@@ -286,17 +317,13 @@ const cargarMaterial = async () => {
         
         if (!id) {
             error.value = 'ID del material no disponible';
-            console.error('No hay ID disponible');
             return;
         }
         
-        console.log('Cargando material con ID:', id);
         const material = await getMaterialById(id);
-        console.log('Material cargado correctamente:', material);
         
         if (!material || Object.keys(material).length === 0) {
             error.value = 'El material no fue encontrado';
-            console.error('Material vacío recibido');
             return;
         }
         
@@ -308,13 +335,13 @@ const cargarMaterial = async () => {
             descripcion: String(material.descripcion || '').trim(),
             unidad_medida: String(material.unidad_medida || '').trim(),
             cantidad_disponible: Number(material.cantidad_disponible) || 0,
-            costo_unitario: Number(material.precio_unitario || material.costo_unitario) || 0
+            costo_unitario: Number(material.precio_unitario || material.costo_unitario) || 0,
+            alto: Number(material.alto) || 0,
+            ancho: Number(material.ancho) || 0,
+            largo: Number(material.largo) || 0
         });
         
-        console.log('Datos cargados en el formulario:', formData.value);
-        
     } catch (err) {
-        console.error('Error cargando material:', err);
         error.value = 'Error al cargar el material: ' + (err.response?.data?.message || err.message);
     } finally {
         cargando.value = false;
@@ -342,19 +369,19 @@ const guardarMaterial = async () => {
             descripcion: formData.value.descripcion,
             unidad_medida: formData.value.unidad_medida,
             cantidad_disponible: formData.value.cantidad_disponible,
-            costo_unitario: formData.value.costo_unitario
+            costo_unitario: formData.value.costo_unitario,
+            alto: formData.value.alto,
+            ancho: formData.value.ancho,
+            largo: formData.value.largo
         };
 
-        console.log('Actualizando material:', datosMaterial);
-        const response = await actualizarMaterial(id, datosMaterial);
-        console.log('Material actualizado:', response);
+        await actualizarMaterial(id, datosMaterial);
 
         exito.value = '✓ Material actualizado exitosamente';
         setTimeout(() => {
             router.push('/materiales');
         }, 1500);
     } catch (err) {
-        console.error('Error actualizando material:', err);
         error.value = err.response?.data?.message || 'Error al actualizar el material';
     } finally {
         cargandoGuardar.value = false;
@@ -362,22 +389,15 @@ const guardarMaterial = async () => {
 };
 
 onMounted(() => {
-    console.log('EditarMaterial mounted, route params:', route.params);
     cargarMaterial();
 });
 
 // Watch para cuando cambia el ID de la ruta
 watch(() => route.params.id, (newId, oldId) => {
     if (newId && newId !== oldId) {
-        console.log('ID cambió de', oldId, 'a', newId, '- Recargando material');
         cargarMaterial();
     }
 });
-
-// Watch para monitorear cambios en formData (para debugging)
-watch(() => formData.value, (newVal) => {
-    console.log('FormData cambió:', newVal);
-}, { deep: true });
 </script>
 
 <style scoped>
