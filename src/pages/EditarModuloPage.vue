@@ -69,45 +69,34 @@
             <div class="componentes-section">
                 <div class="componentes-header">
                     <h2 class="section-title">Componentes del Módulo</h2>
-                    <button class="btn-primary" @click="agregarComponente">+ Agregar Componente</button>
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Seleccionar Componentes *</label>
+                    <select v-model="componenteSeleccionado" class="form-input">
+                        <option value="">-- Seleccionar componente --</option>
+                        <option v-for="componente in todosLosComponentes" :key="componente.id" :value="componente.id">
+                            {{ componente.nombre }} ({{ componente.codigo }})
+                        </option>
+                    </select>
                 </div>
 
                 <div v-if="formData.componentes.length === 0" class="empty-state">
-                    <p>No hay componentes agregados. Haz clic en "+ Agregar Componente" para añadir.</p>
+                    <p>No hay componentes seleccionados. Elige uno del desplegable arriba.</p>
                 </div>
 
                 <div v-else class="componentes-list">
-                    <div v-for="(componente, idx) in formData.componentes" :key="idx" class="componente-card">
-                        <div class="componente-header">
-                            <div class="componente-title">
-                                <h4>Componente {{ idx + 1 }}</h4>
-                                <button class="btn-delete-small" @click="eliminarComponente(idx)">Eliminar</button>
+                    <div v-for="(componente, idx) in formData.componentes" :key="idx" class="componente-row">
+                        <div class="componente-info">
+                            <div class="componente-name">
+                                <strong>{{ componente.nombre }}</strong>
+                                <span class="componente-codigo">{{ componente.codigo }}</span>
                             </div>
                         </div>
 
-                        <div class="componente-grid">
-                            <div class="form-group">
-                                <label class="form-label">Nombre *</label>
-                                <input 
-                                    v-model="componente.nombre" 
-                                    type="text" 
-                                    class="form-input" 
-                                    placeholder="Ej: Silla Moderno"
-                                >
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Código *</label>
-                                <input 
-                                    v-model="componente.codigo" 
-                                    type="text" 
-                                    class="form-input" 
-                                    placeholder="Ej: COMP_SILLA"
-                                >
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Cantidad *</label>
+                        <div class="componente-controls">
+                            <div class="quantity-input">
+                                <label>Cantidad:</label>
                                 <input 
                                     v-model.number="componente.cantidad" 
                                     type="number" 
@@ -116,35 +105,27 @@
                                 >
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">Acabado *</label>
+                            <div class="select-input">
+                                <label>Acabado:</label>
                                 <select v-model="componente.acabado_id" class="form-input">
-                                    <option value="">Seleccionar acabado...</option>
+                                    <option value="">Seleccionar...</option>
                                     <option v-for="acabado in acabados" :key="acabado.id" :value="acabado.id">
-                                        {{ acabado.nombre }} - ${{ formatCurrency(acabado.costo) }}
+                                        {{ acabado.nombre }}
                                     </option>
                                 </select>
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">Mano de Obra *</label>
+                            <div class="select-input">
+                                <label>Mano de Obra:</label>
                                 <select v-model="componente.mano_de_obra_id" class="form-input">
-                                    <option value="">Seleccionar mano de obra...</option>
+                                    <option value="">Seleccionar...</option>
                                     <option v-for="mano in manosDeObra" :key="mano.id" :value="mano.id">
-                                        {{ mano.nombre }} - ${{ formatCurrency(mano.costo_total) }}
+                                        {{ mano.nombre }}
                                     </option>
                                 </select>
                             </div>
 
-                            <div class="form-group full-width">
-                                <label class="form-label">Descripción</label>
-                                <textarea 
-                                    v-model="componente.descripcion" 
-                                    class="form-input textarea-input" 
-                                    placeholder="Descripción del componente"
-                                    rows="2"
-                                ></textarea>
-                            </div>
+                            <button class="btn-delete-small" @click="eliminarComponente(idx)">Eliminar</button>
                         </div>
                     </div>
                 </div>
@@ -181,9 +162,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getModuloById, actualizarModulo, fetchAcabados, fetchManosDeObra } from '@/http/modulos-api';
+import { getModuloById, actualizarModulo, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
 
 const router = useRouter();
 const route = useRoute();
@@ -199,6 +180,8 @@ const formData = ref({
 // Catálogos
 const acabados = ref([]);
 const manosDeObra = ref([]);
+const todosLosComponentes = ref([]);
+const componenteSeleccionado = ref('');
 
 // Estado de UI
 const error = ref(null);
@@ -391,6 +374,9 @@ const cargarCatalogos = async () => {
 
         acabados.value = acabadosRes.data || [];
         manosDeObra.value = manosDeObraRes.data || [];
+        
+        // Cargar todos los componentes disponibles
+        cargarTodosLosComponentes();
     } catch (err) {
         console.error('Error cargando catálogos:', err);
         error.value = 'No se pudieron cargar los catálogos. Intenta nuevamente.';
@@ -399,6 +385,52 @@ const cargarCatalogos = async () => {
         actualizarEstadoCargando();
     }
 };
+
+// Cargar todos los componentes de todos los módulos
+const cargarTodosLosComponentes = async () => {
+    try {
+        const response = await fetchModulos();
+        const modulos = response.data || response;
+        const componentesMap = new Map();
+        
+        modulos.forEach(modulo => {
+            if (modulo.componentes) {
+                modulo.componentes.forEach(comp => {
+                    if (!componentesMap.has(comp.id)) {
+                        componentesMap.set(comp.id, {
+                            id: comp.id,
+                            nombre: comp.nombre,
+                            codigo: comp.codigo,
+                            descripcion: comp.descripcion,
+                            cantidad: 1,
+                            acabado_id: null,
+                            mano_de_obra_id: null
+                        });
+                    }
+                });
+            }
+        });
+        
+        todosLosComponentes.value = Array.from(componentesMap.values());
+    } catch (err) {
+        console.error('Error cargando componentes:', err);
+    }
+};
+
+// Observar cambios en el combobox de componentes
+watch(componenteSeleccionado, (nuevoComponenteId) => {
+    if (nuevoComponenteId) {
+        const componente = todosLosComponentes.value.find(c => c.id == nuevoComponenteId);
+        if (componente) {
+            // Verificar si el componente ya está agregado
+            const yaAgregado = formData.value.componentes.some(c => c.id == nuevoComponenteId);
+            if (!yaAgregado) {
+                formData.value.componentes.push({...componente});
+                componenteSeleccionado.value = '';
+            }
+        }
+    }
+});
 
 // Actualizar estado de carga general
 const actualizarEstadoCargando = () => {
@@ -592,6 +624,72 @@ onMounted(() => {
     border-radius: 8px;
     padding: 20px;
     background: #faf7f2;
+}
+
+.componente-row {
+    border: 1px solid #ede7e0;
+    border-radius: 8px;
+    padding: 16px;
+    background: #faf7f2;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.componente-info {
+    border-bottom: 1px solid #e0d7d0;
+    padding-bottom: 12px;
+}
+
+.componente-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.componente-name strong {
+    color: #5a4037;
+    font-size: 15px;
+}
+
+.componente-codigo {
+    background: #d4a574;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.componente-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.quantity-input,
+.select-input {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.quantity-input label,
+.select-input label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5a4037;
+}
+
+.quantity-input input,
+.select-input select {
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid #d4a574;
+    border-radius: 4px;
+    background: white;
 }
 
 .componente-header {
