@@ -1,11 +1,11 @@
-import CotizacionesPage from "@/pages/CotizacionesPage.vue";
-import CotizacionDetalladaPage from "@/pages/CotizacionDetalladaPage.vue";
-import NuevaCotizacionPage from "@/pages/NuevaCotizacionPage.vue";
-import NuevoModuloPage from "@/pages/NuevoModuloPage.vue";
-import EditarModuloPage from "@/pages/EditarModuloPage.vue";
-import ModulosPage from "@/pages/ModulosPage.vue";
-import ComponentesPage from "@/pages/ComponentesPage.vue";
-import NuevoComponente from "@/pages/NuevoComponente.vue";
+import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage.vue";
+import CotizacionDetalladaPage from "@/pages/cotizaciones/CotizacionDetalladaPage.vue";
+import NuevaCotizacionPage from "@/pages/componentes/NuevaCotizacionPage.vue";
+import NuevoModuloPage from "@/pages/modulos/NuevoModuloPage.vue";
+import EditarModuloPage from "@/pages/modulos/EditarModuloPage.vue";
+import ModulosPage from "@/pages/modulos/ModulosPage.vue";
+import ComponentesPage from "@/pages/cotizaciones/ComponentesPage.vue";
+import NuevoComponente from "@/pages/componentes/NuevoComponente.vue";
 
 export const routes = [
     {

@@ -197,12 +197,12 @@
 <script setup>
 import { reactive, computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useCotizacionesStore } from '../stores/cotizaciones';
-import { useClientesStore } from '../stores/clientes';
-import { useModulosStore } from '../stores/modulos';
-import { crearCotizacion } from '../http/cotizaciones-api';
-import { crearCliente } from '../http/clientes-api';
-import { obtenerTokenCsrf } from '../http/apl';
+import { useCotizacionesStore } from '../../stores/cotizaciones';
+import { useClientesStore } from '../../stores/clientes';
+import { useModulosStore } from '../../stores/modulos';
+import { crearCotizacion } from '../../http/cotizaciones-api';
+import { crearCliente } from '../../http/clientes-api';
+import { obtenerTokenCsrf } from '../../http/apl';
 
 const router = useRouter();
 const storeC = useCotizacionesStore();
