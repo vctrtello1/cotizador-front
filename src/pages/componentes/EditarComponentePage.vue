@@ -168,6 +168,9 @@
                         <div class="info-label">{{ formData.mano_de_obra.nombre }}</div>
                         <div class="info-detail">Descripción: {{ formData.mano_de_obra.descripcion }}</div>
                         <div class="info-detail">Costo/hora: ${{ formatCurrency(formData.mano_de_obra.costo_hora) }}</div>
+                        <div v-if="horasManoDeObra.length > 0" class="info-detail">
+                            Horas asignadas: <strong>{{ horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</strong>
+                        </div>
                     </div>
                 </div>
                 <div v-else class="empty-info">Sin mano de obra asignada</div>
@@ -688,6 +691,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
 import { useCantidadPorHerraje } from '@/stores/cantidad-por-herraje';
+import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
 import { useMateriales } from '@/stores/materiales';
 import { useHerrajes } from '@/stores/herrajes';
 
@@ -695,6 +699,7 @@ const router = useRouter();
 const route = useRoute();
 const storeMaterialesPorComponente = useMaterialesPorComponente();
 const storeCantidadPorHerraje = useCantidadPorHerraje();
+const storeHorasPorManoDeObra = useHorasPorManoDeObraComponente();
 const storeMateriales = useMateriales();
 const storeHerrajes = useHerrajes();
 
@@ -753,6 +758,9 @@ const acabadoEditando = ref(null);
 const acabadosDisponibles = ref([]);
 const busquedaAcabado = ref('');
 const mostrarSelectorAcabados = ref(false);
+
+// Horas de mano de obra por componente
+const horasManoDeObra = ref([]);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -884,6 +892,34 @@ const cargarHerrajesPorComponente = async () => {
         console.error('❌ Error cargando herrajes por componente:', err);
     } finally {
         cargandoHerrajes.value = false;
+    }
+};
+
+// Cargar horas de mano de obra por componente
+const cargarHorasManoDeObra = async () => {
+    try {
+        const componenteId = route.params.id;
+        console.log('📋 Cargando horas de mano de obra para componente:', componenteId);
+        
+        // Cargar todas las horas disponibles del store
+        await storeHorasPorManoDeObra.fetchHorasPorManoDeObraComponenteAction();
+        
+        // Filtrar las horas para este componente
+        const todasLasHoras = storeHorasPorManoDeObra.horasPorManoDeObraComponente;
+        console.log('📡 Todas las horas disponibles:', todasLasHoras);
+        
+        if (todasLasHoras && todasLasHoras.length > 0) {
+            // Filtrar por componente_id
+            horasManoDeObra.value = todasLasHoras.filter(h => h.componente_id === parseInt(componenteId));
+            console.log('✅ Horas de mano de obra para este componente:', horasManoDeObra.value);
+            console.log('   Total de horas:', horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0));
+        } else {
+            horasManoDeObra.value = [];
+            console.log('📭 No hay horas de mano de obra para este componente');
+        }
+    } catch (err) {
+        console.error('❌ Error cargando horas de mano de obra:', err);
+        horasManoDeObra.value = [];
     }
 };
 
@@ -1208,8 +1244,9 @@ const guardarComponente = async () => {
 };
 
 // Cargar datos al montar
-onMounted(() => {
-    cargarComponente();
+onMounted(async () => {
+    await cargarComponente();
+    await cargarHorasManoDeObra();
 });
 </script>
 

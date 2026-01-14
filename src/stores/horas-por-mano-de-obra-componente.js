@@ -2,9 +2,9 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { 
     fetchHorasDeManoDeObraPorComponentes, 
-    getCantidadPorHerrajeId,
-    getCantidadPorHerrajeById,
-    crearCantidadPorHerraje 
+    getHorasPorComponenteId,
+    getHorasById,
+    crearHoras 
 } from '@/http/horas_por_mano_de_obra_por_componente-api';
 
 export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-obra-componente', () => {
@@ -47,7 +47,7 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         loading.value = true;
         error.value = null;
         try {
-            const response = await getCantidadPorHerrajeId(componenteId);
+            const response = await getHorasPorComponenteId(componenteId);
             console.log('📡 Respuesta API para horas por componente:', response);
             return response;
         } catch (err) {
@@ -63,7 +63,7 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         loading.value = true;
         error.value = null;
         try {
-            const response = await getCantidadPorHerrajeById(id);
+            const response = await getHorasById(id);
             console.log('📡 Horas por mano de obra cargadas:', response);
             return response;
         } catch (err) {
@@ -79,7 +79,7 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         loading.value = true;
         error.value = null;
         try {
-            const response = await crearCantidadPorHerraje(datos);
+            const response = await crearHoras(datos);
             console.log('✅ Horas por mano de obra creadas:', response);
             
             // Agregar a la lista local

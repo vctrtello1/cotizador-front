@@ -5,17 +5,17 @@ export const fetchHorasDeManoDeObraPorComponentes = async () => {
   return response.data;
 };
 
-export const getCantidadPorHerrajeId = async (herrajeId) => {
-  const response = await api.get(`/horas-de-mano-de-obra-por-componentes/herraje/${herrajeId}`);
+export const getHorasPorComponenteId = async (componenteId) => {
+  const response = await api.get(`/horas-de-mano-de-obra-por-componentes/componente/${componenteId}`);
   return response.data;
 };
 
-export const getCantidadPorHerrajeById = async (id) => {
+export const getHorasById = async (id) => {
   const response = await api.get(`/horas-de-mano-de-obra-por-componentes/${id}`);
   return response.data;
 };
 
-export const crearCantidadPorHerraje = async (datos) => {
+export const crearHoras = async (datos) => {
   const response = await api.post("/horas-de-mano-de-obra-por-componentes", datos);
   return response.data;
 };
