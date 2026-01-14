@@ -45,6 +45,17 @@
                 </div>
             </div>
 
+            <!-- Botones -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" @click="$router.push('/modulos')">
+                    ✕ Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" :disabled="cargando">
+                    <span v-if="cargando">⏳ Guardando...</span>
+                    <span v-else>✓ Guardar Módulo</span>
+                </button>
+            </div>
+
             <!-- Componentes del Módulo -->
             <div class="form-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -74,17 +85,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Botones -->
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" @click="$router.push('/modulos')">
-                    ✕ Cancelar
-                </button>
-                <button type="submit" class="btn btn-primary" :disabled="cargando">
-                    <span v-if="cargando">⏳ Guardando...</span>
-                    <span v-else>✓ Guardar Módulo</span>
-                </button>
             </div>
         </form>
 
@@ -899,9 +899,15 @@ onMounted(() => {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
+    align-items: center;
     margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e0d0c0;
+    margin-bottom: 3rem;
+    padding: 1.5rem 0;
+    border-bottom: 2px solid #d4a574;
+}
+
+.form-actions + .form-section {
+    margin-top: 2rem;
 }
 
 .btn {
