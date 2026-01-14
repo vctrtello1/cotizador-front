@@ -110,15 +110,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Fallback a materiales cargados del componente -->
-                <div v-else-if="formData.materiales && formData.materiales.length > 0" class="info-list">
-                    <div v-for="material in formData.materiales" :key="material.id" class="info-item-card">
-                        <div class="info-label">{{ material.nombre }}</div>
-                        <div class="info-detail">Código: {{ material.codigo }}</div>
-                        <div class="info-detail">Precio: ${{ formatCurrency(material.precio_unitario) }}</div>
-                    </div>
-                </div>
                 <div v-else class="empty-info">Sin materiales</div>
             </div>
 
@@ -153,15 +144,6 @@
                         <div v-if="herComp.herraje?.precio_unitario && herComp.cantidad" class="info-detail">
                             Subtotal: ${{ formatCurrency((herComp.herraje.precio_unitario * herComp.cantidad)) }}
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Fallback a herrajes cargados del componente -->
-                <div v-else-if="formData.herrajes && formData.herrajes.length > 0" class="info-list">
-                    <div v-for="herraje in formData.herrajes" :key="herraje.id" class="info-item-card">
-                        <div class="info-label">{{ herraje.nombre }}</div>
-                        <div class="info-detail">Código: {{ herraje.codigo }}</div>
-                        <div class="info-detail">Precio: ${{ formatCurrency(herraje.precio_unitario) }}</div>
                     </div>
                 </div>
                 <div v-else class="empty-info">Sin herrajes</div>
@@ -234,14 +216,14 @@
                     </div>
 
                     <!-- Sección de materiales seleccionados -->
-                    <div v-if="formData.materiales && formData.materiales.length > 0" class="selected-items">
+                    <div v-if="materialesDelComponente && materialesDelComponente.length > 0" class="selected-items">
                         <h4 class="items-subtitle">Materiales Seleccionados</h4>
                         <div class="items-grid">
-                            <div v-for="material in formData.materiales" :key="material.id" class="selected-item-edit">
+                            <div v-for="material in materialesDelComponente" :key="material.id" class="selected-item-edit">
                                 <div class="item-info">
-                                    <div class="item-name">{{ material.nombre }}</div>
-                                    <div class="item-code">{{ material.codigo }}</div>
-                                    <div class="item-price">${{ formatCurrency(material.precio_unitario) }}</div>
+                                    <div class="item-name">{{ material.material?.nombre }}</div>
+                                    <div class="item-code">{{ material.material?.codigo }}</div>
+                                    <div class="item-price">${{ formatCurrency(material.material?.precio_unitario) }}</div>
                                 </div>
                                 <div class="quantity-input-group">
                                     <label :for="`qty-material-${material.id}`">Cantidad (unidades)</label>
@@ -259,7 +241,8 @@
                                             min="1"
                                             step="1"
                                             placeholder="1"
-                                            @blur="material.cantidad = Math.round(material.cantidad || 1)"
+                                            @blur="guardarCantidadMaterial(material)"
+                                            @keyup.enter="guardarCantidadMaterial(material)"
                                             class="quantity-input"
                                         />
                                         <button 
@@ -302,14 +285,14 @@
                     </div>
 
                     <!-- Sección de herrajes seleccionados -->
-                    <div v-if="formData.herrajes && formData.herrajes.length > 0" class="selected-items">
+                    <div v-if="herrajesDelComponente && herrajesDelComponente.length > 0" class="selected-items">
                         <h4 class="items-subtitle">Herrajes Seleccionados</h4>
                         <div class="items-grid">
-                            <div v-for="herraje in formData.herrajes" :key="herraje.id" class="selected-item-edit">
+                            <div v-for="herraje in herrajesDelComponente" :key="herraje.id" class="selected-item-edit">
                                 <div class="item-info">
-                                    <div class="item-name">{{ herraje.nombre }}</div>
-                                    <div class="item-code">{{ herraje.codigo }}</div>
-                                    <div class="item-price">${{ formatCurrency(herraje.precio_unitario) }}</div>
+                                    <div class="item-name">{{ herraje.herraje?.nombre }}</div>
+                                    <div class="item-code">{{ herraje.herraje?.codigo }}</div>
+                                    <div class="item-price">${{ formatCurrency(herraje.herraje?.precio_unitario) }}</div>
                                 </div>
                                 <div class="quantity-input-group">
                                     <label :for="`qty-herraje-${herraje.id}`">Cantidad (unidades)</label>
@@ -1012,7 +995,7 @@ const removerDelFormulario = (tipo, id) => {
 const removerMaterial = async (materialId) => {
     try {
         // Encontrar el registro de material-por-componente para este material
-        const materialComp = materialesDelComponente.value.find(m => m.material_id === materialId);
+        const materialComp = materialesDelComponente.value.find(m => m.id === materialId);
         
         if (materialComp && materialComp.id) {
             // Eliminar del backend
@@ -1030,7 +1013,7 @@ const removerMaterial = async (materialId) => {
 const removerHerraje = async (herrajeId) => {
     try {
         // Encontrar el registro de cantidad-por-herraje para este herraje
-        const herrajeComp = herrajesDelComponente.value.find(h => h.herraje_id === herrajeId);
+        const herrajeComp = herrajesDelComponente.value.find(h => h.id === herrajeId);
         
         if (herrajeComp && herrajeComp.id) {
             // Eliminar del backend
@@ -1263,7 +1246,12 @@ const incrementarCantidad = (item) => {
     } else if (item) {
         item.cantidad = 2;
     }
-    guardarCantidadHerraje(item);
+    // Detectar si es material (tiene material_id) o herraje (tiene herraje_id)
+    if (item && item.material_id) {
+        guardarCantidadMaterial(item);
+    } else if (item && item.herraje_id) {
+        guardarCantidadHerraje(item);
+    }
 };
 
 // Decrementar cantidad de material/herraje
@@ -1271,7 +1259,46 @@ const decrementarCantidad = (item) => {
     if (item && typeof item.cantidad === 'number' && item.cantidad > 1) {
         item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
     }
-    guardarCantidadHerraje(item);
+    // Detectar si es material (tiene material_id) o herraje (tiene herraje_id)
+    if (item && item.material_id) {
+        guardarCantidadMaterial(item);
+    } else if (item && item.herraje_id) {
+        guardarCantidadHerraje(item);
+    }
+};
+
+// Guardar cantidad de material
+const guardarCantidadMaterial = async (material) => {
+    if (!material || !material.id) return;
+    
+    const cantidadFinal = Math.round(material.cantidad || 1);
+    material.cantidad = cantidadFinal;
+    
+    try {
+        // Encontrar la relación en materialesDelComponente por id (es la relación, no el material)
+        const materialComp = materialesDelComponente.value.find(m => m.id === material.id);
+        console.log('🔍 Buscando material con ID:', material.id);
+        console.log('📋 materialesDelComponente:', materialesDelComponente.value);
+        console.log('✅ materialComp encontrado:', materialComp);
+        
+        if (!materialComp || !materialComp.id) {
+            console.warn('⚠️ No se encontró el registro de cantidad para este material');
+            return;
+        }
+        
+        const datosActualizar = {
+            cantidad: cantidadFinal
+        };
+        
+        console.log(`📡 Enviando PUT a /materiales-por-componente/${materialComp.id}`, datosActualizar);
+        
+        // Actualizar en el backend
+        const resultado = await storeMaterialesPorComponente.actualizarMaterialPorComponenteAction(materialComp.id, datosActualizar);
+        console.log('✅ Respuesta del API:', resultado);
+    } catch (err) {
+        console.error('❌ Error guardando cantidad de material:', err);
+        mostrarMensaje('❌ Error al actualizar cantidad de material', 'error', 3000);
+    }
 };
 
 // Guardar cantidad de herraje
@@ -1282,8 +1309,8 @@ const guardarCantidadHerraje = async (herraje) => {
     herraje.cantidad = cantidadFinal;
     
     try {
-        // Encontrar la relación en herrajesDelComponente por herraje_id
-        const herrajeComp = herrajesDelComponente.value.find(h => h.herraje_id === herraje.id);
+        // Encontrar la relación en herrajesDelComponente por id (es la relación, no el herraje)
+        const herrajeComp = herrajesDelComponente.value.find(h => h.id === herraje.id);
         console.log('🔍 Buscando herraje con ID:', herraje.id);
         console.log('📋 herrajesDelComponente:', herrajesDelComponente.value);
         console.log('✅ herrajeComp encontrado:', herrajeComp);
