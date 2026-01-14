@@ -165,11 +165,13 @@ const cargarComponente = async () => {
         const response = await getComponenteById(route.params.id);
         const data = response.data || response;
         console.log('Componente cargado:', data);
+        console.log('costo_unitario:', data.costo_unitario);
+        console.log('costo_total:', data.costo_total);
         formData.value = {
             nombre: data.nombre || '',
             codigo: data.codigo || '',
             descripcion: data.descripcion || '',
-            costo_unitario: data.costo_unitario || '',
+            costo_unitario: data.costo_unitario || data.costo_total || '',
             materiales: data.materiales || [],
             herrajes: data.herrajes || [],
             mano_de_obra: data.mano_de_obra_id || null,
