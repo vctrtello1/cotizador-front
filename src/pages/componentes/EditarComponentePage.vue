@@ -115,10 +115,39 @@
             <!-- Sección de Herrajes -->
             <div class="section-info">
                 <div class="section-header">
-                    <h3 class="section-title">🔩 Herrajes</h3>
+                    <div class="header-with-count">
+                        <h3 class="section-title">🔩 Herrajes</h3>
+                        <span v-if="herrajesDelComponente.length > 0" class="materials-badge">
+                            {{ herrajesDelComponente.length }}
+                        </span>
+                    </div>
                     <button type="button" class="btn-edit-small" @click="mostrarModalHerrajes = true">✏️ Editar</button>
                 </div>
-                <div v-if="formData.herrajes && formData.herrajes.length > 0" class="info-list">
+                
+                <!-- Herrajes por Componente desde API -->
+                <div v-if="cargandoHerrajes" class="loading-info">
+                    <p>Cargando relación de herrajes...</p>
+                </div>
+                <div v-else-if="herrajesDelComponente && herrajesDelComponente.length > 0" class="info-list">
+                    <div v-for="herComp in herrajesDelComponente" :key="herComp.id" class="info-item-card">
+                        <div class="info-label">
+                            {{ herComp.herraje?.nombre || 'Herraje sin datos' }}
+                            <span v-if="herComp.cantidad" class="quantity-badge">{{ herComp.cantidad }}</span>
+                        </div>
+                        <div v-if="herComp.herraje?.codigo" class="info-detail">
+                            Código: {{ herComp.herraje.codigo }}
+                        </div>
+                        <div v-if="herComp.herraje?.precio_unitario" class="info-detail">
+                            Precio unitario: ${{ formatCurrency(herComp.herraje.precio_unitario) }}
+                        </div>
+                        <div v-if="herComp.herraje?.precio_unitario && herComp.cantidad" class="info-detail">
+                            Subtotal: ${{ formatCurrency((herComp.herraje.precio_unitario * herComp.cantidad)) }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fallback a herrajes cargados del componente -->
+                <div v-else-if="formData.herrajes && formData.herrajes.length > 0" class="info-list">
                     <div v-for="herraje in formData.herrajes" :key="herraje.id" class="info-item-card">
                         <div class="info-label">{{ herraje.nombre }}</div>
                         <div class="info-detail">Código: {{ herraje.codigo }}</div>
@@ -363,12 +392,16 @@ import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
+import { useCantidadPorHerraje } from '@/stores/cantidad-por-herraje';
 import { useMateriales } from '@/stores/materiales';
+import { useHerrajes } from '@/stores/herrajes';
 
 const router = useRouter();
 const route = useRoute();
 const storeMaterialesPorComponente = useMaterialesPorComponente();
+const storeCantidadPorHerraje = useCantidadPorHerraje();
 const storeMateriales = useMateriales();
+const storeHerrajes = useHerrajes();
 
 // Estado
 const formData = ref({
@@ -387,7 +420,9 @@ const error = ref(null);
 const guardando = ref(false);
 const cargando = ref(true);
 const cargandoMateriales = ref(false);
+const cargandoHerrajes = ref(false);
 const materialesDelComponente = ref([]);
+const herrajesDelComponente = ref([]);
 
 // Modales
 const mostrarModalMateriales = ref(false);
@@ -423,6 +458,9 @@ const cargarComponente = async () => {
         
         // Cargar materiales por componente desde el API
         await cargarMaterialesPorComponente();
+        
+        // Cargar herrajes por componente desde el API
+        await cargarHerrajesPorComponente();
     } catch (err) {
         error.value = 'Error al cargar el componente';
         console.error(err);
@@ -478,6 +516,56 @@ const cargarMaterialesPorComponente = async () => {
         console.error('❌ Error cargando materiales por componente:', err);
     } finally {
         cargandoMateriales.value = false;
+    }
+};
+
+// Cargar herrajes por componente
+const cargarHerrajesPorComponente = async () => {
+    try {
+        cargandoHerrajes.value = true;
+        
+        // Cargar el catálogo completo de herrajes primero
+        console.log('📚 Cargando catálogo de herrajes...');
+        await storeHerrajes.fetchHerralesAction();
+        console.log('✅ Herrajes disponibles:', storeHerrajes.herrajes.length);
+        
+        // Cargar la relación de cantidad por herraje
+        console.log('📡 Cargando relación de cantidad por herraje...');
+        await storeCantidadPorHerraje.fetchCantidadPorHerrajeAction();
+        console.log('✅ Todos los herrajes por componente cargados:');
+        console.log('   Datos completos:', storeCantidadPorHerraje.cantidadPorHerraje);
+        console.log('   Cantidad total:', storeCantidadPorHerraje.cantidadPorHerraje.length);
+        
+        // Luego filtrar los del componente actual
+        const componenteId = parseInt(route.params.id);
+        console.log('🔍 Filtrando para componente ID:', componenteId);
+        
+        const herrajesRelacion = storeCantidadPorHerraje.getCantidadPorComponente(componenteId);
+        console.log('✅ Relaciones encontradas:', herrajesRelacion.length);
+        
+        // Enriquecer con los datos del herraje
+        herrajesDelComponente.value = herrajesRelacion.map(rel => {
+            const herrajeData = storeHerrajes.herrajes.find(h => h.id === rel.herraje_id);
+            console.log(`   Herraje ID ${rel.herraje_id}:`, herrajeData?.nombre || '❌ NO ENCONTRADO');
+            return {
+                ...rel,
+                herraje: herrajeData || {}
+            };
+        });
+        
+        console.log('✅ Herrajes del componente (enriquecidos):', herrajesDelComponente.value);
+        console.log('   Cantidad:', herrajesDelComponente.value.length);
+        
+        // Inspeccionar la estructura
+        if (herrajesDelComponente.value.length > 0) {
+            console.log('📋 Primer herraje enriquecido:');
+            console.log('   Relación:', herrajesDelComponente.value[0]);
+            console.log('   Herraje:', herrajesDelComponente.value[0].herraje);
+        }
+    } catch (err) {
+        console.error('❌ Error cargando herrajes por componente:', err);
+    } finally {
+        cargandoHerrajes.value = false;
     }
 };
 
