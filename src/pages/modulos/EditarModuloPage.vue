@@ -732,16 +732,37 @@ const abrirModalConfiguracion = async (componente) => {
         }
     }
     
-    componenteActual.value = {
+    // Crear el componente con valores por defecto
+    const nuevoComponente = {
         id: componente.id,
         nombre: componente.nombre,
         codigo: componente.codigo,
+        descripcion: componente.descripcion,
         cantidad: 1,
         acabado_id: acabadoEstandar?.id || '',
         mano_de_obra_id: manoDeObraEstandar?.id || ''
     };
-    mostrarModal.value = true;
+    
+    // Agregar a la lista de componentes del módulo
+    formData.value.componentes.push(nuevoComponente);
     mostrarModalComponentes.value = false;
+    
+    // Guardar horas en la API si tenemos un componente nuevo
+    if (componenteActual.value.id || nuevoComponente.id) {
+        try {
+            const storeHoras = useHorasPorManoDeObraComponente();
+            await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+                nuevoComponente.id,
+                manoDeObraEstandar?.id || 0,
+                { horas: 1 }
+            );
+            console.log('✅ Componente guardado con mano de obra en API');
+        } catch (err) {
+            console.warn('⚠️ No se pudo guardar horas en API:', err);
+        }
+    }
+    
+    mostrarMensaje('✅ Componente agregado', 'success', 1500);
 };
 
 // Guardar componente del modal
