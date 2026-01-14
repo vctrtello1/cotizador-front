@@ -230,14 +230,30 @@
                                 </div>
                                 <div class="quantity-input-group">
                                     <label :for="`qty-material-${material.id}`">Cantidad</label>
-                                    <input 
-                                        :id="`qty-material-${material.id}`"
-                                        v-model.number="material.cantidad"
-                                        type="number"
-                                        min="1"
-                                        placeholder="1"
-                                        class="quantity-input"
-                                    />
+                                    <div class="quantity-controls">
+                                        <button 
+                                            type="button"
+                                            class="btn-qty-control btn-qty-minus"
+                                            @click="decrementarCantidad(material)"
+                                            title="Disminuir"
+                                        >−</button>
+                                        <input 
+                                            :id="`qty-material-${material.id}`"
+                                            v-model.number="material.cantidad"
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            placeholder="1"
+                                            @blur="material.cantidad = Math.round(material.cantidad || 1)"
+                                            class="quantity-input"
+                                        />
+                                        <button 
+                                            type="button"
+                                            class="btn-qty-control btn-qty-plus"
+                                            @click="incrementarCantidad(material)"
+                                            title="Aumentar"
+                                        >+</button>
+                                    </div>
                                 </div>
                                 <button class="btn-remove" @click="removerMaterial(material.id)" title="Remover">×</button>
                             </div>
@@ -282,14 +298,30 @@
                                 </div>
                                 <div class="quantity-input-group">
                                     <label :for="`qty-herraje-${herraje.id}`">Cantidad</label>
-                                    <input 
-                                        :id="`qty-herraje-${herraje.id}`"
-                                        v-model.number="herraje.cantidad"
-                                        type="number"
-                                        min="1"
-                                        placeholder="1"
-                                        class="quantity-input"
-                                    />
+                                    <div class="quantity-controls">
+                                        <button 
+                                            type="button"
+                                            class="btn-qty-control btn-qty-minus"
+                                            @click="decrementarCantidad(herraje)"
+                                            title="Disminuir"
+                                        >−</button>
+                                        <input 
+                                            :id="`qty-herraje-${herraje.id}`"
+                                            v-model.number="herraje.cantidad"
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            placeholder="1"
+                                            @blur="herraje.cantidad = Math.round(herraje.cantidad || 1)"
+                                            class="quantity-input"
+                                        />
+                                        <button 
+                                            type="button"
+                                            class="btn-qty-control btn-qty-plus"
+                                            @click="incrementarCantidad(herraje)"
+                                            title="Aumentar"
+                                        >+</button>
+                                    </div>
                                 </div>
                                 <button class="btn-remove" @click="removerHerraje(herraje.id)" title="Remover">×</button>
                             </div>
@@ -673,6 +705,22 @@ const removerManoDeObra = () => {
 
 const removerAcabado = () => {
     formData.value.acabado = null;
+};
+
+// Incrementar cantidad de material/herraje
+const incrementarCantidad = (item) => {
+    if (item && typeof item.cantidad === 'number') {
+        item.cantidad = Math.floor(item.cantidad) + 1;
+    } else if (item) {
+        item.cantidad = 2;
+    }
+};
+
+// Decrementar cantidad de material/herraje
+const decrementarCantidad = (item) => {
+    if (item && typeof item.cantidad === 'number' && item.cantidad > 1) {
+        item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
+    }
 };
 
 // Cargar materiales disponibles
@@ -1327,6 +1375,65 @@ onMounted(() => {
 .quantity-input::placeholder {
     color: #d4a574;
     opacity: 0.5;
+}
+
+/* Controles de cantidad con botones +/- */
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border-radius: 8px;
+    padding: 4px;
+    border: 2px solid #e8ddd7;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quantity-controls:hover {
+    border-color: #d4a574;
+    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
+    box-shadow: 0 4px 8px rgba(212, 165, 116, 0.1);
+}
+
+.btn-qty-control {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #d4a574;
+    border-radius: 6px;
+    background: white;
+    color: #5a4037;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.08);
+}
+
+.btn-qty-control:hover {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border-color: #c89564;
+    transform: scale(1.08);
+    box-shadow: 0 4px 8px rgba(212, 165, 116, 0.2);
+}
+
+.btn-qty-control:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.1);
+}
+
+.btn-qty-minus:hover {
+    background: linear-gradient(135deg, #ff9999 0%, #ff8888 100%);
+    border-color: #c62828;
+}
+
+.btn-qty-plus:hover {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    border-color: #2e7d32;
 }
 
 .item-info {
