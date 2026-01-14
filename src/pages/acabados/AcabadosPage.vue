@@ -42,7 +42,7 @@
                 <div class="acabado-info">
                     <div class="info-item">
                         <label>💰 Costo</label>
-                        <span>${{ formatCurrency(acabado.precio || 0) }}</span>
+                        <span>${{ formatCurrency(acabado.costo || 0) }}</span>
                     </div>
                 </div>
 
