@@ -77,6 +77,16 @@
                 <span v-if="errors.costo_unitario" class="error-text">{{ errors.costo_unitario }}</span>
             </div>
 
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" @click="$router.back()">
+                    <span>✕ Cancelar</span>
+                </button>
+                <button type="submit" class="btn-primary" :disabled="guardando">
+                    <span v-if="guardando">⏳ Guardando...</span>
+                    <span v-else>✓ Guardar Cambios</span>
+                </button>
+            </div>
+
             <!-- Sección de Materiales -->
             <div class="section-info">
                 <div class="section-header">
@@ -185,15 +195,7 @@
                 <div v-else class="empty-info">Sin acabado asignado</div>
             </div>
 
-            <div class="form-actions">
-                <button type="button" class="btn-secondary" @click="$router.back()">
-                    <span>✕ Cancelar</span>
-                </button>
-                <button type="submit" class="btn-primary" :disabled="guardando">
-                    <span v-if="guardando">⏳ Guardando...</span>
-                    <span v-else>✓ Guardar Cambios</span>
-                </button>
-            </div>
+
         </form>
 
         <!-- Modal Materiales -->
