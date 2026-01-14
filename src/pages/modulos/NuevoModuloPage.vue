@@ -1085,9 +1085,10 @@ onMounted(() => {
 
 .modal-label {
     display: block;
-    font-weight: 500;
+    font-weight: 700;
+    font-size: 1.1rem;
     margin-bottom: 0.5rem;
-    color: #333;
+    color: #d4a574;
 }
 
 .modal-value {
@@ -1120,6 +1121,8 @@ onMounted(() => {
     border: 1px solid #d4c4b8;
     border-radius: 4px;
     cursor: pointer;
+    color: #333;
+    font-size: 1rem;
     transition: all 0.2s;
 }
 
@@ -1290,11 +1293,14 @@ onMounted(() => {
 }
 
 .input-horas {
-    width: 50px;
-    padding: 0.4rem;
+    width: 60px;
+    padding: 0.5rem;
     text-align: center;
-    border: 1px solid #d4c4b8;
+    border: 2px solid #d4a574;
     border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
 }
 
 .horas-unit {
