@@ -70,10 +70,39 @@
             <!-- Sección de Materiales -->
             <div class="section-info">
                 <div class="section-header">
-                    <h3 class="section-title">📋 Materiales</h3>
+                    <div class="header-with-count">
+                        <h3 class="section-title">📋 Materiales</h3>
+                        <span v-if="materialesDelComponente.length > 0" class="materials-badge">
+                            {{ materialesDelComponente.length }}
+                        </span>
+                    </div>
                     <button type="button" class="btn-edit-small" @click="mostrarModalMateriales = true">✏️ Editar</button>
                 </div>
-                <div v-if="formData.materiales && formData.materiales.length > 0" class="info-list">
+                
+                <!-- Materiales por Componente desde API -->
+                <div v-if="cargandoMateriales" class="loading-info">
+                    <p>Cargando relación de materiales...</p>
+                </div>
+                <div v-else-if="materialesDelComponente && materialesDelComponente.length > 0" class="info-list">
+                    <div v-for="matComp in materialesDelComponente" :key="matComp.id" class="info-item-card">
+                        <div class="info-label">
+                            {{ matComp.material?.nombre || 'Material sin datos' }}
+                            <span v-if="matComp.cantidad" class="quantity-badge">{{ matComp.cantidad }}</span>
+                        </div>
+                        <div v-if="matComp.material?.codigo" class="info-detail">
+                            Código: {{ matComp.material.codigo }}
+                        </div>
+                        <div v-if="matComp.material?.precio_unitario" class="info-detail">
+                            Precio unitario: ${{ formatCurrency(matComp.material.precio_unitario) }}
+                        </div>
+                        <div v-if="matComp.material?.precio_unitario && matComp.cantidad" class="info-detail">
+                            Subtotal: ${{ formatCurrency((matComp.material.precio_unitario * matComp.cantidad)) }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fallback a materiales cargados del componente -->
+                <div v-else-if="formData.materiales && formData.materiales.length > 0" class="info-list">
                     <div v-for="material in formData.materiales" :key="material.id" class="info-item-card">
                         <div class="info-label">{{ material.nombre }}</div>
                         <div class="info-detail">Código: {{ material.codigo }}</div>
@@ -333,9 +362,13 @@
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getComponenteById } from '@/http/componentes-api';
+import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
+import { useMateriales } from '@/stores/materiales';
 
 const router = useRouter();
 const route = useRoute();
+const storeMaterialesPorComponente = useMaterialesPorComponente();
+const storeMateriales = useMateriales();
 
 // Estado
 const formData = ref({
@@ -353,6 +386,8 @@ const errors = ref({});
 const error = ref(null);
 const guardando = ref(false);
 const cargando = ref(true);
+const cargandoMateriales = ref(false);
+const materialesDelComponente = ref([]);
 
 // Modales
 const mostrarModalMateriales = ref(false);
@@ -385,11 +420,64 @@ const cargarComponente = async () => {
             mano_de_obra: data.mano_de_obra_id || null,
             acabado: data.acabado_id || null,
         };
+        
+        // Cargar materiales por componente desde el API
+        await cargarMaterialesPorComponente();
     } catch (err) {
         error.value = 'Error al cargar el componente';
         console.error(err);
     } finally {
         cargando.value = false;
+    }
+};
+
+// Cargar materiales por componente
+const cargarMaterialesPorComponente = async () => {
+    try {
+        cargandoMateriales.value = true;
+        
+        // Cargar todos los materiales primero
+        console.log('📚 Cargando catálogo de materiales...');
+        await storeMateriales.fetchMaterialesAction();
+        console.log('✅ Materiales disponibles:', storeMateriales.materiales.length);
+        
+        // Cargar la relación de materiales por componente
+        console.log('📡 Cargando relación de materiales por componente...');
+        await storeMaterialesPorComponente.fetchMaterialesPorComponenteAction();
+        console.log('✅ Todos los materiales por componente cargados:');
+        console.log('   Datos completos:', storeMaterialesPorComponente.materialesPorComponente);
+        console.log('   Cantidad total:', storeMaterialesPorComponente.materialesPorComponente.length);
+        
+        // Luego filtrar los del componente actual
+        const componenteId = parseInt(route.params.id);
+        console.log('🔍 Filtrando para componente ID:', componenteId);
+        
+        const materialesRelacion = storeMaterialesPorComponente.getMaterialesPorComponente(componenteId);
+        console.log('✅ Relaciones encontradas:', materialesRelacion.length);
+        
+        // Enriquecer con los datos del material
+        materialesDelComponente.value = materialesRelacion.map(rel => {
+            const materialData = storeMateriales.materiales.find(m => m.id === rel.material_id);
+            console.log(`   Material ID ${rel.material_id}:`, materialData?.nombre || '❌ NO ENCONTRADO');
+            return {
+                ...rel,
+                material: materialData || {}
+            };
+        });
+        
+        console.log('✅ Materiales del componente (enriquecidos):', materialesDelComponente.value);
+        console.log('   Cantidad:', materialesDelComponente.value.length);
+        
+        // Inspeccionar la estructura
+        if (materialesDelComponente.value.length > 0) {
+            console.log('📋 Primer material enriquecido:');
+            console.log('   Relación:', materialesDelComponente.value[0]);
+            console.log('   Material:', materialesDelComponente.value[0].material);
+        }
+    } catch (err) {
+        console.error('❌ Error cargando materiales por componente:', err);
+    } finally {
+        cargandoMateriales.value = false;
     }
 };
 
@@ -759,6 +847,29 @@ onMounted(() => {
     font-style: italic;
     background: white;
     border-radius: 4px;
+}
+
+.loading-info {
+    padding: 1rem;
+    text-align: center;
+    color: #8b7355;
+    background: white;
+    border-radius: 4px;
+    border-left: 3px solid #d4a574;
+}
+
+.loading-info p {
+    margin: 0;
+}
+
+.quantity-badge {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 0.5rem;
 }
 
 .section-header {
