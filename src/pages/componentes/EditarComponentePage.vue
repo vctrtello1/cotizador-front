@@ -87,7 +87,7 @@
                     <div v-for="matComp in materialesDelComponente" :key="matComp.id" class="info-item-card">
                         <div class="info-label">
                             {{ matComp.material?.nombre || 'Material sin datos' }}
-                            <span v-if="matComp.cantidad" class="quantity-badge">{{ matComp.cantidad }}</span>
+                            <span v-if="matComp.cantidad" class="quantity-badge">{{ matComp.cantidad }} unidades</span>
                         </div>
                         <div v-if="matComp.material?.codigo" class="info-detail">
                             Código: {{ matComp.material.codigo }}
@@ -132,7 +132,7 @@
                     <div v-for="herComp in herrajesDelComponente" :key="herComp.id" class="info-item-card">
                         <div class="info-label">
                             {{ herComp.herraje?.nombre || 'Herraje sin datos' }}
-                            <span v-if="herComp.cantidad" class="quantity-badge">{{ herComp.cantidad }}</span>
+                            <span v-if="herComp.cantidad" class="quantity-badge">{{ herComp.cantidad }} unidades</span>
                         </div>
                         <div v-if="herComp.herraje?.codigo" class="info-detail">
                             Código: {{ herComp.herraje.codigo }}
@@ -229,7 +229,7 @@
                                     <div class="item-price">${{ formatCurrency(material.precio_unitario) }}</div>
                                 </div>
                                 <div class="quantity-input-group">
-                                    <label :for="`qty-material-${material.id}`">Cantidad</label>
+                                    <label :for="`qty-material-${material.id}`">Cantidad (unidades)</label>
                                     <div class="quantity-controls">
                                         <button 
                                             type="button"
@@ -297,7 +297,7 @@
                                     <div class="item-price">${{ formatCurrency(herraje.precio_unitario) }}</div>
                                 </div>
                                 <div class="quantity-input-group">
-                                    <label :for="`qty-herraje-${herraje.id}`">Cantidad</label>
+                                    <label :for="`qty-herraje-${herraje.id}`">Cantidad (unidades)</label>
                                     <div class="quantity-controls">
                                         <button 
                                             type="button"
