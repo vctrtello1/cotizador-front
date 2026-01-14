@@ -1253,8 +1253,21 @@ const abrirSelectorManoDeObra = async () => {
 };
 
 // Agregar mano de obra seleccionada
+// Limpiar horas de la mano de obra anterior antes de cambiar
+const limpiarHorasManoDeObraAnterior = () => {
+    // Solo limpiar el array local, sin intentar guardar en la API
+    // (El backend no acepta horas = 0)
+    horasManoDeObra.value = [];
+};
+
 const agregarManoDeObra = async (manoDeObra) => {
     if (manoDeObra) {
+        // Limpiar horas de la mano de obra anterior
+        if (formData.value.mano_de_obra && formData.value.mano_de_obra.id !== manoDeObra.id) {
+            limpiarHorasManoDeObraAnterior();
+        }
+        
+        // Cambiar a la nueva mano de obra
         formData.value.mano_de_obra = {
             ...manoDeObra
         };
@@ -1262,9 +1275,7 @@ const agregarManoDeObra = async (manoDeObra) => {
         busquedaManoDeObra.value = '';
         
         // Cargar horas para la nueva mano de obra
-        console.log('🔄 Nueva mano de obra asignada, cargando horas...');
         await cargarHorasManoDeObra();
-        console.log('✅ Horas cargadas para la nueva mano de obra:', horasManoDeObra.value);
     }
 };
 
