@@ -82,9 +82,7 @@
                 <div class="section-header">
                     <div class="header-with-count">
                         <h3 class="section-title">📋 Materiales</h3>
-                        <span v-if="materialesDelComponente.length > 0" class="materials-badge">
-                            {{ materialesDelComponente.length }}
-                        </span>
+                        
                     </div>
                     <button type="button" class="btn-edit-small" @click="mostrarModalMateriales = true">✏️ Editar</button>
                 </div>
@@ -119,7 +117,7 @@
                     <div class="header-with-count">
                         <h3 class="section-title">🔩 Herrajes</h3>
                         <span v-if="herrajesDelComponente.length > 0" class="materials-badge">
-                            {{ herrajesDelComponente.length }}
+                            
                         </span>
                     </div>
                     <button type="button" class="btn-edit-small" @click="mostrarModalHerrajes = true">✏️ Editar</button>
