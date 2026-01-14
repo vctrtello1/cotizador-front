@@ -417,33 +417,50 @@
                     </div>
 
                     <!-- Sección de Horas -->
-                    <div v-if="formData.mano_de_obra && horasManoDeObra.length > 0" class="selected-items">
+                    <div v-if="formData.mano_de_obra && horaActual" class="selected-items">
                         <h4 class="items-subtitle">⏱️ Horas Asignadas</h4>
-                        <div class="horas-counter">
-                            <div class="counter-info">
-                                <div class="counter-label">Total de Horas</div>
-                                <div class="counter-value">{{ totalHoras }} horas</div>
-                            </div>
+                        
+                        <!-- Input de horas editable - solo el registro actual -->
+                        <div class="quantity-input-group" style="margin: 15px 0;">
+                            <label for="horas-input">Horas de Mano de Obra</label>
                             <div class="quantity-controls">
                                 <button 
                                     type="button"
                                     class="btn-qty-control btn-qty-minus"
-                                    @click="decrementarHorasTotal"
+                                    @click="decrementarHora(0)"
                                     :disabled="guardandoHoras"
                                     title="Disminuir"
                                 >−</button>
-                                <span class="quantity-display">{{ totalHoras }}</span>
+                                <input 
+                                    id="horas-input"
+                                    v-model.number="horaActual.horas"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    placeholder="0"
+                                    @blur="guardarCambiosHoras"
+                                    @keyup.enter="guardarCambiosHoras"
+                                    class="quantity-input"
+                                    :disabled="guardandoHoras"
+                                />
                                 <button 
                                     type="button"
                                     class="btn-qty-control btn-qty-plus"
-                                    @click="incrementarHorasTotal"
+                                    @click="incrementarHora(0)"
                                     :disabled="guardandoHoras"
                                     title="Aumentar"
                                 >+</button>
                             </div>
                         </div>
+                        
+                        <!-- Resumen de horas -->
                         <div class="horas-summary">
-                            <p class="horas-cost">Costo total: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong></p>
+                            <p class="horas-cost">
+                                Total: <strong>{{ totalHoras }} horas</strong>
+                            </p>
+                            <p class="horas-cost">
+                                Costo: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -1096,28 +1113,91 @@ const cancelarEdicionManoDeObra = () => {
     manoDeObraEditando.value = null;
 };
 
+// Computed para obtener el registro de horas de la mano de obra actual
+const horaActual = computed(() => {
+    const manoDeObraId = formData.value.mano_de_obra?.id;
+    if (!manoDeObraId) return null;
+    return horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId) || null;
+});
+
 // Funciones para editar horas de mano de obra
 const guardarCambiosHoras = async () => {
     if (guardandoHoras.value) return; // Evitar guardados simultáneos
     
     guardandoHoras.value = true;
     try {
-        const promesas = horasManoDeObra.value
-            .filter(hora => (hora.horas || 0) > 0)
-            .map(hora => storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
-                id: hora.id,
-                componente_id: route.params.id,
-                mano_de_obra_id: formData.value.mano_de_obra?.id,
-                horas: Math.floor(hora.horas)
-            }));
-        
-        if (promesas.length > 0) {
-            await Promise.allSettled(promesas);
+        // Filtrar para obtener el registro de la mano de obra ACTUAL
+        const manoDeObraId = formData.value.mano_de_obra?.id;
+        console.log('🔍 Buscando registro para mano_de_obra_id:', manoDeObraId);
+        console.log('📊 Registros disponibles:', horasManoDeObra.value.map(h => ({
+            id: h.id,
+            mano_de_obra_id: h.mano_de_obra_id,
+            horas: h.horas
+        })));
+
+        // Encontrar el registro que corresponde a la mano de obra actual
+        const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
+        console.log('✅ Registro encontrado:', hora);
+
+        if (!hora) {
+            console.log('❌ No hay registro para esta mano de obra');
+            guardandoHoras.value = false;
+            return;
+        }
+
+        const horas = Math.floor(hora.horas || 0);
+        console.log('📊 Horas redondeadas:', horas);
+
+        // Si tiene horas > 0, guardar
+        if (horas > 0) {
+            const datosHora = {
+                componente_id: parseInt(route.params.id),
+                mano_de_obra_id: manoDeObraId,
+                horas: horas
+            };
+
+            console.log('📝 Datos a enviar:', datosHora);
+
+            if (hora.id) {
+                console.log('🔄 Actualizando horas ID:', hora.id);
+                await storeHorasPorManoDeObra.actualizarHorasPorManoDeObraAction(hora.id, datosHora);
+            } else {
+                console.log('🆕 Creando nuevas horas');
+                await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction(datosHora);
+            }
+            console.log('✅ Horas guardadas correctamente');
         }
     } catch (err) {
         console.error('Error guardando horas:', err);
     } finally {
         guardandoHoras.value = false;
+    }
+};
+
+// Incrementar horas de la mano de obra actual
+const incrementarHora = async (index) => {
+    // Encontrar el registro de la mano de obra actual
+    const manoDeObraId = formData.value.mano_de_obra?.id;
+    const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
+    
+    if (hora) {
+        hora.horas = Math.floor((hora.horas || 0)) + 1;
+        console.log(`✅ Horas incrementadas:`, hora.horas);
+        await guardarCambiosHoras();
+    }
+};
+
+// Decrementar horas de la mano de obra actual
+const decrementarHora = async (index) => {
+    // Encontrar el registro de la mano de obra actual
+    const manoDeObraId = formData.value.mano_de_obra?.id;
+    const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
+    
+    if (hora) {
+        const nuevasHoras = Math.max(0, (hora.horas || 0) - 1);
+        hora.horas = nuevasHoras;
+        console.log(`✅ Horas decrementadas:`, hora.horas);
+        await guardarCambiosHoras();
     }
 };
 

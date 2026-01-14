@@ -4,7 +4,8 @@ import {
     fetchHorasDeManoDeObraPorComponentes, 
     getHorasPorComponenteId,
     getHorasById,
-    crearHoras 
+    crearHoras,
+    actualizarHoras
 } from '@/http/horas_por_mano_de_obra_por_componente-api';
 
 export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-obra-componente', () => {
@@ -106,6 +107,33 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         }
     };
 
+    const actualizarHorasPorManoDeObraAction = async (id, datos) => {
+        loading.value = true;
+        error.value = null;
+        try {
+            console.log('📝 Actualizando horas ID:', id, 'Datos:', datos);
+            const response = await actualizarHoras(id, datos);
+            console.log('✅ Horas por mano de obra actualizadas:', response);
+            
+            // Actualizar en la lista local
+            const index = horasPorManoDeObraComponente.value.findIndex(h => h.id === id);
+            if (index !== -1) {
+                horasPorManoDeObraComponente.value[index] = { ...horasPorManoDeObraComponente.value[index], ...datos };
+            }
+            
+            return response;
+        } catch (err) {
+            console.error('❌ Error actualizando horas por mano de obra:', err);
+            console.error('📋 Status:', err.response?.status);
+            console.error('📋 Error message:', err.response?.data?.message || err.response?.data?.error);
+            console.error('📋 Todos los detalles:', err.response?.data);
+            error.value = err.message || 'Error al actualizar horas por mano de obra';
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
     return {
         horasPorManoDeObraComponente,
         loading,
@@ -113,6 +141,7 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         fetchHorasPorManoDeObraComponenteAction,
         getHorasPorManoDeObraByComponenteIdAction,
         getHorasPorManoDeObraByIdAction,
-        crearHorasPorManoDeObraAction
+        crearHorasPorManoDeObraAction,
+        actualizarHorasPorManoDeObraAction
     };
 });
