@@ -6,6 +6,7 @@ import EditarModuloPage from "@/pages/modulos/EditarModuloPage.vue";
 import ModulosPage from "@/pages/modulos/ModulosPage.vue";
 import ComponentesPage from "@/pages/componentes/ComponentesPage.vue";
 import NuevoComponentePage from "@/pages/componentes/NuevoComponentePage.vue";
+import EditarComponentePage from "@/pages/componentes/EditarComponentePage.vue";
 import MaterialesPage from "@/pages/materiales/MaterialesPage.vue";
 import NuevoMaterial from "@/pages/materiales/NuevoMaterial.vue";
 import EditarMaterial from "@/pages/materiales/EditarMaterial.vue";
@@ -57,6 +58,11 @@ export const routes = [
         path: "/nuevo-componente",
         name: "NuevoComponente",
         component: NuevoComponentePage,
+    },
+    {
+        path: "/editar-componente/:id",
+        name: "EditarComponente",
+        component: EditarComponentePage,
     },
     {
         path: "/materiales",

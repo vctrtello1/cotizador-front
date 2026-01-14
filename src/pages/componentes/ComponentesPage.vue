@@ -2,7 +2,10 @@
     <div class="componentes-container">
         <!-- Header -->
         <div class="page-header">
-            <h1 class="page-title">Componentes</h1>
+            <div class="header-content">
+                <h1 class="page-title">🔧 Componentes</h1>
+                <p class="header-subtitle">Gestiona los componentes de tus proyectos</p>
+            </div>
             <button class="btn-primary" @click="$router.push('/nuevo-componente')">+ Nuevo Componente</button>
         </div>
 
@@ -25,7 +28,7 @@
 
         <!-- Empty State -->
         <div v-else-if="componentes.length === 0" class="empty-state">
-            <p>No hay componentes registrados.</p>
+            <p>📭 No hay componentes registrados.</p>
             <button class="btn-primary" @click="$router.push('/nuevo-componente')">Crear Primer Componente</button>
         </div>
 
@@ -41,24 +44,15 @@
 
                 <div class="componente-info">
                     <div class="info-item">
-                        <label>Unidad</label>
-                        <span>{{ componente.unidad_medida }}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Stock</label>
-                        <span :class="{ 'stock-bajo': componente.cantidad_disponible < 10 }">
-                            {{ componente.cantidad_disponible }}
-                        </span>
-                    </div>
-                    <div class="info-item">
-                        <label>Precio</label>
-                        <span>${{ formatCurrency(componente.costo_unitario) }}</span>
+
+                        <label> Precio</label>
+                        <span>${{ formatCurrency(componente.costo_total) }}</span>
                     </div>
                 </div>
 
                 <div class="card-actions">
-                    <button class="btn-edit" @click="editarComponente(componente.id)">Editar</button>
-                    <button class="btn-delete" @click="confirmarEliminar(componente.id)">Eliminar</button>
+                    <button class="btn-edit" @click="editarComponente(componente.id)">✏️ Editar</button>
+                    <button class="btn-delete" @click="confirmarEliminar(componente.id)">🗑️ Eliminar</button>
                 </div>
             </div>
         </div>
@@ -99,6 +93,9 @@ const cargarComponentes = async () => {
     try {
         const response = await fetchComponentes();
         console.log('Componentes cargados:', response);
+        if (Array.isArray(response) && response.length > 0) {
+            console.log('Primer componente:', response[0]);
+        }
         componentes.value = Array.isArray(response) ? response : (response.data || []);
     } catch (err) {
         console.error('Error cargando componentes:', err);
@@ -110,7 +107,7 @@ const cargarComponentes = async () => {
 
 // Editar componente
 const editarComponente = (id) => {
-    router.push({ name: 'EditarComponente', params: { id } });
+    router.push(`/editar-componente/${id}`);
 };
 
 // Confirmar eliminación
@@ -155,8 +152,13 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 40px;
-    padding-bottom: 20px;
+    padding: 24px 0 24px 0;
     border-bottom: 2px solid #d4a574;
+    gap: 20px;
+}
+
+.header-content {
+    flex: 1;
 }
 
 .page-title {
@@ -164,6 +166,13 @@ onMounted(() => {
     font-weight: 700;
     color: #5a4037;
     margin: 0;
+}
+
+.header-subtitle {
+    font-size: 14px;
+    color: #8b7355;
+    margin: 6px 0 0 0;
+    font-weight: 500;
 }
 
 .btn-primary {
@@ -279,13 +288,14 @@ onMounted(() => {
 }
 
 .componente-codigo {
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
-    padding: 4px 12px;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
 }
 
 .componente-descripcion {
@@ -297,10 +307,11 @@ onMounted(() => {
 
 .componente-info {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     gap: 12px;
     padding: 16px;
-    background: #faf7f2;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border: 1px solid #e8ddd7;
     border-radius: 8px;
 }
 
@@ -313,15 +324,15 @@ onMounted(() => {
 
 .info-item label {
     font-size: 11px;
-    font-weight: 600;
-    color: #999;
+    font-weight: 700;
+    color: #8b7355;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .info-item span {
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     color: #5a4037;
 }
 
@@ -348,22 +359,26 @@ onMounted(() => {
 }
 
 .btn-edit {
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.2);
 }
 
 .btn-edit:hover {
-    background: #c89564;
+    background: linear-gradient(135deg, #c89564 0%, #b8844c 100%);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 .btn-delete {
-    background: #fee;
-    color: #c33;
-    border: 1px solid #c33;
+    background: white;
+    color: #e67e22;
+    border: 2px solid #e67e22;
+    box-shadow: 0 2px 8px rgba(230, 126, 34, 0.1);
 }
 
 .btn-delete:hover {
-    background: #fdd;
+    background: #fff5f0;
+    box-shadow: 0 4px 12px rgba(230, 126, 34, 0.2);
 }
 
 /* Modal */
