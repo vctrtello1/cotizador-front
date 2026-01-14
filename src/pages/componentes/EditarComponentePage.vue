@@ -1333,71 +1333,78 @@ const limpiarHorasManoDeObraAnterior = () => {
 };
 
 const agregarManoDeObra = async (manoDeObra) => {
-    if (manoDeObra) {
-        console.log('📝 Cambiando mano de obra a:', manoDeObra.nombre);
+    if (!manoDeObra) return;
+    
+    try {
+        console.log('📝 Seleccionando mano de obra:', manoDeObra.nombre);
         
+        // Preparar datos para enviar al servidor
+        const datos = {
+            nombre: formData.value.nombre.trim(),
+            codigo: formData.value.codigo.trim(),
+            descripcion: formData.value.descripcion.trim(),
+            costo_unitario: parseFloat(formData.value.costo_unitario),
+            mano_de_obra_id: manoDeObra.id,
+        };
+        
+        // Agregar acabado_id si existe
+        if (formData.value.acabado && formData.value.acabado.id) {
+            datos.acabado_id = formData.value.acabado.id;
+        }
+        
+        console.log('📤 Guardando cambio de mano de obra en el servidor...');
+        console.log('   Datos:', datos);
+        
+        const api = (await import('@/http/apl')).default;
+        const response = await api.put(`/componentes/${route.params.id}`, datos);
+        console.log('✅ Respuesta del servidor:', response);
+        
+        // Solo si el servidor confirmó, actualizar el estado local
         // Limpiar horas de la mano de obra anterior
         if (formData.value.mano_de_obra && formData.value.mano_de_obra.id !== manoDeObra.id) {
             limpiarHorasManoDeObraAnterior();
         }
         
-        try {
-            // Cambiar a la nueva mano de obra
-            formData.value.mano_de_obra = {
-                ...manoDeObra
-            };
-            
-            // Guardar el cambio en la API inmediatamente
-            console.log('📤 Guardando cambio de mano de obra en el componente...');
-            const datos = {
-                nombre: formData.value.nombre.trim(),
-                codigo: formData.value.codigo.trim(),
-                descripcion: formData.value.descripcion.trim(),
-                costo_unitario: parseFloat(formData.value.costo_unitario),
-                mano_de_obra_id: manoDeObra.id,
-            };
-            
-            // Agregar acabado_id si existe
-            if (formData.value.acabado && formData.value.acabado.id) {
-                datos.acabado_id = formData.value.acabado.id;
+        // Actualizar mano de obra en el estado local
+        formData.value.mano_de_obra = {
+            ...manoDeObra
+        };
+        
+        // Cerrar modal y limpiar búsqueda
+        mostrarSelectorManoDeObra.value = false;
+        busquedaManoDeObra.value = '';
+        
+        console.log('✅ Modal cerrado');
+        
+        // Cargar horas para la nueva mano de obra
+        console.log('📋 Cargando horas para la nueva mano de obra...');
+        await cargarHorasManoDeObra();
+        
+        // Si no hay horas, crear una inicial con 1 hora
+        if (horasManoDeObra.value.length === 0) {
+            console.log('🆕 Creando primer registro de horas con 1 hora...');
+            try {
+                await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
+                    componente_id: parseInt(route.params.id),
+                    mano_de_obra_id: manoDeObra.id,
+                    horas: 1
+                });
+                console.log('✅ Primer registro de horas creado');
+                // Recargar horas
+                await cargarHorasManoDeObra();
+            } catch (err) {
+                console.error('⚠️ Error creando primer registro de horas:', err);
             }
-            
-            console.log('📋 Datos a enviar:', datos);
-            
-            const api = (await import('@/http/apl')).default;
-            const response = await api.put(`/componentes/${route.params.id}`, datos);
-            console.log('✅ Respuesta del servidor:', response);
-            
-            mostrarSelectorManoDeObra.value = false;
-            busquedaManoDeObra.value = '';
-            
-            // Cargar horas para la nueva mano de obra
-            await cargarHorasManoDeObra();
-            
-            // Si no hay horas, crear una inicial con 1 hora
-            if (horasManoDeObra.value.length === 0) {
-                console.log('🆕 Creando primer registro de horas con 1 hora...');
-                try {
-                    const nuevaHora = await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
-                        componente_id: parseInt(route.params.id),
-                        mano_de_obra_id: manoDeObra.id,
-                        horas: 1
-                    });
-                    console.log('✅ Primer registro de horas creado:', nuevaHora);
-                    // Recargar horas
-                    await cargarHorasManoDeObra();
-                } catch (err) {
-                    console.error('⚠️ Error creando primer registro de horas:', err);
-                }
-            }
-            
-            console.log('✅ Mano de obra actualizada en la API correctamente');
-        } catch (err) {
-            console.error('❌ Error al guardar cambio de mano de obra:', err);
-            console.error('   Status:', err.response?.status);
-            console.error('   Data:', err.response?.data);
-            error.value = 'Error al cambiar la mano de obra: ' + (err.response?.data?.message || err.message);
         }
+        
+        console.log('✅ Mano de obra actualizada correctamente');
+    } catch (err) {
+        console.error('❌ Error al guardar cambio de mano de obra:', err);
+        console.error('   Status:', err.response?.status);
+        console.error('   Data:', err.response?.data);
+        error.value = 'Error al cambiar la mano de obra: ' + (err.response?.data?.message || err.message);
+        // No cerrar el modal, mostrar el error
+        console.log('📌 Modal se mantiene abierto para reintentar');
     }
 };
 
