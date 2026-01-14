@@ -362,7 +362,6 @@
                                 </div>
                             </div>
                             <div class="button-group-vertical">
-                                <button class="btn-edit-item" @click="iniciarEdicionManoDeObra" title="Editar">✏️ Editar</button>
                                 <button class="btn-change-item" @click="abrirSelectorManoDeObra" title="Cambiar">🔄 Cambiar</button>
                             </div>
                         </div>
