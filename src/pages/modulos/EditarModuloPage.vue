@@ -18,6 +18,16 @@
             <button @click="exito = null" class="error-close">✕</button>
         </div>
 
+        <!-- Mensaje personalizado (warning/success/info) -->
+        <transition name="slide-down">
+            <div v-if="mensaje" class="custom-message" :class="`message-${tipoMensaje}`">
+                <div class="message-content">
+                    <span class="message-text">{{ mensaje }}</span>
+                    <button @click="cerrarMensaje" class="message-close">✕</button>
+                </div>
+            </div>
+        </transition>
+
         <!-- Loading -->
         <div v-if="cargando" class="loading-state">
             <p>Cargando módulo...</p>
@@ -233,7 +243,7 @@
                         <label class="modal-label">Mano de Obra *</label>
                         <button 
                             class="btn-select-modal"
-                            @click="mostrarModalSeleccionarManoDeObra = true"
+                            @click="abrirModalManoDeObra"
                         >
                             {{ obtenerNombreManodeObra(componenteActual.mano_de_obra_id) || 'Seleccionar mano de obra...' }}
                         </button>
@@ -324,7 +334,7 @@
                                                 v-model.number="mano.horas" 
                                                 type="number" 
                                                 min="0"
-                                                step="0.5"
+                                                step="1"
                                                 class="input-horas"
                                                 @click.stop
                                                 @change.stop
@@ -357,6 +367,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getModuloById, actualizarModulo, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
+import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
 
 const router = useRouter();
 const route = useRoute();
@@ -392,6 +403,8 @@ const componenteActual = ref({
 // Estado de UI
 const error = ref(null);
 const exito = ref(null);
+const mensaje = ref(null);
+const tipoMensaje = ref(null);
 const cargando = ref(true);
 const cargandoModulo = ref(true);
 const cargandoCatalogos = ref(true);
@@ -399,6 +412,23 @@ const erroresValidacion = ref({
     nombre: null,
     codigo: null
 });
+
+// Función para mostrar mensajes
+const mostrarMensaje = (texto, tipo = 'info', duracion = 3000) => {
+    mensaje.value = texto;
+    tipoMensaje.value = tipo;
+    if (duracion > 0) {
+        setTimeout(() => {
+            mensaje.value = null;
+            tipoMensaje.value = null;
+        }, duracion);
+    }
+};
+
+const cerrarMensaje = () => {
+    mensaje.value = null;
+    tipoMensaje.value = null;
+};
 
 // Métodos de validación
 const validarCampo = (campo) => {
@@ -695,25 +725,65 @@ const seleccionarManoDeObra = (mano) => {
     componenteActual.value.mano_de_obra_horas = mano.horas || 0;
 };
 
+// Abrir modal de mano de obra con horas inicializadas en 1
+const abrirModalManoDeObra = () => {
+    // Inicializar horas en 1 para todas las manos de obra
+    manosDeObra.value.forEach(mano => {
+        if (!mano.horas) {
+            mano.horas = 1;
+        }
+    });
+    mostrarModalSeleccionarManoDeObra.value = true;
+};
+
 // Incrementar horas de mano de obra
-const incrementarHoras = (mano) => {
-    mano.horas = (mano.horas || 0) + 0.5;
+const incrementarHoras = async (mano) => {
+    if (!mano) return;
+    
+    mano.horas = (mano.horas || 0) + 1;
+    await guardarHorasEnAPI(mano);
 };
 
 // Decrementar horas de mano de obra
-const decrementarHoras = (mano) => {
-    if ((mano.horas || 0) > 0) {
-        mano.horas = Math.max(0, (mano.horas || 0) - 0.5);
+const decrementarHoras = async (mano) => {
+    if (!mano || (mano.horas || 0) <= 0) return;
+    
+    mano.horas = Math.max(0, (mano.horas || 0) - 1);
+    await guardarHorasEnAPI(mano);
+};
+
+// Guardar horas en la API
+const guardarHorasEnAPI = async (mano) => {
+    if (!mano || !componenteActual.value.id) return;
+    
+    try {
+        const storeHoras = useHorasPorManoDeObraComponente();
+        
+        // Actualizar horas en el store con el ID del componente
+        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+            componenteActual.value.id, 
+            mano.id, 
+            { horas: mano.horas || 0 }
+        );
+        
+        mostrarMensaje('✅ Horas actualizadas', 'success', 1500);
+    } catch (err) {
+        console.error('Error guardando horas:', err);
+        // No mostrar error si es porque el registro no existe (es normal en nuevos módulos)
+        if (err.response?.status !== 404) {
+            mostrarMensaje('⚠️ Horas actualizadas localmente', 'warning', 1500);
+        }
     }
 };
 
 // Confirmar selección de mano de obra y guardar horas
-const confirmarManoDeObra = () => {
+const confirmarManoDeObra = async () => {
     const manoSeleccionada = manosDeObra.value.find(m => m.id === componenteActual.value.mano_de_obra_id);
-    if (manoSeleccionada) {
-        componenteActual.value.mano_de_obra_horas = manoSeleccionada.horas || 0;
-    }
+    if (!manoSeleccionada) return;
+    
+    componenteActual.value.mano_de_obra_horas = manoSeleccionada.horas || 0;
     mostrarModalSeleccionarManoDeObra.value = false;
+    mostrarMensaje('✅ Mano de obra confirmada', 'success', 1500);
 };
 
 // Actualizar estado de carga general
@@ -807,6 +877,72 @@ onMounted(() => {
     background: white;
     border-radius: 12px;
     color: #999;
+}
+
+.custom-message {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.message-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.message-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+.message-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.message-success {
+    background: #efe;
+    color: #3c3;
+    border-left: 4px solid #3c3;
+}
+
+.message-error {
+    background: #fee;
+    color: #c33;
+    border-left: 4px solid #c33;
+}
+
+.message-warning {
+    background: #ffeaa7;
+    color: #d63031;
+    border-left: 4px solid #d63031;
+}
+
+.message-info {
+    background: #e8f4f8;
+    color: #0984e3;
+    border-left: 4px solid #0984e3;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .info-card,

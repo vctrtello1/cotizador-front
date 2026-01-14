@@ -134,6 +134,61 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         }
     };
 
+    const actualizarHorasPorManoDeObraComponenteAction = async (componenteId, manoDeObraId, datos) => {
+        loading.value = true;
+        error.value = null;
+        try {
+            console.log('📝 Buscando horas para componente:', componenteId, 'Mano de obra:', manoDeObraId);
+            
+            // Buscar el registro en la lista local que coincida con componente_id y mano_de_obra_id
+            const horasExistente = horasPorManoDeObraComponente.value.find(h => 
+                h.componente_id === componenteId && h.mano_de_obra_id === manoDeObraId
+            );
+            
+            if (horasExistente) {
+                // Si existe, actualizar
+                console.log('✅ Encontrado registro ID:', horasExistente.id);
+                const response = await actualizarHoras(horasExistente.id, datos);
+                console.log('✅ Horas actualizadas:', response);
+                
+                // Actualizar en la lista local
+                const index = horasPorManoDeObraComponente.value.findIndex(h => h.id === horasExistente.id);
+                if (index !== -1) {
+                    horasPorManoDeObraComponente.value[index] = { ...horasPorManoDeObraComponente.value[index], ...datos };
+                }
+                
+                return response;
+            } else {
+                // Si no existe, crear uno nuevo
+                console.log('📦 Creando nuevo registro de horas');
+                const nuosDatos = {
+                    componente_id: componenteId,
+                    mano_de_obra_id: manoDeObraId,
+                    ...datos
+                };
+                const response = await crearHoras(nuosDatos);
+                console.log('✅ Horas creadas:', response);
+                
+                // Agregar a la lista local
+                if (response.data) {
+                    horasPorManoDeObraComponente.value.push(response.data);
+                } else {
+                    horasPorManoDeObraComponente.value.push(response);
+                }
+                
+                return response;
+            }
+        } catch (err) {
+            console.error('❌ Error en actualizarHorasPorManoDeObraComponenteAction:', err);
+            console.error('📋 Status:', err.response?.status);
+            console.error('📋 Error message:', err.response?.data?.message || err.response?.data?.error);
+            error.value = err.message || 'Error al actualizar horas por mano de obra';
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
     return {
         horasPorManoDeObraComponente,
         loading,
@@ -142,6 +197,7 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         getHorasPorManoDeObraByComponenteIdAction,
         getHorasPorManoDeObraByIdAction,
         crearHorasPorManoDeObraAction,
-        actualizarHorasPorManoDeObraAction
+        actualizarHorasPorManoDeObraAction,
+        actualizarHorasPorManoDeObraComponenteAction
     };
 });
