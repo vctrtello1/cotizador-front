@@ -147,12 +147,20 @@
 
                     <div class="modal-item">
                         <label class="modal-label">Cantidad *</label>
-                        <input 
-                            v-model.number="componenteActual.cantidad" 
-                            type="number" 
-                            min="1" 
-                            class="form-input"
-                        >
+                        <div class="horas-editor">
+                            <button class="btn-horas-moins" @click.stop="decrementarCantidad">−</button>
+                            <input 
+                                v-model.number="componenteActual.cantidad" 
+                                type="number" 
+                                min="1"
+                                step="1"
+                                class="input-horas"
+                                @click.stop
+                                @change.stop
+                            >
+                            <span class="horas-unit">pcs</span>
+                            <button class="btn-horas-plus" @click.stop="incrementarCantidad">+</button>
+                        </div>
                     </div>
 
                     <div class="modal-item">
@@ -720,67 +728,10 @@ const abrirModalConfiguracion = async (componente) => {
         return;
     }
     
-    // Agregar a la lista de componentes del módulo
-    formData.value.componentes.push(nuevoComponente);
-    
-    // Guardar el módulo actualizado en la API inmediatamente
-    try {
-        const datosModulo = {
-            nombre: formData.value.nombre,
-            codigo: formData.value.codigo,
-            descripcion: formData.value.descripcion,
-            componentes: formData.value.componentes.map(comp => ({
-                id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
-            }))
-        };
-        
-        console.log('=== GUARDANDO COMPONENTE EN MODAL ===');
-        console.log('Nuevo componente:', nuevoComponente);
-        console.log('Todos los componentes a guardar:', formData.value.componentes);
-        console.log('Datos a enviar:', datosModulo);
-        
-        const response = await actualizarModulo(route.params.id, datosModulo);
-        
-        // El backend no retorna componentes en el update, así que hacemos una query adicional
-        const moduloCompleto = await getModuloById(route.params.id);
-        let moduloGuardado = moduloCompleto.data || moduloCompleto;
-        
-        console.log('Respuesta completa en abrirModalConfiguracion:', moduloCompleto);
-        console.log('moduloGuardado:', moduloGuardado);
-        console.log('Propiedades de moduloGuardado:', Object.keys(moduloGuardado));
-        console.log('Componentes guardados en abrirModalConfiguracion:', moduloGuardado.componentes);
-        
-        // Guardar horas en la API para el componente nuevo
-        if (moduloGuardado.componentes && moduloGuardado.componentes.length > 0) {
-            const componenteGuardado = moduloGuardado.componentes.find(
-                c => c.componente_id == nuevoComponente.id
-            );
-            
-            if (componenteGuardado) {
-                const storeHoras = useHorasPorManoDeObraComponente();
-                await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-                    componenteGuardado.id,
-                    manoDeObraEstandar?.id || 0,
-                    { horas: 1 }
-                );
-                console.log(`✅ Componente y horas guardados en API`);
-            }
-        }
-        
-        mostrarModalComponentes.value = false;
-        mostrarMensaje('✅ Componente agregado y guardado', 'success', 1500);
-        
-        // Actualizar componentes originales
-        componentesOriginales.value = JSON.parse(JSON.stringify(formData.value.componentes));
-    } catch (err) {
-        console.error('❌ Error al guardar componente en API:', err);
-        // Remover el componente de la lista local si no se pudo guardar
-        formData.value.componentes.pop();
-        mostrarMensaje('Error al agregar componente', 'error', 2000);
-    }
+    // Asignar al componenteActual y mostrar modal para configurar
+    componenteActual.value = nuevoComponente;
+    mostrarModal.value = true;
+    mostrarModalComponentes.value = false;
 };
 
 // Guardar componente del modal
@@ -887,6 +838,18 @@ const guardarHorasEnAPI = async (mano) => {
 // Confirmar selección de mano de obra y guardar horas
 const confirmarManoDeObra = async () => {
     const manoSeleccionada = manosDeObra.value.find(m => m.id === componenteActual.value.mano_de_obra_id);
+
+// Incrementar cantidad de componente
+const incrementarCantidad = () => {
+    if (!componenteActual.value) return;
+    componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) + 1;
+};
+
+// Decrementar cantidad de componente
+const decrementarCantidad = () => {
+    if (!componenteActual.value || (componenteActual.value.cantidad || 0) <= 1) return;  // No bajar de 1
+    componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) - 1;
+};
     if (!manoSeleccionada) return;
     
     componenteActual.value.mano_de_obra_horas = manoSeleccionada.horas || 0;

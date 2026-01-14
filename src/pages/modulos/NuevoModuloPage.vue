@@ -146,12 +146,20 @@
 
                     <div class="modal-item">
                         <label class="modal-label">Cantidad *</label>
-                        <input 
-                            v-model.number="componenteActual.cantidad" 
-                            type="number" 
-                            min="1" 
-                            class="form-input"
-                        >
+                        <div class="horas-editor">
+                            <button class="btn-horas-moins" @click.stop="decrementarCantidad">−</button>
+                            <input 
+                                v-model.number="componenteActual.cantidad" 
+                                type="number" 
+                                min="1"
+                                step="1"
+                                class="input-horas"
+                                @click.stop
+                                @change.stop
+                            >
+                            <span class="horas-unit">pcs</span>
+                            <button class="btn-horas-plus" @click.stop="incrementarCantidad">+</button>
+                        </div>
                     </div>
 
                     <div class="modal-item">
@@ -681,11 +689,10 @@ const abrirModalConfiguracion = async (componente) => {
         return;
     }
     
-    // Agregar a la lista de componentes del módulo
-    formData.value.componentes.push(nuevoComponente);
+    // Asignar al componenteActual y mostrar modal para configurar
+    componenteActual.value = nuevoComponente;
+    mostrarModal.value = true;
     mostrarModalComponentes.value = false;
-    
-    mostrarMensaje('✅ Componente agregado', 'success', 1500);
 };
 
 // Guardar componente del modal
@@ -787,6 +794,18 @@ const guardarHorasEnAPI = async (mano) => {
             mostrarMensaje('⚠️ Horas actualizadas localmente', 'warning', 1500);
         }
     }
+};
+
+// Incrementar cantidad de componente
+const incrementarCantidad = () => {
+    if (!componenteActual.value) return;
+    componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) + 1;
+};
+
+// Decrementar cantidad de componente
+const decrementarCantidad = () => {
+    if (!componenteActual.value || (componenteActual.value.cantidad || 0) <= 1) return;  // No bajar de 1
+    componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) - 1;
 };
 
 // Confirmar selección de mano de obra y guardar horas
