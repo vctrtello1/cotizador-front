@@ -1009,7 +1009,24 @@ const removerDelFormulario = (tipo, id) => {
     }
 };
 
-const removerMaterial = (id) => removerDelFormulario('material', id);
+const removerMaterial = async (materialId) => {
+    try {
+        // Encontrar el registro de material-por-componente para este material
+        const materialComp = materialesDelComponente.value.find(m => m.material_id === materialId);
+        
+        if (materialComp && materialComp.id) {
+            // Eliminar del backend
+            await storeMaterialesPorComponente.eliminarMaterialPorComponenteAction(materialComp.id);
+            
+            // Actualizar lista local
+            materialesDelComponente.value = materialesDelComponente.value.filter(m => m.id !== materialComp.id);
+            mostrarMensaje('✅ Material eliminado', 'success', 2000);
+        }
+    } catch (err) {
+        console.error('Error eliminando material:', err);
+        mostrarMensaje('❌ Error al eliminar material', 'error', 3000);
+    }
+};
 const removerHerraje = async (herrajeId) => {
     try {
         // Encontrar el registro de cantidad-por-herraje para este herraje
@@ -1021,7 +1038,7 @@ const removerHerraje = async (herrajeId) => {
             
             // Actualizar lista local
             herrajesDelComponente.value = herrajesDelComponente.value.filter(h => h.id !== herrajeComp.id);
-            //mostrarMensaje('✅ Herraje eliminado', 'success', 2000);
+            mostrarMensaje('✅ Herraje eliminado', 'success', 2000);
         }
     } catch (err) {
         console.error('Error eliminando herraje:', err);
@@ -1332,9 +1349,10 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
 };
 
 // Computed properties para filtros
-const materialesFiltrados = computed(() => 
-    filtrarCatalogo(materialesDisponibles.value, busquedaMaterial.value, formData.value.materiales)
-);
+const materialesFiltrados = computed(() => {
+    const materialesAgregados = materialesDelComponente.value.map(m => m.material_id);
+    return filtrarCatalogo(materialesDisponibles.value, busquedaMaterial.value, materialesAgregados);
+});
 
 const herrajesFiltrados = computed(() => {
     const herrajesAgregados = herrajesDelComponente.value.map(h => h.herraje_id);
@@ -1342,14 +1360,38 @@ const herrajesFiltrados = computed(() => {
 });
 
 // Métodos simplificados
-const agregarMaterial = (material) => {
-    if (material && !formData.value.materiales.some(m => m.id === material.id)) {
-        formData.value.materiales.push({
-            ...material,
-            cantidad: material.cantidad || 1
+const agregarMaterial = async (material) => {
+    try {
+        if (!material || !material.id) return;
+        
+        // Verificar que no exista ya
+        const yaExiste = materialesDelComponente.value.some(m => m.material_id === material.id);
+        if (yaExiste) {
+            mostrarMensaje('⚠️ Este material ya está agregado', 'warning', 2000);
+            return;
+        }
+        
+        // Crear el registro en el backend
+        const datosNuevo = {
+            componente_id: parseInt(route.params.id),
+            material_id: material.id,
+            cantidad: 1
+        };
+        
+        const resultado = await storeMaterialesPorComponente.crearMaterialPorComponenteAction(datosNuevo);
+        
+        // Agregar a la lista local
+        materialesDelComponente.value.push({
+            ...resultado,
+            material: material
         });
+        
+        mostrarMensaje('✅ Material agregado', 'success', 2000);
         mostrarSelectorMateriales.value = false;
         busquedaMaterial.value = '';
+    } catch (err) {
+        console.error('Error agregando material:', err);
+        mostrarMensaje('❌ Error al agregar material', 'error', 3000);
     }
 };
 

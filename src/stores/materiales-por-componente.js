@@ -4,7 +4,9 @@ import {
     fetchMaterialesPorComponente, 
     getMaterialesPorComponenteId,
     getMaterialPorComponenteById,
-    crearMaterialPorComponente 
+    crearMaterialPorComponente,
+    actualizarMaterialPorComponente,
+    eliminarMaterialPorComponente 
 } from '@/http/materiales_por_componente-api';
 
 export const useMaterialesPorComponente = defineStore('materiales-por-componente', () => {
@@ -78,6 +80,43 @@ export const useMaterialesPorComponente = defineStore('materiales-por-componente
         }
     };
 
+    const actualizarMaterialPorComponenteAction = async (id, datos) => {
+        loading.value = true;
+        error.value = null;
+        try {
+            const response = await actualizarMaterialPorComponente(id, datos);
+            console.log('Material por componente actualizado:', response);
+            const index = materialesPorComponente.value.findIndex(m => m.id === id);
+            if (index !== -1) {
+                materialesPorComponente.value[index] = response;
+            }
+            return response;
+        } catch (err) {
+            console.error('Error actualizando material por componente en store:', err);
+            error.value = err.message || 'Error al actualizar material por componente';
+            throw error.value;
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    const eliminarMaterialPorComponenteAction = async (id) => {
+        loading.value = true;
+        error.value = null;
+        try {
+            await eliminarMaterialPorComponente(id);
+            console.log('Material por componente eliminado:', id);
+            materialesPorComponente.value = materialesPorComponente.value.filter(m => m.id !== id);
+            return true;
+        } catch (err) {
+            console.error('Error eliminando material por componente en store:', err);
+            error.value = err.message || 'Error al eliminar material por componente';
+            throw error.value;
+        } finally {
+            loading.value = false;
+        }
+    };
+
     const getMaterialesPorComponente = (componenteId) => {
         return materialesPorComponente.value.filter(
             material => material.componente_id === componenteId
@@ -95,6 +134,8 @@ export const useMaterialesPorComponente = defineStore('materiales-por-componente
         fetchMaterialesPorComponenteAction,
         getMaterialPorComponenteByIdAction,
         crearMaterialPorComponenteAction,
+        actualizarMaterialPorComponenteAction,
+        eliminarMaterialPorComponenteAction,
         getMaterialesPorComponente,
         getCantidadMaterialesPorComponente
     };

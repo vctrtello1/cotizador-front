@@ -19,3 +19,13 @@ export const crearMaterialPorComponente = async (datos) => {
   const response = await api.post("/materiales-por-componente", datos);
   return response.data;
 };
+
+export const actualizarMaterialPorComponente = async (id, datos) => {
+  const response = await api.put(`/materiales-por-componente/${id}`, datos);
+  return response.data;
+};
+
+export const eliminarMaterialPorComponente = async (id) => {
+  const response = await api.delete(`/materiales-por-componente/${id}`);
+  return response.data;
+};
