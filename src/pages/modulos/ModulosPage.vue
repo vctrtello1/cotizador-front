@@ -2,8 +2,11 @@
     <div class="modulos-container">
         <!-- Header -->
         <div class="page-header">
-            <h1 class="page-title">Módulos</h1>
-            <button class="btn-primary" @click="$router.push('/nuevo-modulo')">+ Nuevo Módulo</button>
+            <div class="header-content">
+                <h1 class="page-title">📦 Módulos</h1>
+                <p class="header-subtitle">{{ modulos.length }} módulos disponibles</p>
+            </div>
+            <button class="btn-primary" @click="$router.push('/nuevo-modulo')">➕ Nuevo Módulo</button>
         </div>
 
         <!-- Mensaje de error -->
@@ -39,28 +42,33 @@
 
                 <p class="modulo-descripcion">{{ modulo.descripcion || 'Sin descripción' }}</p>
 
-                <div class="modulo-info">
-                    <div class="info-item">
-                        <label>Componentes</label>
-                        <span>{{ modulo.componentes?.length || 0 }}</span>
+                <div class="modulo-stats">
+                    <div class="stat-item">
+                        <div class="stat-icon">⚙️</div>
+                        <div class="stat-content">
+                            <label>Componentes</label>
+                            <span>{{ modulo.componentes?.length || 0 }}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div v-if="modulo.componentes && modulo.componentes.length > 0" class="componentes-preview">
-                    <label>Componentes:</label>
+                <div v-if="modulo.componentes && modulo.componentes.length > 0" class="componentes-list">
+                    <div class="list-header">
+                        <label>🔗 Componentes:</label>
+                    </div>
                     <ul>
                         <li v-for="comp in modulo.componentes.slice(0, 3)" :key="comp.id">
-                            {{ comp.nombre }}
+                            <span class="component-bullet">•</span> {{ comp.nombre }}
                         </li>
                         <li v-if="modulo.componentes.length > 3" class="mas-items">
-                            +{{ modulo.componentes.length - 3 }} más
+                            <span class="more-badge">+{{ modulo.componentes.length - 3 }}</span> más
                         </li>
                     </ul>
                 </div>
 
                 <div class="card-actions">
-                    <button class="btn-edit" @click="editarModulo(modulo.id)">Editar</button>
-                    <button class="btn-delete" @click="confirmarEliminar(modulo.id)">Eliminar</button>
+                    <button class="btn-edit" @click="editarModulo(modulo.id)" title="Editar módulo">✏️ Editar</button>
+                    <button class="btn-delete" @click="confirmarEliminar(modulo.id)" title="Eliminar módulo">🗑️ Eliminar</button>
                 </div>
             </div>
         </div>
@@ -154,6 +162,14 @@ onMounted(() => {
     align-items: center;
     margin-bottom: 30px;
     gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(212, 165, 116, 0.05) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(212, 165, 116, 0.2);
+}
+
+.header-content {
+    flex: 1;
 }
 
 .page-title {
@@ -161,6 +177,14 @@ onMounted(() => {
     font-weight: 700;
     color: #5a4037;
     margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.header-subtitle {
+    color: #999;
+    font-size: 14px;
+    margin: 8px 0 0 0;
+    font-weight: 500;
 }
 
 .error-message,
@@ -274,7 +298,7 @@ onMounted(() => {
     flex-grow: 1;
 }
 
-.modulo-info {
+.modulo-stats {
     display: flex;
     gap: 15px;
     padding: 15px 0;
@@ -282,109 +306,183 @@ onMounted(() => {
     border-bottom: 1px solid #ede7e0;
 }
 
-.info-item {
-    text-align: center;
+.stat-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: #faf7f2;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: #f5f1ed;
+    transform: translateX(2px);
+}
+
+.stat-icon {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-content {
     flex: 1;
 }
 
-.info-item label {
+.stat-content label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     color: #999;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+    font-weight: 600;
 }
 
-.info-item span {
+.stat-content span {
     display: block;
     font-size: 18px;
     font-weight: 700;
     color: #5a4037;
 }
 
-.componentes-preview {
-    background: #faf7f2;
-    border-radius: 6px;
-    padding: 10px;
+.componentes-list {
+    background: linear-gradient(135deg, #faf7f2 0%, #f5f1ed 100%);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #ede7e0;
+    transition: all 0.3s ease;
 }
 
-.componentes-preview label {
+.componentes-list:hover {
+    border-color: #d4a574;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+}
+
+.list-header {
+    margin-bottom: 8px;
+}
+
+.list-header label {
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     color: #5a4037;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     display: block;
-    margin-bottom: 8px;
 }
 
-.componentes-preview ul {
+.componentes-list ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.componentes-preview li {
+.componentes-list li {
     font-size: 13px;
     color: #666;
-    padding: 4px 0;
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.componentes-list li:hover {
+    color: #5a4037;
+    padding-left: 4px;
+}
+
+.component-bullet {
+    color: #d4a574;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
 }
 
 .mas-items {
     color: #999;
-    font-style: italic;
+    justify-content: flex-start;
+}
+
+.more-badge {
+    background: #d4a574;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 4px;
 }
 
 .card-actions {
     display: flex;
     gap: 10px;
     margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid #ede7e0;
 }
 
 .btn-primary,
 .btn-edit,
 .btn-secondary {
     flex: 1;
-    padding: 10px 16px;
+    padding: 12px 16px;
     border: none;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    text-transform: none;
+    letter-spacing: 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .btn-primary {
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
 .btn-primary:hover {
-    background: #c89564;
     transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0px);
 }
 
 .btn-edit {
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
+    box-shadow: 0 1px 4px rgba(212, 165, 116, 0.2);
 }
 
 .btn-edit:hover {
-    background: #c89564;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+    transform: translateY(-1px);
 }
 
 .btn-delete {
     background: #fee;
     color: #c33;
-    border: 1px solid #c33;
+    border: 1.5px solid #c33;
 }
 
 .btn-delete:hover {
     background: #c33;
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(204, 51, 51, 0.2);
 }
 
 .btn-secondary {
