@@ -1265,90 +1265,39 @@ const decrementarCantidad = (item) => {
     }
 };
 
-// Guardar cantidad de material
-const guardarCantidadMaterial = async (material) => {
-    if (!material || !material.id) return;
+// Guardar cantidad genérica de material/herraje
+const guardarCantidad = async (item, tipo) => {
+    if (!item || !item.id) return;
     
-    const cantidadFinal = Math.round(material.cantidad || 1);
+    const cantidadFinal = Math.round(item.cantidad || 1);
+    const maxCantidad = 50;
     
-    // Validar que no exceda 50 unidades
-    if (cantidadFinal > 50) {
-        mostrarMensaje('📦 La cantidad máxima permitida es 50 unidades', 'warning', 3000);
-        material.cantidad = 50; // Resetear a 50
+    if (cantidadFinal > maxCantidad) {
+        const emoji = tipo === 'material' ? '📦' : '🔩';
+        mostrarMensaje(`${emoji} La cantidad máxima permitida es ${maxCantidad} unidades`, 'warning', 3000);
+        item.cantidad = maxCantidad;
         return;
     }
     
-    material.cantidad = cantidadFinal;
+    item.cantidad = cantidadFinal;
     
     try {
-        // Encontrar la relación en materialesDelComponente por id (es la relación, no el material)
-        const materialComp = materialesDelComponente.value.find(m => m.id === material.id);
-        console.log('🔍 Buscando material con ID:', material.id);
-        console.log('📋 materialesDelComponente:', materialesDelComponente.value);
-        console.log('✅ materialComp encontrado:', materialComp);
+        const itemsList = tipo === 'material' ? materialesDelComponente.value : herrajesDelComponente.value;
+        const itemComp = itemsList.find(i => i.id === item.id);
+        if (!itemComp?.id) return;
         
-        if (!materialComp || !materialComp.id) {
-            console.warn('⚠️ No se encontró el registro de cantidad para este material');
-            return;
-        }
+        const store = tipo === 'material' ? storeMaterialesPorComponente : storeCantidadPorHerraje;
+        const action = tipo === 'material' ? 'actualizarMaterialPorComponenteAction' : 'actualizarCantidadPorHerrajeAction';
         
-        const datosActualizar = {
-            cantidad: cantidadFinal
-        };
-        
-        console.log(`📡 Enviando PUT a /materiales-por-componente/${materialComp.id}`, datosActualizar);
-        
-        // Actualizar en el backend
-        const resultado = await storeMaterialesPorComponente.actualizarMaterialPorComponenteAction(materialComp.id, datosActualizar);
-        console.log('✅ Respuesta del API:', resultado);
-        //mostrarMensaje('✅ Cantidad de material actualizada', 'success', 2000);
+        await store[action](itemComp.id, { cantidad: cantidadFinal });
     } catch (err) {
-        console.error('❌ Error guardando cantidad de material:', err);
-        mostrarMensaje('❌ Error al actualizar cantidad de material', 'error', 3000);
+        console.error(`Error guardando cantidad de ${tipo}:`, err);
+        mostrarMensaje(`❌ Error al actualizar cantidad de ${tipo}`, 'error', 3000);
     }
 };
 
-// Guardar cantidad de herraje
-const guardarCantidadHerraje = async (herraje) => {
-    if (!herraje || !herraje.id) return;
-    
-    const cantidadFinal = Math.round(herraje.cantidad || 1);
-    
-    // Validar que no exceda 50 unidades
-    if (cantidadFinal > 50) {
-        mostrarMensaje('🔩 La cantidad máxima permitida es 50 unidades', 'warning', 3000);
-        herraje.cantidad = 50; // Resetear a 50
-        return;
-    }
-    
-    herraje.cantidad = cantidadFinal;
-    
-    try {
-        // Encontrar la relación en herrajesDelComponente por id (es la relación, no el herraje)
-        const herrajeComp = herrajesDelComponente.value.find(h => h.id === herraje.id);
-        console.log('🔍 Buscando herraje con ID:', herraje.id);
-        console.log('📋 herrajesDelComponente:', herrajesDelComponente.value);
-        console.log('✅ herrajeComp encontrado:', herrajeComp);
-        
-        if (!herrajeComp || !herrajeComp.id) {
-            console.warn('⚠️ No se encontró el registro de cantidad para este herraje');
-            return;
-        }
-        
-        const datosActualizar = {
-            cantidad: cantidadFinal
-        };
-        
-        console.log(`📡 Enviando PUT a /cantidad-por-herrajes/${herrajeComp.id}`, datosActualizar);
-        
-        // Actualizar en el backend
-        const resultado = await storeCantidadPorHerraje.actualizarCantidadPorHerrajeAction(herrajeComp.id, datosActualizar);
-        console.log('✅ Respuesta del API:', resultado);
-    } catch (err) {
-        console.error('❌ Error guardando cantidad de herraje:', err);
-        mostrarMensaje('❌ Error al actualizar cantidad de herraje', 'error', 3000);
-    }
-};
+const guardarCantidadMaterial = (material) => guardarCantidad(material, 'material');
+const guardarCantidadHerraje = (herraje) => guardarCantidad(herraje, 'herraje');
 
 // Cargar catálogos de forma genérica
 const cargarCatalogo = async (endpoint, targetRef) => {
@@ -1406,33 +1355,26 @@ const agregarMaterial = async (material) => {
     try {
         if (!material || !material.id) return;
         
-        // Verificar que no exista ya
         const yaExiste = materialesDelComponente.value.some(m => m.material_id === material.id);
         if (yaExiste) {
             mostrarMensaje('⚠️ Este material ya está agregado', 'warning', 2000);
             return;
         }
         
-        // Crear el registro en el backend
-        const datosNuevo = {
+        const resultado = await storeMaterialesPorComponente.crearMaterialPorComponenteAction({
             componente_id: parseInt(route.params.id),
             material_id: material.id,
             cantidad: 1
-        };
+        });
         
-        const resultado = await storeMaterialesPorComponente.crearMaterialPorComponenteAction(datosNuevo);
-        
-        // Extraer los datos correctamente del resultado (que viene como {data: {...}})
         const datosResultado = resultado.data || resultado;
-        
-        // Agregar a la lista local con el material del selector que ya tiene todos los datos
         materialesDelComponente.value.push({
             id: datosResultado.id,
             componente_id: datosResultado.componente_id,
             material_id: datosResultado.material_id,
             cantidad: datosResultado.cantidad,
             created_at: datosResultado.created_at,
-            material: { ...material }  // Usar el objeto del selector con todos sus datos
+            material: { ...material }
         });
         
         mostrarMensaje('✅ Material agregado', 'success', 2000);
@@ -1448,43 +1390,27 @@ const agregarHerraje = async (herraje) => {
     try {
         if (!herraje || !herraje.id) return;
         
-        console.log('📌 Herraje del selector:', herraje);
-        console.log('📌 Propiedades:', Object.keys(herraje));
-        
-        // Verificar que no exista ya
         const yaExiste = herrajesDelComponente.value.some(h => h.herraje_id === herraje.id);
         if (yaExiste) {
             mostrarMensaje('⚠️ Este herraje ya está agregado', 'warning', 2000);
             return;
         }
         
-        // Crear el registro en el backend
-        const datosNuevo = {
+        const resultado = await storeCantidadPorHerraje.crearCantidadPorHerrajeAction({
             componente_id: parseInt(route.params.id),
             herraje_id: herraje.id,
             cantidad: 1
-        };
+        });
         
-        const resultado = await storeCantidadPorHerraje.crearCantidadPorHerrajeAction(datosNuevo);
-        
-        // Extraer los datos correctamente del resultado (que viene como {data: {...}})
         const datosResultado = resultado.data || resultado;
-        console.log('📌 Resultado completo:', resultado);
-        console.log('📌 datosResultado:', datosResultado);
-        console.log('📌 datosResultado.id:', datosResultado.id);
-        
-        // Agregar a la lista local con el herraje del selector que ya tiene todos los datos
-        const nuevoHerraje = {
+        herrajesDelComponente.value.push({
             id: datosResultado.id,
             componente_id: datosResultado.componente_id,
             herraje_id: datosResultado.herraje_id,
             cantidad: datosResultado.cantidad,
             created_at: datosResultado.created_at,
-            herraje: { ...herraje }  // Usar el objeto del selector con todos sus datos
-        };
-        console.log('📌 Nuevo herraje a guardar:', nuevoHerraje);
-        console.log('📌 herraje.herraje.precio_unitario:', nuevoHerraje.herraje.precio_unitario);
-        herrajesDelComponente.value.push(nuevoHerraje);
+            herraje: { ...herraje }
+        });
         
         mostrarMensaje('✅ Herraje agregado', 'success', 2000);
         mostrarSelectorHerrajes.value = false;
