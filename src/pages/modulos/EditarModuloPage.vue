@@ -373,6 +373,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getModuloById, actualizarModulo, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
 import { crearAcabado } from '@/http/acabado-api .js';
+import { crearCliente as crearManoDeObra } from '@/http/mano_de_obra-api .js';
 import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
 
 const router = useRouter();
@@ -707,13 +708,37 @@ const abrirModalConfiguracion = async (componente) => {
         }
     }
     
+    // Buscar o crear la mano de obra estándar
+    let manoDeObraEstandar = manosDeObra.value.find(m => m.nombre && m.nombre.toLowerCase().includes('estándar'));
+    
+    if (!manoDeObraEstandar) {
+        // Si no existe, intentar crearla
+        try {
+            const nuevaMano = await crearManoDeObra({
+                nombre: 'Mano de Obra Estándar',
+                codigo: 'MO_EST',
+                descripcion: 'Mano de obra estándar',
+                costo_hora: 0
+            });
+            
+            // Agregar a la lista de manos de obra
+            const manoCreada = nuevaMano.data || nuevaMano;
+            manosDeObra.value.push(manoCreada);
+            manoDeObraEstandar = manoCreada;
+            
+            console.log('✅ Mano de obra estándar creada:', manoDeObraEstandar);
+        } catch (err) {
+            console.warn('⚠️ No se pudo crear mano de obra estándar:', err);
+        }
+    }
+    
     componenteActual.value = {
         id: componente.id,
         nombre: componente.nombre,
         codigo: componente.codigo,
         cantidad: 1,
         acabado_id: acabadoEstandar?.id || '',
-        mano_de_obra_id: ''
+        mano_de_obra_id: manoDeObraEstandar?.id || ''
     };
     mostrarModal.value = true;
     mostrarModalComponentes.value = false;
@@ -827,6 +852,20 @@ const confirmarManoDeObra = async () => {
     
     componenteActual.value.mano_de_obra_horas = manoSeleccionada.horas || 0;
     mostrarModalSeleccionarManoDeObra.value = false;
+    
+    // Guardar horas en la API
+    try {
+        const storeHoras = useHorasPorManoDeObraComponente();
+        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+            componenteActual.value.id,
+            manoSeleccionada.id,
+            { horas: manoSeleccionada.horas || 1 }
+        );
+        console.log('✅ Mano de obra guardada en API');
+    } catch (err) {
+        console.warn('⚠️ No se pudo guardar mano de obra en API:', err);
+    }
+    
     mostrarMensaje('✅ Mano de obra confirmada', 'success', 1500);
 };
 
