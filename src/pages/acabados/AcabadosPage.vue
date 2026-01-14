@@ -41,12 +41,8 @@
 
                 <div class="acabado-info">
                     <div class="info-item">
-                        <label>Tipo</label>
-                        <span>{{ acabado.tipo || '-' }}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Precio</label>
-                        <span>${{ formatCurrency(acabado.precio) }}</span>
+                        <label>💰 Costo</label>
+                        <span>${{ formatCurrency(acabado.precio || 0) }}</span>
                     </div>
                 </div>
 
@@ -279,12 +275,13 @@ onMounted(() => {
 
 .acabado-info {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1rem;
     margin: 1rem 0;
-    padding: 1rem;
-    background-color: #f9f9f9;
-    border-radius: 4px;
+    padding: 1.2rem;
+    background: linear-gradient(135deg, #f5f5f5 0%, #f9f9f9 100%);
+    border: 2px solid #d4a574;
+    border-radius: 8px;
 }
 
 .info-item {
@@ -295,14 +292,16 @@ onMounted(() => {
 .info-item label {
     font-size: 0.85rem;
     color: #999;
-    font-weight: 500;
-    margin-bottom: 0.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .info-item span {
-    font-size: 1rem;
-    color: #333;
-    font-weight: 500;
+    font-size: 1.3rem;
+    color: #d4a574;
+    font-weight: 700;
 }
 
 .card-actions {
