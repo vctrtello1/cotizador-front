@@ -419,29 +419,22 @@
                         <div class="horas-counter">
                             <div class="counter-info">
                                 <div class="counter-label">Total de Horas</div>
-                                <div class="counter-value">{{ horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</div>
+                                <div class="counter-value">{{ totalHoras }} horas</div>
                             </div>
                             <div class="quantity-controls">
                                 <button 
                                     type="button"
                                     class="btn-qty-control btn-qty-minus"
                                     @click="decrementarHorasTotal"
+                                    :disabled="guardandoHoras"
                                     title="Disminuir"
                                 >−</button>
-                                <input 
-                                    id="qty-horas-total"
-                                    :value="horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0)"
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    placeholder="0"
-                                    @input="actualizarHorasTotal"
-                                    class="quantity-input"
-                                />
+                                <span class="quantity-display">{{ totalHoras }}</span>
                                 <button 
                                     type="button"
                                     class="btn-qty-control btn-qty-plus"
                                     @click="incrementarHorasTotal"
+                                    :disabled="guardandoHoras"
                                     title="Aumentar"
                                 >+</button>
                             </div>
@@ -727,7 +720,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
@@ -759,6 +752,7 @@ const formData = ref({
 const errors = ref({});
 const error = ref(null);
 const guardando = ref(false);
+const guardandoHoras = ref(false);
 const cargando = ref(true);
 const cargandoMateriales = ref(false);
 const cargandoHerrajes = ref(false);
@@ -776,6 +770,11 @@ const mostrarSelectorMateriales = ref(false);
 const materialesDisponibles = ref([]);
 const materialSeleccionadoId = ref(null);
 const busquedaMaterial = ref('');
+
+// Total de horas calculado dinámicamente
+const totalHoras = computed(() => {
+    return horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
+});
 
 // Datos para seleccionar herrajes
 const herrajesDisponibles = ref([]);
@@ -953,7 +952,8 @@ const cargarHorasManoDeObra = async () => {
             // Filtrar por componente_id
             horasManoDeObra.value = todasLasHoras.filter(h => h.componente_id === parseInt(componenteId));
             console.log('✅ Horas de mano de obra para este componente:', horasManoDeObra.value);
-            console.log('   Total de horas:', horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0));
+            const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
+            console.log('   Total de horas:', totalHoras);
         } else {
             horasManoDeObra.value = [];
             console.log('📭 No hay horas de mano de obra para este componente');
@@ -1025,36 +1025,102 @@ const cancelarEdicionManoDeObra = () => {
 };
 
 // Funciones para editar horas de mano de obra
-const incrementarHorasTotal = () => {
-    if (horasManoDeObra.value.length > 0) {
-        if (horasManoDeObra.value[0]) {
-            horasManoDeObra.value[0].horas = Math.floor((horasManoDeObra.value[0].horas || 0)) + 1;
-        }
+const guardarCambiosHoras = async () => {
+    // Evitar guardar múltiples veces simultáneamente
+    if (guardandoHoras.value) {
+        console.log('⏳ Ya hay un guardado en progreso, ignorando solicitud...');
+        return;
+    }
+    
+    guardandoHoras.value = true;
+    
+    try {
+        console.log('💾 Guardando cambios de horas en la API...');
+            console.log('   Estado actual de horasManoDeObra:', horasManoDeObra.value);
+            
+            // Crear promesas para actualizar cada hora
+            const promesas = horasManoDeObra.value.map(hora => {
+                console.log('📤 Enviando:', { id: hora.id, horas: Math.floor(hora.horas || 0) });
+                return storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
+                    id: hora.id,
+                    componente_id: route.params.id,
+                    mano_de_obra_id: formData.value.mano_de_obra?.id,
+                    horas: Math.floor(hora.horas || 0)
+                });
+            });
+            
+            const resultados = await Promise.allSettled(promesas);
+            
+            // Procesar resultados
+            const exitosos = resultados.filter(r => r.status === 'fulfilled').length;
+            const errores = resultados.filter(r => r.status === 'rejected').length;
+            
+            // Mostrar detalles de los errores
+            resultados.forEach((resultado, index) => {
+                if (resultado.status === 'rejected') {
+                    console.error(`❌ Error en hora ${index + 1}:`, resultado.reason);
+                }
+            });
+            
+            console.log(`✅ Horas guardadas: ${exitosos} exitosas, ${errores} con error`);
+            console.log('   Estado después de guardar:', horasManoDeObra.value);
+    } catch (err) {
+        console.error('❌ Error guardando horas:', err);
+    } finally {
+        guardandoHoras.value = false;
     }
 };
 
-const decrementarHorasTotal = () => {
+const incrementarHorasTotal = async () => {
+    console.log('➕ INICIO: Incrementando horas');
+    console.log('   ANTES - totalHoras.value:', totalHoras.value);
+    console.log('   ANTES - horasManoDeObra:', horasManoDeObra.value.map((h, i) => ({ bloque: i, horas: h.horas })));
+    
     if (horasManoDeObra.value.length > 0) {
-        const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-        if (totalHoras > 0) {
-            if (horasManoDeObra.value[0]) {
-                horasManoDeObra.value[0].horas = Math.max(0, Math.floor((horasManoDeObra.value[0].horas || 0)) - 1);
-            }
+        // Incrementar el último bloque (el más reciente/general)
+        const ultimoBloque = horasManoDeObra.value[horasManoDeObra.value.length - 1];
+        if (ultimoBloque) {
+            const horasAnteriores = ultimoBloque.horas;
+            ultimoBloque.horas = Math.floor((ultimoBloque.horas || 0)) + 1;
+            console.log('   CAMBIO APLICADO - último bloque:', horasAnteriores, '→', ultimoBloque.horas);
+            console.log('   DESPUÉS - totalHoras.value:', totalHoras.value);
+            await guardarCambiosHoras();
+            console.log('   FINAL - totalHoras.value:', totalHoras.value);
+            console.log('   FINAL - horasManoDeObra:', horasManoDeObra.value.map((h, i) => ({ bloque: i, horas: h.horas })));
         }
     }
+    console.log('➕ FIN: Incrementando horas');
 };
 
-const actualizarHorasTotal = (event) => {
+const decrementarHorasTotal = async () => {
+    console.log('➖ Decrementando horas');
     if (horasManoDeObra.value.length > 0) {
-        const nuevoTotal = Math.max(0, Math.floor(parseFloat(event.target.value) || 0));
         const totalActual = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-        const diferencia = nuevoTotal - totalActual;
-        
-        // Agregar la diferencia al primer bloque
-        if (horasManoDeObra.value[0]) {
-            horasManoDeObra.value[0].horas = Math.max(0, (horasManoDeObra.value[0].horas || 0) + diferencia);
+        // Mínimo 1 hora total (el backend requiere al menos 1 hora)
+        if (totalActual > 1) {
+            // Encontrar el primer bloque con horas > 0 para decrementar
+            let decrementado = false;
+            for (let i = 0; i < horasManoDeObra.value.length; i++) {
+                if (horasManoDeObra.value[i].horas > 0) {
+                    const horasAnteriores = horasManoDeObra.value[i].horas;
+                    horasManoDeObra.value[i].horas = Math.max(0, horasManoDeObra.value[i].horas - 1);
+                    console.log(`   Bloque ${i}: ${horasAnteriores} → ${horasManoDeObra.value[i].horas}`);
+                    decrementado = true;
+                    break;
+                }
+            }
+            if (decrementado) {
+                console.log('   Total calculado:', totalHoras.value);
+                await guardarCambiosHoras();
+            }
+        } else {
+            console.log('   No se puede decrementar, ya está en mínimo (1 hora total)');
         }
     }
+};
+
+const actualizarHorasTotal = async (event) => {
+    // Esta función ya no se usa, ahora solo se usan los botones +/-
 };
 
 // Funciones para editar acabado
@@ -1233,13 +1299,18 @@ const abrirSelectorManoDeObra = async () => {
 };
 
 // Agregar mano de obra seleccionada
-const agregarManoDeObra = (manoDeObra) => {
+const agregarManoDeObra = async (manoDeObra) => {
     if (manoDeObra) {
         formData.value.mano_de_obra = {
             ...manoDeObra
         };
         mostrarSelectorManoDeObra.value = false;
         busquedaManoDeObra.value = '';
+        
+        // Cargar horas para la nueva mano de obra
+        console.log('🔄 Nueva mano de obra asignada, cargando horas...');
+        await cargarHorasManoDeObra();
+        console.log('✅ Horas cargadas para la nueva mano de obra:', horasManoDeObra.value);
     }
 };
 

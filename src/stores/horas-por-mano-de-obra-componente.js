@@ -79,6 +79,7 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
         loading.value = true;
         error.value = null;
         try {
+            console.log('📤 Enviando datos de horas:', datos);
             const response = await crearHoras(datos);
             console.log('✅ Horas por mano de obra creadas:', response);
             
@@ -90,8 +91,15 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
             return response;
         } catch (err) {
             console.error('❌ Error creando horas por mano de obra:', err);
+            console.error('📋 Detalles del error:', {
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                data: err.response?.data,
+                message: err.message
+            });
             error.value = err.message || 'Error al crear horas por mano de obra';
-            return null;
+            // Rechazar la promesa para que Promise.allSettled lo marque como rechazo
+            throw err;
         } finally {
             loading.value = false;
         }
