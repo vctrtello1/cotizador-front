@@ -433,7 +433,7 @@
                                     :value="horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0)"
                                     type="number"
                                     min="0"
-                                    step="0.5"
+                                    step="1"
                                     placeholder="0"
                                     @input="actualizarHorasTotal"
                                     class="quantity-input"
@@ -1027,13 +1027,8 @@ const cancelarEdicionManoDeObra = () => {
 // Funciones para editar horas de mano de obra
 const incrementarHorasTotal = () => {
     if (horasManoDeObra.value.length > 0) {
-        const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-        const nuevasHoras = Math.round((totalHoras + 0.5) * 2) / 2;
-        const diferencia = nuevasHoras - totalHoras;
-        
-        // Agregar la diferencia al primer bloque
         if (horasManoDeObra.value[0]) {
-            horasManoDeObra.value[0].horas = (horasManoDeObra.value[0].horas || 0) + diferencia;
+            horasManoDeObra.value[0].horas = Math.floor((horasManoDeObra.value[0].horas || 0)) + 1;
         }
     }
 };
@@ -1042,12 +1037,8 @@ const decrementarHorasTotal = () => {
     if (horasManoDeObra.value.length > 0) {
         const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
         if (totalHoras > 0) {
-            const nuevasHoras = Math.round((totalHoras - 0.5) * 2) / 2;
-            const diferencia = nuevasHoras - totalHoras;
-            
-            // Restar la diferencia del primer bloque
             if (horasManoDeObra.value[0]) {
-                horasManoDeObra.value[0].horas = Math.max(0, (horasManoDeObra.value[0].horas || 0) + diferencia);
+                horasManoDeObra.value[0].horas = Math.max(0, Math.floor((horasManoDeObra.value[0].horas || 0)) - 1);
             }
         }
     }
@@ -1055,7 +1046,7 @@ const decrementarHorasTotal = () => {
 
 const actualizarHorasTotal = (event) => {
     if (horasManoDeObra.value.length > 0) {
-        const nuevoTotal = parseFloat(event.target.value) || 0;
+        const nuevoTotal = Math.max(0, Math.floor(parseFloat(event.target.value) || 0));
         const totalActual = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
         const diferencia = nuevoTotal - totalActual;
         
