@@ -21,12 +21,13 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
             console.log('   Tipo:', typeof response);
             console.log('   Es array:', Array.isArray(response));
             
-            if (response.data && Array.isArray(response.data)) {
+            // El API ya retorna response.data, así que esperamos un array directamente
+            if (Array.isArray(response)) {
+                horasPorManoDeObraComponente.value = response;
+                console.log('✅ Horas cargadas como array');
+            } else if (response.data && Array.isArray(response.data)) {
                 horasPorManoDeObraComponente.value = response.data;
                 console.log('✅ Usando response.data');
-            } else if (Array.isArray(response)) {
-                horasPorManoDeObraComponente.value = response;
-                console.log('✅ Usando response directamente');
             } else {
                 console.warn('⚠️ Respuesta no es un array ni tiene .data:', response);
                 horasPorManoDeObraComponente.value = [];

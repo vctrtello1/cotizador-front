@@ -817,6 +817,21 @@ const cargarComponente = async () => {
         console.log('Componente cargado:', data);
         console.log('costo_unitario:', data.costo_unitario);
         console.log('costo_total:', data.costo_total);
+        
+        // Mano de obra: puede venir como objeto completo o como ID
+        let manoDeObraData = null;
+        if (data.mano_de_obra_id) {
+            // Si es un objeto, usarlo directamente; si es ID, cargar desde API
+            if (typeof data.mano_de_obra_id === 'object' && data.mano_de_obra_id.id) {
+                console.log('📦 Mano de obra viene como objeto:', data.mano_de_obra_id.nombre);
+                manoDeObraData = data.mano_de_obra_id;
+            } else if (typeof data.mano_de_obra_id === 'number' || typeof data.mano_de_obra_id === 'string') {
+                console.log('📚 Cargando mano de obra ID:', data.mano_de_obra_id);
+                manoDeObraData = await storeManosDeObra.getManosDeObraByIdStore(data.mano_de_obra_id);
+                console.log('✅ Mano de obra cargada:', manoDeObraData);
+            }
+        }
+        
         formData.value = {
             nombre: data.nombre || '',
             codigo: data.codigo || '',
@@ -824,7 +839,7 @@ const cargarComponente = async () => {
             costo_unitario: data.costo_unitario || data.costo_total || '',
             materiales: data.materiales || [],
             herrajes: data.herrajes || [],
-            mano_de_obra: data.mano_de_obra_id || null,
+            mano_de_obra: manoDeObraData || null,
             acabado: data.acabado_id || null,
         };
         
@@ -952,17 +967,36 @@ const cargarHorasManoDeObra = async () => {
         
         // Filtrar las horas para este componente
         const todasLasHoras = storeHorasPorManoDeObra.horasPorManoDeObraComponente;
-        console.log('📡 Todas las horas disponibles:', todasLasHoras);
+        console.log('📡 Todas las horas disponibles:', todasLasHoras.length);
         
         if (todasLasHoras && todasLasHoras.length > 0) {
-            // Filtrar por componente_id
-            horasManoDeObra.value = todasLasHoras.filter(h => h.componente_id === parseInt(componenteId));
-            console.log('✅ Horas de mano de obra para este componente:', horasManoDeObra.value);
+            // Filtrar por componente_id (asegurar que sea comparación numérica)
+            horasManoDeObra.value = todasLasHoras.filter(h => {
+                return parseInt(h.componente_id) === parseInt(componenteId);
+            });
+            console.log('✅ Horas de mano de obra para este componente:', horasManoDeObra.value.length);
             const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
             console.log('   Total de horas:', totalHoras);
         } else {
             horasManoDeObra.value = [];
-            console.log('📭 No hay horas de mano de obra para este componente');
+            console.log('📭 No hay horas de mano de obra en el sistema');
+            
+            // Si el componente tiene mano de obra pero no hay horas, crear un registro inicial
+            if (formData.value.mano_de_obra && formData.value.mano_de_obra.id) {
+                console.log('🆕 Creando primer registro de horas inicial (1 hora)...');
+                try {
+                    await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
+                        componente_id: parseInt(componenteId),
+                        mano_de_obra_id: formData.value.mano_de_obra.id,
+                        horas: 1
+                    });
+                    console.log('✅ Primer registro de horas creado');
+                    // Recargar horas
+                    await cargarHorasManoDeObra();
+                } catch (err) {
+                    console.error('⚠️ Error creando primer registro de horas:', err);
+                }
+            }
         }
     } catch (err) {
         console.error('❌ Error cargando horas de mano de obra:', err);
@@ -1339,6 +1373,23 @@ const agregarManoDeObra = async (manoDeObra) => {
             
             // Cargar horas para la nueva mano de obra
             await cargarHorasManoDeObra();
+            
+            // Si no hay horas, crear una inicial con 1 hora
+            if (horasManoDeObra.value.length === 0) {
+                console.log('🆕 Creando primer registro de horas con 1 hora...');
+                try {
+                    const nuevaHora = await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
+                        componente_id: parseInt(route.params.id),
+                        mano_de_obra_id: manoDeObra.id,
+                        horas: 1
+                    });
+                    console.log('✅ Primer registro de horas creado:', nuevaHora);
+                    // Recargar horas
+                    await cargarHorasManoDeObra();
+                } catch (err) {
+                    console.error('⚠️ Error creando primer registro de horas:', err);
+                }
+            }
             
             console.log('✅ Mano de obra actualizada en la API correctamente');
         } catch (err) {
