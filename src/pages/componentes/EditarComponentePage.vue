@@ -1295,6 +1295,7 @@ const guardarCantidadMaterial = async (material) => {
         // Actualizar en el backend
         const resultado = await storeMaterialesPorComponente.actualizarMaterialPorComponenteAction(materialComp.id, datosActualizar);
         console.log('✅ Respuesta del API:', resultado);
+        //mostrarMensaje('✅ Cantidad de material actualizada', 'success', 2000);
     } catch (err) {
         console.error('❌ Error guardando cantidad de material:', err);
         mostrarMensaje('❌ Error al actualizar cantidad de material', 'error', 3000);
