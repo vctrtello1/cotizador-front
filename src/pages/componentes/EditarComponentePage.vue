@@ -327,7 +327,8 @@
                                             min="1"
                                             step="1"
                                             placeholder="1"
-                                            @blur="herraje.cantidad = Math.round(herraje.cantidad || 1)"
+                                            @blur="guardarCantidadHerraje(herraje)"
+                                            @keyup.enter="guardarCantidadHerraje(herraje)"
                                             class="quantity-input"
                                         />
                                         <button 
@@ -1228,12 +1229,49 @@ const incrementarCantidad = (item) => {
     } else if (item) {
         item.cantidad = 2;
     }
+    guardarCantidadHerraje(item);
 };
 
 // Decrementar cantidad de material/herraje
 const decrementarCantidad = (item) => {
     if (item && typeof item.cantidad === 'number' && item.cantidad > 1) {
         item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
+    }
+    guardarCantidadHerraje(item);
+};
+
+// Guardar cantidad de herraje
+const guardarCantidadHerraje = async (herraje) => {
+    if (!herraje || !herraje.id) return;
+    
+    const cantidadFinal = Math.round(herraje.cantidad || 1);
+    herraje.cantidad = cantidadFinal;
+    
+    try {
+        // Encontrar la relación en herrajesDelComponente por herraje_id
+        const herrajeComp = herrajesDelComponente.value.find(h => h.herraje_id === herraje.id);
+        console.log('🔍 Buscando herraje con ID:', herraje.id);
+        console.log('📋 herrajesDelComponente:', herrajesDelComponente.value);
+        console.log('✅ herrajeComp encontrado:', herrajeComp);
+        
+        if (!herrajeComp || !herrajeComp.id) {
+            console.warn('⚠️ No se encontró el registro de cantidad para este herraje');
+            return;
+        }
+        
+        const datosActualizar = {
+            cantidad: cantidadFinal
+        };
+        
+        console.log(`📡 Enviando PUT a /cantidad-por-herrajes/${herrajeComp.id}`, datosActualizar);
+        
+        // Actualizar en el backend
+        const resultado = await storeCantidadPorHerraje.actualizarCantidadPorHerrajeAction(herrajeComp.id, datosActualizar);
+        console.log('✅ Respuesta del API:', resultado);
+        mostrarMensaje(`✅ Cantidad actualizada a ${cantidadFinal}`, 'success', 2000);
+    } catch (err) {
+        console.error('❌ Error guardando cantidad de herraje:', err);
+        mostrarMensaje('❌ Error al actualizar cantidad de herraje', 'error', 3000);
     }
 };
 

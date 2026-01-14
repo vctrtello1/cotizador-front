@@ -19,3 +19,8 @@ export const crearCantidadPorHerraje = async (datos) => {
   const response = await api.post("/cantidad-por-herrajes", datos);
   return response.data;
 };
+
+export const actualizarCantidadPorHerraje = async (id, datos) => {
+  const response = await api.put(`/cantidad-por-herrajes/${id}`, datos);
+  return response.data;
+};

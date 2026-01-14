@@ -4,7 +4,8 @@ import {
     fetchCantidadPorHerraje, 
     getCantidadPorHerrajeId,
     getCantidadPorHerrajeById,
-    crearCantidadPorHerraje 
+    crearCantidadPorHerraje,
+    actualizarCantidadPorHerraje 
 } from '@/http/cantidad_por_herraje-api';
 
 export const useCantidadPorHerraje = defineStore('cantidad-por-herraje', () => {
@@ -78,6 +79,27 @@ export const useCantidadPorHerraje = defineStore('cantidad-por-herraje', () => {
         }
     };
 
+    const actualizarCantidadPorHerrajeAction = async (id, datos) => {
+        loading.value = true;
+        error.value = null;
+        try {
+            const response = await actualizarCantidadPorHerraje(id, datos);
+            console.log('Cantidad por herraje actualizada:', response);
+            // Actualizar el item en el array local
+            const index = cantidadPorHerraje.value.findIndex(h => h.id === id);
+            if (index !== -1) {
+                cantidadPorHerraje.value[index] = response;
+            }
+            return response;
+        } catch (err) {
+            console.error('Error actualizando cantidad por herraje en store:', err);
+            error.value = err.message || 'Error al actualizar cantidad por herraje';
+            throw error.value;
+        } finally {
+            loading.value = false;
+        }
+    };
+
     const getCantidadPorComponente = (componenteId) => {
         return cantidadPorHerraje.value.filter(
             herraje => herraje.componente_id === componenteId
@@ -95,6 +117,7 @@ export const useCantidadPorHerraje = defineStore('cantidad-por-herraje', () => {
         fetchCantidadPorHerrajeAction,
         getCantidadPorHerrajeByIdAction,
         crearCantidadPorHerrajeAction,
+        actualizarCantidadPorHerrajeAction,
         getCantidadPorComponente,
         getCantidadHerrajesPorComponente
     };
