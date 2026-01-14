@@ -1133,30 +1133,58 @@ onMounted(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        background: rgba(0, 0, 0, 0);
+    }
+    to {
+        background: rgba(0, 0, 0, 0.6);
+    }
 }
 
 .modal-content {
     background: white;
-    border-radius: 12px;
+    border-radius: 14px;
     max-width: 500px;
     width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
     max-height: 80vh;
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content-large {
+    max-width: 650px;
 }
 
 .modal-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid #e8ddd7;
+    padding: 24px 28px;
+    border-bottom: 2px solid #e8ddd7;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border-radius: 14px 14px 0 0;
 }
 
 .modal-title {
@@ -1164,27 +1192,29 @@ onMounted(() => {
     font-weight: 700;
     color: #5a4037;
     margin: 0;
+    letter-spacing: 0.3px;
 }
 
 .modal-close {
     background: none;
     border: none;
     font-size: 24px;
-    color: #ccc;
+    color: #999;
     cursor: pointer;
     padding: 0;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 6px;
 }
 
 .modal-close:hover {
     background: #f5f1ed;
     color: #5a4037;
+    transform: rotate(90deg);
 }
 
 .modal-body {
@@ -1229,52 +1259,74 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    padding: 16px 18px;
     background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
     border-left: 4px solid #d4a574;
-    border-radius: 6px;
-    gap: 12px;
+    border-radius: 8px;
+    gap: 16px;
     flex-wrap: wrap;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
+}
+
+.selected-item-edit:hover {
+    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.15);
+    transform: translateY(-2px);
+    border-left-color: #c89564;
 }
 
 .quantity-input-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
+    position: relative;
 }
 
 .quantity-input-group label {
     font-size: 11px;
-    font-weight: 600;
-    color: #8b7355;
+    font-weight: 700;
+    color: #5a4037;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .quantity-input {
-    width: 60px;
-    padding: 6px 8px;
-    border: 1px solid #d4a574;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
+    width: 70px;
+    padding: 10px 12px;
+    border: 2px solid #d4a574;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 700;
     color: #5a4037;
     text-align: center;
-    background: white;
-    transition: all 0.2s;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.1);
+}
+
+.quantity-input:hover {
+    border-color: #c89564;
+    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
+    box-shadow: 0 4px 8px rgba(212, 165, 116, 0.15);
+    transform: translateY(-1px);
 }
 
 .quantity-input:focus {
     outline: none;
     border-color: #c89564;
-    box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.2);
-    background: #fff9f0;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.3);
+    background: white;
+    transform: translateY(-2px);
 }
 
 .quantity-input::placeholder {
     color: #d4a574;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .item-info {
@@ -1301,30 +1353,68 @@ onMounted(() => {
 }
 
 .btn-remove {
-    background: #ffebee;
+    background: linear-gradient(135deg, #ffebee 0%, #ffdddd 100%);
     color: #c62828;
-    border: 1px solid #c62828;
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    font-size: 18px;
+    border: 2px solid #c62828;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    font-size: 20px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 4px rgba(198, 40, 40, 0.1);
 }
 
 .btn-remove:hover {
-    background: #ff9999;
+    background: linear-gradient(135deg, #ff9999 0%, #ff8888 100%);
     color: white;
+    border-color: #a01010;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(198, 40, 40, 0.25);
+}
+
+.btn-remove:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(198, 40, 40, 0.15);
 }
 
 .add-section {
-    margin-bottom: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid #e0d5c7;
+    margin-bottom: 28px;
+    padding: 18px 0;
+    border-bottom: 2px solid #e8ddd7;
+}
+
+.btn-add-material {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+}
+
+.btn-add-material:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+}
+
+.btn-add-material:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(212, 165, 116, 0.3);
 }
 
 .select-bar {
@@ -1573,24 +1663,25 @@ onMounted(() => {
 .material-card {
     background: white;
     border: 2px solid #e8ddd7;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
 }
 
 .material-card:hover {
     border-color: #d4a574;
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.2);
-    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212, 165, 116, 0.25);
+    transform: translateY(-4px);
 }
 
 .card-header {
-    padding: 16px;
+    padding: 18px;
     background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
-    border-bottom: 1px solid #e8ddd7;
+    border-bottom: 2px solid #e8ddd7;
 }
 
 .card-name {
@@ -1598,21 +1689,23 @@ onMounted(() => {
     color: #5a4037;
     font-size: 15px;
     margin-bottom: 8px;
+    line-height: 1.4;
 }
 
 .card-badge {
     display: inline-block;
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 5px 12px;
+    border-radius: 14px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.2);
 }
 
 .card-body {
-    padding: 16px;
+    padding: 18px;
     flex: 1;
 }
 
@@ -1620,9 +1713,9 @@ onMounted(() => {
     font-size: 12px;
     color: #8b7355;
     margin: 0 0 6px 0;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
 }
 
 .card-price {
@@ -1633,31 +1726,34 @@ onMounted(() => {
 }
 
 .card-footer {
-    padding: 12px 16px;
-    background: #f5f1ed;
-    border-top: 1px solid #e8ddd7;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
+    border-top: 2px solid #e8ddd7;
 }
 
 .btn-select {
     width: 100%;
-    padding: 10px 16px;
+    padding: 12px 16px;
     background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.15);
+    letter-spacing: 0.3px;
 }
 
 .btn-select:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
 .btn-select:active {
     transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.15);
 }
 
 .btn-add-material {
