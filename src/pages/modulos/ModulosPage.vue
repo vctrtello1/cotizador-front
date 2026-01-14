@@ -6,7 +6,7 @@
                 <h1 class="page-title">📦 Módulos</h1>
                 <p class="header-subtitle">{{ modulos.length }} módulos disponibles</p>
             </div>
-            <button class="btn-primary" @click="$router.push('/nuevo-modulo')">➕ Nuevo Módulo</button>
+            <button class="btn-primary" @click="crearModuloNuevo">➕ Nuevo Módulo</button>
         </div>
 
         <!-- Mensaje de error -->
@@ -90,7 +90,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { fetchModulos, eliminarModulo as deleteModuloAPI } from '@/http/modulos-api';
+import { fetchModulos, eliminarModulo as deleteModuloAPI, crearModulo } from '@/http/modulos-api';
 
 const router = useRouter();
 
@@ -120,6 +120,31 @@ const cargarModulos = async () => {
 // Editar módulo
 const editarModulo = (id) => {
     router.push(`/editar-modulo/${id}`);
+};
+
+// Crear nuevo módulo con valores por defecto
+const crearModuloNuevo = async () => {
+    cargando.value = true;
+    error.value = null;
+    try {
+        const datosModulo = {
+            nombre: 'Nuevo Módulo',
+            codigo: `MOD_${Date.now()}`,
+            descripcion: 'Descripción del módulo',
+            componentes: []
+        };
+        const response = await crearModulo(datosModulo);
+        const nuevoModulo = response.data || response;
+        exito.value = 'Módulo creado correctamente';
+        // Redirigir a editar el nuevo módulo
+        setTimeout(() => {
+            router.push(`/editar-modulo/${nuevoModulo.id}`);
+        }, 500);
+    } catch (err) {
+        console.error('Error creando módulo:', err);
+        error.value = err.response?.data?.message || 'Error al crear el módulo';
+        cargando.value = false;
+    }
 };
 
 // Confirmar eliminación
