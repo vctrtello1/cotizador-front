@@ -180,18 +180,23 @@
                     </div>
 
                     <div v-else class="componentes-lista">
-                        <div v-for="componente in todosLosComponentes" :key="componente.id" class="componente-item">
+                        <div 
+                            v-for="componente in todosLosComponentes" 
+                            :key="componente.id" 
+                            class="componente-item"
+                            @click="!formData.componentes.some(c => c.id == componente.id) && abrirModalConfiguracion(componente)"
+                            :class="{ 'componente-item-disabled': formData.componentes.some(c => c.id == componente.id) }"
+                        >
                             <div class="componente-info-modal">
                                 <h4>{{ componente.nombre }}</h4>
                                 <p>{{ componente.codigo }}</p>
                             </div>
-                            <button 
-                                class="btn-add-component"
-                                @click="abrirModalConfiguracion(componente)"
-                                :disabled="formData.componentes.some(c => c.id == componente.id)"
-                            >
-                                {{ formData.componentes.some(c => c.id == componente.id) ? 'Agregado' : 'Agregar' }}
-                            </button>
+                            <div v-if="formData.componentes.some(c => c.id == componente.id)" class="componente-item-badge">
+                                ✓ Agregado
+                            </div>
+                            <div v-else class="componente-item-icon">
+                                ➜
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1405,16 +1410,24 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px;
+    padding: 16px;
     background: #faf7f2;
-    border: 1px solid #e0d7d0;
-    border-radius: 6px;
+    border: 2px solid #e0d7d0;
+    border-radius: 8px;
     transition: all 0.2s;
+    cursor: pointer;
 }
 
-.componente-item:hover {
+.componente-item:not(.componente-item-disabled):hover {
     background: #f5f1ed;
     border-color: #d4a574;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.15);
+    transform: translateX(4px);
+}
+
+.componente-item-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .componente-info-modal {
@@ -1424,7 +1437,7 @@ onMounted(() => {
 .componente-info-modal h4 {
     margin: 0;
     color: #5a4037;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
 }
 
@@ -1432,6 +1445,31 @@ onMounted(() => {
     margin: 4px 0 0 0;
     color: #999;
     font-size: 12px;
+}
+
+.componente-item-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #efe;
+    color: #3c3;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.componente-item-icon {
+    color: #d4a574;
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 16px;
+    transition: transform 0.2s;
+}
+
+.componente-item:not(.componente-item-disabled):hover .componente-item-icon {
+    transform: translateX(4px);
 }
 
 .btn-add-component {
