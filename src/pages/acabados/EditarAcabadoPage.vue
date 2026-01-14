@@ -2,7 +2,10 @@
     <div class="form-container">
         <!-- Header -->
         <div class="form-header">
-            <h1 class="form-title">Editar Acabado</h1>
+            <div class="header-content">
+                <h1 class="form-title">✏️ Editar Acabado</h1>
+                <p class="form-subtitle">Actualiza los detalles de este acabado</p>
+            </div>
         </div>
 
         <!-- Mensaje de error -->
@@ -51,16 +54,6 @@
             </div>
 
             <div class="form-group">
-                <label for="tipo">Tipo</label>
-                <input
-                    v-model="formData.tipo"
-                    type="text"
-                    id="tipo"
-                    placeholder="Ej: Pintura, Lacado, Vitrificado"
-                />
-            </div>
-
-            <div class="form-group">
                 <label for="costo">Costo *</label>
                 <input
                     v-model.number="formData.costo"
@@ -75,9 +68,12 @@
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn-secondary" @click="$router.back()">Cancelar</button>
+                <button type="button" class="btn-secondary" @click="$router.back()">
+                    <span>✕ Cancelar</span>
+                </button>
                 <button type="submit" class="btn-primary" :disabled="guardando">
-                    {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+                    <span v-if="guardando">⏳ Guardando...</span>
+                    <span v-else>✓ Guardar Cambios</span>
                 </button>
             </div>
         </form>
@@ -97,7 +93,6 @@ const formData = ref({
     nombre: '',
     codigo: '',
     descripcion: '',
-    tipo: '',
     costo: '',
 });
 
@@ -116,7 +111,6 @@ const cargarAcabado = async () => {
             nombre: data.nombre || '',
             codigo: data.codigo || '',
             descripcion: data.descripcion || '',
-            tipo: data.tipo || '',
             costo: data.costo || '',
         };
     } catch (err) {
@@ -154,7 +148,6 @@ const guardarAcabado = async () => {
             nombre: formData.value.nombre.trim(),
             codigo: formData.value.codigo.trim(),
             descripcion: formData.value.descripcion.trim(),
-            tipo: formData.value.tipo.trim(),
             costo: parseFloat(formData.value.costo),
         };
         
@@ -182,31 +175,47 @@ onMounted(() => {
     max-width: 600px;
     margin: 0 auto;
     padding: 2rem;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    min-height: 100vh;
 }
 
 .form-header {
     margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #d4a574;
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .form-title {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: #333;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #5a4037;
     margin: 0;
 }
 
+.form-subtitle {
+    font-size: 0.95rem;
+    color: #8b7355;
+    margin: 0;
+    font-weight: 500;
+}
+
 .error-message {
-    padding: 1rem;
+    padding: 1.2rem 1.5rem;
     margin-bottom: 1.5rem;
     background-color: #ffebee;
     color: #c62828;
-    border: 1px solid #ef5350;
-    border-radius: 4px;
+    border: 2px solid #ef5350;
+    border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-weight: 500;
 }
 
 .error-close {
@@ -214,38 +223,58 @@ onMounted(() => {
     border: none;
     color: inherit;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.error-close:hover {
+    opacity: 0.7;
 }
 
 .loading-state {
     text-align: center;
-    padding: 3rem 2rem;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-    color: #666;
+    padding: 4rem 2rem;
+    background-color: white;
+    border-radius: 12px;
+    color: #999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.loading-state p {
+    font-size: 1.1rem;
+    margin: 0;
+    color: #8b7355;
 }
 
 .form-content {
     background: white;
-    padding: 1.5rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #ede6dd;
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.8rem;
 }
 
 .form-group:last-of-type {
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #333;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #5a4037;
     font-size: 0.95rem;
+    letter-spacing: 0.4px;
 }
 
 .form-group input,
@@ -292,40 +321,50 @@ onMounted(() => {
 .form-actions {
     display: flex;
     gap: 1rem;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
 .btn-primary,
 .btn-secondary {
-    padding: 0.75rem 2rem;
+    flex: 1;
+    padding: 12px 24px;
     border: none;
-    border-radius: 4px;
-    font-size: 1rem;
+    border-radius: 8px;
+    font-size: 15px;
     cursor: pointer;
-    transition: opacity 0.3s;
-    font-weight: 500;
+    transition: all 0.3s;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .btn-primary {
-    background-color: #4CAF50;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
     color: white;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
-    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
 
 .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
 }
 
 .btn-secondary {
-    background-color: #9e9e9e;
+    background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
     color: white;
+    box-shadow: 0 2px 8px rgba(158, 158, 158, 0.2);
 }
 
 .btn-secondary:hover {
-    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
 }
 </style>
