@@ -666,6 +666,7 @@
                             v-for="manoDeObra in manoDeObraFiltrada()"
                             :key="manoDeObra.id"
                             class="material-card"
+                            :class="{ 'selected': formData.mano_de_obra?.id === manoDeObra.id }"
                             @click="agregarManoDeObra(manoDeObra)"
                         >
                             <div class="card-header">
@@ -677,7 +678,8 @@
                                 <p class="card-price">${{ formatCurrency(manoDeObra.costo_hora) }}</p>
                             </div>
                             <div class="card-footer">
-                                <button class="btn-select">+ Seleccionar</button>
+                                <button v-if="formData.mano_de_obra?.id === manoDeObra.id" class="btn-select btn-select-active" disabled>✓ Seleccionado</button>
+                                <button v-else class="btn-select">+ Seleccionar</button>
                             </div>
                         </div>
                     </div>
@@ -2709,10 +2711,21 @@ onMounted(async () => {
     box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
 }
 
+.material-card.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15), 0 8px 20px rgba(76, 175, 80, 0.25);
+    background: rgba(76, 175, 80, 0.02);
+}
+
 .material-card:hover {
     border-color: #d4a574;
     box-shadow: 0 8px 20px rgba(212, 165, 116, 0.25);
     transform: translateY(-4px);
+}
+
+.material-card.selected:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15), 0 8px 20px rgba(76, 175, 80, 0.3);
 }
 
 .card-header {
@@ -2791,6 +2804,15 @@ onMounted(async () => {
 .btn-select:active {
     transform: translateY(0);
     box-shadow: 0 2px 6px rgba(76, 175, 80, 0.15);
+}
+
+.btn-select-active {
+    background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
+    cursor: default;
+}
+
+.btn-select-active:disabled {
+    opacity: 1;
 }
 
 .btn-add-material {
