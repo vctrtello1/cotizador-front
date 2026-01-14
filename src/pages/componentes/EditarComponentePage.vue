@@ -54,27 +54,6 @@
             </div>
 
             <div class="form-group">
-                <label for="unidad_medida">Unidad de Medida</label>
-                <input
-                    v-model="formData.unidad_medida"
-                    type="text"
-                    id="unidad_medida"
-                    placeholder="Ej: Pieza, Metro, Kg"
-                />
-            </div>
-
-            <div class="form-group">
-                <label for="cantidad_disponible">Cantidad Disponible</label>
-                <input
-                    v-model.number="formData.cantidad_disponible"
-                    type="number"
-                    id="cantidad_disponible"
-                    min="0"
-                    placeholder="Ej: 50"
-                />
-            </div>
-
-            <div class="form-group">
                 <label for="costo_unitario">Costo Unitario *</label>
                 <input
                     v-model.number="formData.costo_unitario"
@@ -86,6 +65,59 @@
                     required
                 />
                 <span v-if="errors.costo_unitario" class="error-text">{{ errors.costo_unitario }}</span>
+            </div>
+
+            <!-- Sección de Materiales -->
+            <div class="section-info">
+                <h3 class="section-title">📋 Materiales</h3>
+                <div v-if="formData.materiales && formData.materiales.length > 0" class="info-list">
+                    <div v-for="material in formData.materiales" :key="material.id" class="info-item-card">
+                        <div class="info-label">{{ material.nombre }}</div>
+                        <div class="info-detail">Código: {{ material.codigo }}</div>
+                        <div class="info-detail">Precio: ${{ formatCurrency(material.precio_unitario) }}</div>
+                    </div>
+                </div>
+                <div v-else class="empty-info">Sin materiales</div>
+            </div>
+
+            <!-- Sección de Herrajes -->
+            <div class="section-info">
+                <h3 class="section-title">🔩 Herrajes</h3>
+                <div v-if="formData.herrajes && formData.herrajes.length > 0" class="info-list">
+                    <div v-for="herraje in formData.herrajes" :key="herraje.id" class="info-item-card">
+                        <div class="info-label">{{ herraje.nombre }}</div>
+                        <div class="info-detail">Código: {{ herraje.codigo }}</div>
+                        <div class="info-detail">Precio: ${{ formatCurrency(herraje.precio_unitario) }}</div>
+                    </div>
+                </div>
+                <div v-else class="empty-info">Sin herrajes</div>
+            </div>
+
+            <!-- Sección de Mano de Obra -->
+            <div class="section-info">
+                <h3 class="section-title">👷 Mano de Obra</h3>
+                <div v-if="formData.mano_de_obra" class="info-list">
+                    <div class="info-item-card">
+                        <div class="info-label">{{ formData.mano_de_obra.nombre }}</div>
+                        <div class="info-detail">Descripción: {{ formData.mano_de_obra.descripcion }}</div>
+                        <div class="info-detail">Costo/hora: ${{ formatCurrency(formData.mano_de_obra.costo_hora) }}</div>
+                        <div class="info-detail">Tiempo: {{ formData.mano_de_obra.tiempo }} horas</div>
+                    </div>
+                </div>
+                <div v-else class="empty-info">Sin mano de obra asignada</div>
+            </div>
+
+            <!-- Sección de Acabado -->
+            <div class="section-info">
+                <h3 class="section-title">🎨 Acabado</h3>
+                <div v-if="formData.acabado" class="info-list">
+                    <div class="info-item-card">
+                        <div class="info-label">{{ formData.acabado.nombre }}</div>
+                        <div class="info-detail">Descripción: {{ formData.acabado.descripcion }}</div>
+                        <div class="info-detail">Costo: ${{ formatCurrency(formData.acabado.costo) }}</div>
+                    </div>
+                </div>
+                <div v-else class="empty-info">Sin acabado asignado</div>
             </div>
 
             <div class="form-actions">
@@ -104,6 +136,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { getComponenteById } from '@/http/componentes-api';
 
 const router = useRouter();
 const route = useRoute();
@@ -113,9 +146,11 @@ const formData = ref({
     nombre: '',
     codigo: '',
     descripcion: '',
-    unidad_medida: '',
-    cantidad_disponible: '',
     costo_unitario: '',
+    materiales: [],
+    herrajes: [],
+    mano_de_obra: null,
+    acabado: null,
 });
 
 const errors = ref({});
@@ -127,15 +162,31 @@ const cargando = ref(true);
 const cargarComponente = async () => {
     try {
         cargando.value = true;
-        // TODO: Implementar con API cuando esté disponible
-        // const response = await getComponenteById(route.params.id);
-        console.log('Cargando componente:', route.params.id);
+        const response = await getComponenteById(route.params.id);
+        const data = response.data || response;
+        console.log('Componente cargado:', data);
+        formData.value = {
+            nombre: data.nombre || '',
+            codigo: data.codigo || '',
+            descripcion: data.descripcion || '',
+            costo_unitario: data.costo_unitario || '',
+            materiales: data.materiales || [],
+            herrajes: data.herrajes || [],
+            mano_de_obra: data.mano_de_obra_id || null,
+            acabado: data.acabado_id || null,
+        };
     } catch (err) {
         error.value = 'Error al cargar el componente';
         console.error(err);
     } finally {
         cargando.value = false;
     }
+};
+
+// Formatear moneda
+const formatCurrency = (value) => {
+    if (!value) return '0.00';
+    return parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
 // Validar formulario
@@ -165,8 +216,6 @@ const guardarComponente = async () => {
             nombre: formData.value.nombre.trim(),
             codigo: formData.value.codigo.trim(),
             descripcion: formData.value.descripcion.trim(),
-            unidad_medida: formData.value.unidad_medida.trim(),
-            cantidad_disponible: formData.value.cantidad_disponible,
             costo_unitario: parseFloat(formData.value.costo_unitario),
         };
         
@@ -386,5 +435,55 @@ onMounted(() => {
 .btn-secondary:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
+}
+
+.section-info {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border: 1px solid #e8ddd7;
+    border-radius: 8px;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #5a4037;
+    margin: 0 0 1rem 0;
+}
+
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.info-item-card {
+    padding: 1rem;
+    background: white;
+    border-left: 3px solid #d4a574;
+    border-radius: 4px;
+}
+
+.info-label {
+    font-weight: 700;
+    color: #5a4037;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.info-detail {
+    font-size: 0.9rem;
+    color: #8b7355;
+    margin: 0.25rem 0;
+}
+
+.empty-info {
+    padding: 1rem;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    background: white;
+    border-radius: 4px;
 }
 </style>
