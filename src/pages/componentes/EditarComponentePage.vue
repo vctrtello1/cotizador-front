@@ -168,7 +168,6 @@
                         <div class="info-label">{{ formData.mano_de_obra.nombre }}</div>
                         <div class="info-detail">Descripción: {{ formData.mano_de_obra.descripcion }}</div>
                         <div class="info-detail">Costo/hora: ${{ formatCurrency(formData.mano_de_obra.costo_hora) }}</div>
-                        <div class="info-detail">Tiempo: {{ formData.mano_de_obra.tiempo }} horas</div>
                     </div>
                 </div>
                 <div v-else class="empty-info">Sin mano de obra asignada</div>
@@ -355,10 +354,6 @@
                                     <span class="info-label">Costo/hora:</span>
                                     <span class="info-value">${{ formatCurrency(formData.mano_de_obra.costo_hora) }}</span>
                                 </div>
-                                <div class="info-row">
-                                    <span class="info-label">Tiempo:</span>
-                                    <span class="info-value">{{ formData.mano_de_obra.tiempo }} horas</span>
-                                </div>
                             </div>
                             <div class="button-group-vertical">
                                 <button class="btn-edit-item" @click="iniciarEdicionManoDeObra" title="Editar">✏️ Editar</button>
@@ -397,18 +392,6 @@
                                     step="0.01"
                                     min="0"
                                     placeholder="0.00"
-                                    class="form-input-small"
-                                />
-                            </div>
-                            <div class="form-group-small">
-                                <label for="tiempo-mano">Tiempo (horas)</label>
-                                <input 
-                                    id="tiempo-mano"
-                                    v-model.number="manoDeObraEditando.tiempo"
-                                    type="number"
-                                    step="0.5"
-                                    min="0"
-                                    placeholder="0"
                                     class="form-input-small"
                                 />
                             </div>
