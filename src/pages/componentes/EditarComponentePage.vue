@@ -153,33 +153,11 @@
                 <div class="modal-body">
                     <!-- Sección para agregar nuevo material -->
                     <div class="add-section">
-                        <h4 class="items-subtitle">Agregar Material</h4>
-                        <div class="search-bar">
-                            <input 
-                                v-model="busquedaMaterial" 
-                                type="text" 
-                                placeholder="Buscar material..." 
-                                class="search-input"
-                                @focus="cargarMateriales"
-                            />
-                        </div>
-                        <div v-if="busquedaMaterial && materialesFiltrados().length > 0" class="available-list">
-                            <div v-for="material in materialesFiltrados()" :key="material.id" class="available-item">
-                                <div class="item-info">
-                                    <div class="item-name">{{ material.nombre }}</div>
-                                    <div class="item-code">{{ material.codigo }}</div>
-                                    <div class="item-price">${{ formatCurrency(material.precio_unitario) }}</div>
-                                </div>
-                                <button 
-                                    type="button" 
-                                    class="btn-add" 
-                                    @click="materialSeleccionadoId = material.id; agregarMaterial()"
-                                >+ Agregar</button>
-                            </div>
-                        </div>
-                        <div v-else-if="busquedaMaterial && materialesFiltrados().length === 0" class="empty-search">
-                            No hay materiales disponibles
-                        </div>
+                        <button 
+                            type="button" 
+                            class="btn-add-material"
+                            @click="abrirSelectorMateriales()"
+                        >+ Agregar Material</button>
                     </div>
 
                     <!-- Sección de materiales seleccionados -->
@@ -196,7 +174,7 @@
                             </div>
                         </div>
                     </div>
-                    <div v-else-if="!busquedaMaterial" class="empty-list">
+                    <div v-else class="empty-list">
                         <p>📭 No hay materiales seleccionados</p>
                     </div>
                 </div>
@@ -302,6 +280,52 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Selector de Materiales -->
+        <div v-if="mostrarSelectorMateriales" class="modal-overlay" @click.self="mostrarSelectorMateriales = false">
+            <div class="modal-content modal-content-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">📋 Seleccionar Materiales</h3>
+                    <button class="modal-close" @click="mostrarSelectorMateriales = false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="search-section">
+                        <input 
+                            v-model="busquedaMaterial"
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar material..."
+                        />
+                    </div>
+                    <div class="materiales-grid">
+                        <div 
+                            v-for="material in materialesFiltrados()"
+                            :key="material.id"
+                            class="material-card"
+                            @click="agregarMaterial(material)"
+                        >
+                            <div class="card-header">
+                                <div class="card-name">{{ material.nombre }}</div>
+                                <div class="card-badge">{{ material.codigo }}</div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-label">Precio Unitario</p>
+                                <p class="card-price">${{ formatCurrency(material.precio_unitario) }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-select">+ Seleccionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="materialesFiltrados().length === 0" class="empty-list">
+                        <p>📭 No hay materiales disponibles</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarSelectorMateriales = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -335,6 +359,7 @@ const mostrarModalMateriales = ref(false);
 const mostrarModalHerrajes = ref(false);
 const mostrarModalManoDeObra = ref(false);
 const mostrarModalAcabado = ref(false);
+const mostrarSelectorMateriales = ref(false);
 
 // Datos para seleccionar materiales
 const materialesDisponibles = ref([]);
@@ -405,24 +430,37 @@ const cargarMateriales = async () => {
     }
 };
 
+// Abrir selector de materiales
+const abrirSelectorMateriales = async () => {
+    await cargarMateriales();
+    mostrarSelectorMateriales.value = true;
+};
+
 // Agregar material seleccionado
-const agregarMaterial = () => {
-    if (!materialSeleccionadoId.value) return;
-    const material = materialesDisponibles.value.find(m => m.id === materialSeleccionadoId.value);
+const agregarMaterial = (material) => {
     if (material && !formData.value.materiales.some(m => m.id === material.id)) {
         formData.value.materiales.push(material);
-        materialSeleccionadoId.value = null;
+        mostrarSelectorMateriales.value = false;
+        busquedaMaterial.value = '';
     }
 };
 
 // Filtrar materiales disponibles
 const materialesFiltrados = () => {
-    return materialesDisponibles.value.filter(m => {
-        const yaAgregado = formData.value.materiales.some(mat => mat.id === m.id);
-        const coincideBusqueda = m.nombre.toLowerCase().includes(busquedaMaterial.value.toLowerCase()) ||
-                                 m.codigo.toLowerCase().includes(busquedaMaterial.value.toLowerCase());
-        return !yaAgregado && coincideBusqueda;
-    });
+    const filtrados = materialesDisponibles.value.filter(m => 
+        !formData.value.materiales.some(mat => mat.id === m.id)
+    );
+    
+    // Filtrar por búsqueda
+    if (busquedaMaterial.value.trim()) {
+        const busqueda = busquedaMaterial.value.toLowerCase();
+        return filtrados.filter(m => 
+            m.nombre.toLowerCase().includes(busqueda) ||
+            m.codigo.toLowerCase().includes(busqueda)
+        );
+    }
+    
+    return filtrados;
 };
 
 // Validar formulario
@@ -902,6 +940,74 @@ onMounted(() => {
     border-bottom: 1px solid #e0d5c7;
 }
 
+.select-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.material-select {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0d5c7;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #5a4037;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23d4a574' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+.material-select:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+    background-color: #fff9f0;
+}
+
+.material-select:disabled {
+    background-color: #f0f0f0;
+    color: #8b7355;
+    cursor: not-allowed;
+}
+
+.btn-add {
+    background: #d4a574;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-add:hover:not(:disabled) {
+    background: #c89564;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.3);
+}
+
+.btn-add:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-add:disabled {
+    background: #c0a589;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .search-bar {
     margin-bottom: 16px;
 }
@@ -950,30 +1056,6 @@ onMounted(() => {
     background: #fff9f0;
     border-color: #d4a574;
     box-shadow: 0 2px 4px rgba(212, 165, 116, 0.2);
-}
-
-.btn-add {
-    background: #d4a574;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.btn-add:hover {
-    background: #c89564;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.3);
-}
-
-.btn-add:active {
-    transform: translateY(0);
 }
 
 .empty-search {
@@ -1060,5 +1142,157 @@ onMounted(() => {
     justify-content: flex-end;
     gap: 12px;
     background: #faf7f2;
+}
+
+/* Estilos para el modal de selección de materiales */
+.modal-content-large {
+    max-width: 700px;
+    max-height: 85vh;
+}
+
+.search-section {
+    margin-bottom: 24px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0d5c7;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.3s;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+}
+
+.search-input::placeholder {
+    color: #d4a574;
+    opacity: 0.6;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.2);
+    background: white;
+}
+
+.materiales-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.material-card {
+    background: white;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.material-card:hover {
+    border-color: #d4a574;
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.2);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    padding: 16px;
+    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
+    border-bottom: 1px solid #e8ddd7;
+}
+
+.card-name {
+    font-weight: 700;
+    color: #5a4037;
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.card-badge {
+    display: inline-block;
+    background: #d4a574;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.card-body {
+    padding: 16px;
+    flex: 1;
+}
+
+.card-label {
+    font-size: 12px;
+    color: #8b7355;
+    margin: 0 0 6px 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.card-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: #d4a574;
+    margin: 0;
+}
+
+.card-footer {
+    padding: 12px 16px;
+    background: #f5f1ed;
+    border-top: 1px solid #e8ddd7;
+}
+
+.btn-select {
+    width: 100%;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-select:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-select:active {
+    transform: translateY(0);
+}
+
+.btn-add-material {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 0;
+}
+
+.btn-add-material:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+}
+
+.btn-add-material:active {
+    transform: translateY(0);
 }
 </style>
