@@ -147,18 +147,16 @@
                     <div class="modal-item">
                         <label class="modal-label">Cantidad *</label>
                         <div class="horas-editor">
-                            <button class="btn-horas-moins" @click.stop="decrementarCantidad">−</button>
+                            <button type="button" class="btn-horas-moins" @click="decrementarCantidad">−</button>
                             <input 
                                 v-model.number="componenteActual.cantidad" 
                                 type="number" 
                                 min="1"
                                 step="1"
                                 class="input-horas"
-                                @click.stop
-                                @change.stop
                             >
-                            <span class="horas-unit">pcs</span>
-                            <button class="btn-horas-plus" @click.stop="incrementarCantidad">+</button>
+                            <span class="horas-unit">unidades</span>
+                            <button type="button" class="btn-horas-plus" @click="incrementarCantidad">+</button>
                         </div>
                     </div>
 

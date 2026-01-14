@@ -148,18 +148,16 @@
                     <div class="modal-item">
                         <label class="modal-label">Cantidad *</label>
                         <div class="horas-editor">
-                            <button class="btn-horas-moins" @click.stop="decrementarCantidad">−</button>
+                            <button type="button" class="btn-horas-moins" @click="decrementarCantidad">−</button>
                             <input 
                                 v-model.number="componenteActual.cantidad" 
                                 type="number" 
                                 min="1"
                                 step="1"
                                 class="input-horas"
-                                @click.stop
-                                @change.stop
                             >
-                            <span class="horas-unit">pcs</span>
-                            <button class="btn-horas-plus" @click.stop="incrementarCantidad">+</button>
+                            <span class="horas-unit">unidades</span>
+                            <button type="button" class="btn-horas-plus" @click="incrementarCantidad">+</button>
                         </div>
                     </div>
 
@@ -835,10 +833,6 @@ const guardarHorasEnAPI = async (mano) => {
     }
 };
 
-// Confirmar selección de mano de obra y guardar horas
-const confirmarManoDeObra = async () => {
-    const manoSeleccionada = manosDeObra.value.find(m => m.id === componenteActual.value.mano_de_obra_id);
-
 // Incrementar cantidad de componente
 const incrementarCantidad = () => {
     if (!componenteActual.value) return;
@@ -850,10 +844,10 @@ const decrementarCantidad = () => {
     if (!componenteActual.value || (componenteActual.value.cantidad || 0) <= 1) return;  // No bajar de 1
     componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) - 1;
 };
-    if (!manoSeleccionada) return;
-    
-    componenteActual.value.mano_de_obra_horas = manoSeleccionada.horas || 0;
-    mostrarModalSeleccionarManoDeObra.value = false;
+
+// Confirmar selección de mano de obra y guardar horas
+const confirmarManoDeObra = async () => {
+    const manoSeleccionada = manosDeObra.value.find(m => m.id === componenteActual.value.mano_de_obra_id);
     
     // Guardar horas en la API
     try {
