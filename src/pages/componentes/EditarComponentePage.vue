@@ -509,7 +509,6 @@
                                 </div>
                             </div>
                             <div class="button-group-vertical">
-                                <button class="btn-edit-item" @click="iniciarEdicionAcabado" title="Editar">✏️ Editar</button>
                                 <button class="btn-change-item" @click="abrirSelectorAcabados" title="Cambiar">🔄 Cambiar</button>
                             </div>
                         </div>
@@ -721,9 +720,10 @@
                     </div>
                     <div class="materiales-grid">
                         <div 
-                            v-for="acabado in acabadosFiltrados()"
+                            v-for="acabado in acabadosFiltrados"
                             :key="acabado.id"
                             class="material-card"
+                            :class="{ 'selected': formData.acabado?.id === acabado.id }"
                             @click="agregarAcabado(acabado)"
                         >
                             <div class="card-header">
@@ -735,11 +735,12 @@
                                 <p class="card-price">${{ formatCurrency(acabado.costo) }}</p>
                             </div>
                             <div class="card-footer">
-                                <button class="btn-select">+ Seleccionar</button>
+                                <button v-if="formData.acabado?.id === acabado.id" class="btn-select btn-select-active" disabled>✓ Seleccionado</button>
+                                <button v-else class="btn-select">+ Seleccionar</button>
                             </div>
                         </div>
                     </div>
-                    <div v-if="acabadosFiltrados().length === 0" class="empty-list">
+                    <div v-if="acabadosFiltrados.length === 0" class="empty-list">
                         <p>📭 No hay acabados disponibles</p>
                     </div>
                 </div>
@@ -1455,7 +1456,7 @@ const agregarAcabado = (acabado) => {
 };
 
 // Filtrar acabados disponibles
-const acabadosFiltrados = () => {
+const acabadosFiltrados = computed(() => {
     if (busquedaAcabado.value.trim()) {
         const busqueda = busquedaAcabado.value.toLowerCase();
         return acabadosDisponibles.value.filter(a => 
@@ -1465,7 +1466,7 @@ const acabadosFiltrados = () => {
     }
     
     return acabadosDisponibles.value;
-};
+});
 
 // Validar formulario
 const validar = () => {
