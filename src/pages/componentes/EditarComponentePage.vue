@@ -1424,10 +1424,14 @@ const agregarMaterial = async (material) => {
         
         const resultado = await storeMaterialesPorComponente.crearMaterialPorComponenteAction(datosNuevo);
         
-        // Agregar a la lista local
+        // Agregar a la lista local con el material del selector que ya tiene todos los datos
         materialesDelComponente.value.push({
-            ...resultado,
-            material: material
+            id: resultado.id,
+            componente_id: resultado.componente_id,
+            material_id: resultado.material_id,
+            cantidad: resultado.cantidad,
+            created_at: resultado.created_at,
+            material: { ...material }  // Usar el objeto del selector con todos sus datos
         });
         
         mostrarMensaje('✅ Material agregado', 'success', 2000);
@@ -1459,11 +1463,18 @@ const agregarHerraje = async (herraje) => {
         
         const resultado = await storeCantidadPorHerraje.crearCantidadPorHerrajeAction(datosNuevo);
         
-        // Agregar a la lista local
-        herrajesDelComponente.value.push({
-            ...resultado,
-            herraje: herraje
-        });
+        // Agregar a la lista local con el herraje del selector que ya tiene todos los datos
+        const nuevoHerraje = {
+            id: resultado.id,
+            componente_id: resultado.componente_id,
+            herraje_id: resultado.herraje_id,
+            cantidad: resultado.cantidad,
+            created_at: resultado.created_at,
+            herraje: { ...herraje }  // Usar el objeto del selector con todos sus datos
+        };
+        console.log('📌 Nuevo herraje a guardar:', nuevoHerraje);
+        console.log('📌 herraje.herraje.precio_unitario:', nuevoHerraje.herraje.precio_unitario);
+        herrajesDelComponente.value.push(nuevoHerraje);
         
         mostrarMensaje('✅ Herraje agregado', 'success', 2000);
         mostrarSelectorHerrajes.value = false;
