@@ -436,6 +436,15 @@
                     <button class="modal-close" @click="mostrarModalAcabado = false">✕</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Sección para agregar acabado -->
+                    <div v-if="!formData.acabado" class="add-section">
+                        <button 
+                            type="button" 
+                            class="btn-add-material"
+                            @click="abrirSelectorAcabados()"
+                        >+ Agregar Acabado</button>
+                    </div>
+
                     <div v-if="formData.acabado" class="selected-items">
                         <!-- Modo Lectura -->
                         <div v-if="!editandoAcabado" class="selected-item-full">
@@ -493,8 +502,7 @@
                             </div>
                         </div>
                     </div>
-                    <div v-else class="empty-list">
-                        <p>📭 No hay acabado asignado</p>
+                    <div v-if="formData.acabado && !editandoAcabado" class="empty-list">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -594,6 +602,52 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Selector de Acabados -->
+        <div v-if="mostrarSelectorAcabados" class="modal-overlay" @click.self="mostrarSelectorAcabados = false">
+            <div class="modal-content modal-content-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">🎨 Seleccionar Acabados</h3>
+                    <button class="modal-close" @click="mostrarSelectorAcabados = false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="search-section">
+                        <input 
+                            v-model="busquedaAcabado"
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar acabado..."
+                        />
+                    </div>
+                    <div class="materiales-grid">
+                        <div 
+                            v-for="acabado in acabadosFiltrados()"
+                            :key="acabado.id"
+                            class="material-card"
+                            @click="agregarAcabado(acabado)"
+                        >
+                            <div class="card-header">
+                                <div class="card-name">{{ acabado.nombre }}</div>
+                                <div class="card-badge">{{ acabado.codigo }}</div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-label">Costo</p>
+                                <p class="card-price">${{ formatCurrency(acabado.costo) }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-select">+ Seleccionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="acabadosFiltrados().length === 0" class="empty-list">
+                        <p>📭 No hay acabados disponibles</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarSelectorAcabados = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -658,6 +712,11 @@ const manoDeObraEditando = ref(null);
 // Estado para editar acabado
 const editandoAcabado = ref(false);
 const acabadoEditando = ref(null);
+
+// Datos para seleccionar acabados
+const acabadosDisponibles = ref([]);
+const busquedaAcabado = ref('');
+const mostrarSelectorAcabados = ref(false);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -979,6 +1038,50 @@ const herrajesFiltrados = () => {
     }
     
     return filtrados;
+};
+
+// Cargar acabados disponibles
+const cargarAcabados = async () => {
+    try {
+        const api = (await import('@/http/apl')).default;
+        const response = await api.get('/acabados');
+        const data = response.data.data || response.data || [];
+        acabadosDisponibles.value = Array.isArray(data) ? data : [];
+        console.log('Acabados disponibles:', acabadosDisponibles.value);
+    } catch (err) {
+        console.error('Error al cargar acabados:', err);
+        acabadosDisponibles.value = [];
+    }
+};
+
+// Abrir selector de acabados
+const abrirSelectorAcabados = async () => {
+    await cargarAcabados();
+    mostrarSelectorAcabados.value = true;
+};
+
+// Agregar acabado seleccionado
+const agregarAcabado = (acabado) => {
+    if (acabado) {
+        formData.value.acabado = {
+            ...acabado
+        };
+        mostrarSelectorAcabados.value = false;
+        busquedaAcabado.value = '';
+    }
+};
+
+// Filtrar acabados disponibles
+const acabadosFiltrados = () => {
+    if (busquedaAcabado.value.trim()) {
+        const busqueda = busquedaAcabado.value.toLowerCase();
+        return acabadosDisponibles.value.filter(a => 
+            a.nombre.toLowerCase().includes(busqueda) ||
+            a.codigo.toLowerCase().includes(busqueda)
+        );
+    }
+    
+    return acabadosDisponibles.value;
 };
 
 // Validar formulario
