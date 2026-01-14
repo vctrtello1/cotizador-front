@@ -1272,6 +1272,14 @@ const guardarCantidadMaterial = async (material) => {
     if (!material || !material.id) return;
     
     const cantidadFinal = Math.round(material.cantidad || 1);
+    
+    // Validar que no exceda 50 unidades
+    if (cantidadFinal > 50) {
+        mostrarMensaje('📦 La cantidad máxima permitida es 50 unidades', 'warning', 3000);
+        material.cantidad = 50; // Resetear a 50
+        return;
+    }
+    
     material.cantidad = cantidadFinal;
     
     try {
@@ -1307,6 +1315,14 @@ const guardarCantidadHerraje = async (herraje) => {
     if (!herraje || !herraje.id) return;
     
     const cantidadFinal = Math.round(herraje.cantidad || 1);
+    
+    // Validar que no exceda 50 unidades
+    if (cantidadFinal > 50) {
+        mostrarMensaje('🔩 La cantidad máxima permitida es 50 unidades', 'warning', 3000);
+        herraje.cantidad = 50; // Resetear a 50
+        return;
+    }
+    
     herraje.cantidad = cantidadFinal;
     
     try {
