@@ -309,9 +309,33 @@
                                 <h4>{{ mano.nombre }}</h4>
                                 <p class="item-codigo">{{ mano.codigo }}</p>
                                 <p v-if="mano.descripcion" class="item-descripcion">{{ mano.descripcion }}</p>
-                                <p v-if="mano.horas" class="item-horas">Horas: <strong>{{ mano.horas }} hrs</strong></p>
-                                <p v-if="mano.costo_hora" class="item-costo-hora">Costo/hora: <strong>${{ formatCurrency(mano.costo_hora) }}</strong></p>
-                                <p class="item-precio">Costo Total: <strong>${{ formatCurrency(mano.costo_total) }}</strong></p>
+                                <div class="item-details">
+                                    <div class="detail-row">
+                                        <span class="detail-label">Costo/hora:</span>
+                                        <strong class="detail-value">${{ formatCurrency(mano.costo_hora) }}</strong>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Horas asignadas:</span>
+                                        <div class="horas-editor">
+                                            <button class="btn-horas-moins" @click.stop="decrementarHoras(mano)">−</button>
+                                            <input 
+                                                v-model.number="mano.horas" 
+                                                type="number" 
+                                                min="0"
+                                                step="0.5"
+                                                class="input-horas"
+                                                @click.stop
+                                                @change.stop
+                                            >
+                                            <span class="horas-unit">hrs</span>
+                                            <button class="btn-horas-plus" @click.stop="incrementarHoras(mano)">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="detail-row total">
+                                        <span class="detail-label">Subtotal:</span>
+                                        <strong class="detail-value">${{ formatCurrency(mano.costo_hora * (mano.horas || 0)) }}</strong>
+                                    </div>
+                                </div>
                             </div>
                             <div v-if="componenteActual.mano_de_obra_id == mano.id" class="item-checkmark">✓</div>
                         </div>
@@ -320,7 +344,7 @@
 
                 <div class="modal-footer">
                     <button class="btn-secondary" @click="mostrarModalSeleccionarManoDeObra = false">Cancelar</button>
-                    <button class="btn-primary" @click="mostrarModalSeleccionarManoDeObra = false" :disabled="!componenteActual.mano_de_obra_id">Confirmar</button>
+                    <button class="btn-primary" @click="confirmarManoDeObra" :disabled="!componenteActual.mano_de_obra_id">Confirmar</button>
                 </div>
             </div>
         </div>
@@ -636,6 +660,28 @@ const seleccionarAcabado = (acabado) => {
 // Seleccionar mano de obra
 const seleccionarManoDeObra = (mano) => {
     componenteActual.value.mano_de_obra_id = mano.id;
+    componenteActual.value.mano_de_obra_horas = mano.horas || 0;
+};
+
+// Incrementar horas de mano de obra
+const incrementarHoras = (mano) => {
+    mano.horas = (mano.horas || 0) + 0.5;
+};
+
+// Decrementar horas de mano de obra
+const decrementarHoras = (mano) => {
+    if ((mano.horas || 0) > 0) {
+        mano.horas = Math.max(0, (mano.horas || 0) - 0.5);
+    }
+};
+
+// Confirmar selección de mano de obra y guardar horas
+const confirmarManoDeObra = () => {
+    const manoSeleccionada = manosDeObra.value.find(m => m.id === componenteActual.value.mano_de_obra_id);
+    if (manoSeleccionada) {
+        componenteActual.value.mano_de_obra_horas = manoSeleccionada.horas || 0;
+    }
+    mostrarModalSeleccionarManoDeObra.value = false;
 };
 
 // Lifecycle
@@ -1336,6 +1382,96 @@ onMounted(() => {
     margin: 4px 0 0 0;
     color: #666;
     font-size: 13px;
+}
+
+.item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0d7d0;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.detail-row.total {
+    font-weight: 600;
+    color: #5a4037;
+    padding-top: 6px;
+    border-top: 1px solid #ede7e0;
+}
+
+.detail-label {
+    color: #999;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #5a4037;
+    font-weight: 600;
+}
+
+.horas-editor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.input-horas {
+    width: 50px;
+    padding: 4px 8px;
+    border: 1px solid #d4a574;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a4037;
+}
+
+.input-horas:focus {
+    outline: none;
+    border-color: #b8860b;
+    box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.1);
+}
+
+.horas-unit {
+    color: #999;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.btn-horas-moins,
+.btn-horas-plus {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #d4a574;
+    background: white;
+    color: #d4a574;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-horas-moins:hover,
+.btn-horas-plus:hover {
+    background: #d4a574;
+    color: white;
+}
+
+.btn-horas-moins:active,
+.btn-horas-plus:active {
+    transform: scale(0.95);
 }
 
 .item-checkmark {
