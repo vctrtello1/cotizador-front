@@ -68,6 +68,12 @@ api.interceptors.request.use(
       } else {
         console.warn('No se encontró token CSRF en cookies para enviar');
       }
+      
+      // Log del payload enviado
+      if (config.data) {
+        console.log(`📤 ${config.method.toUpperCase()} ${config.url}:`);
+        console.log('Payload completo:', JSON.stringify(config.data, null, 2));
+      }
     }
     
     return config;
@@ -109,6 +115,16 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Log detallado de errores
+    if (error.response) {
+      console.error(`❌ Error ${error.response.status}:`, error.response.data);
+      if (error.response.data?.errors) {
+        console.error('Errores de validación:', error.response.data.errors);
+      }
+      if (error.response.data?.message) {
+        console.error('Mensaje del servidor:', error.response.data.message);
+      }
+    }
     return Promise.reject(error);
   }
 );

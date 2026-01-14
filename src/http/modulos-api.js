@@ -15,6 +15,21 @@ export const getComponentesByModulo = async (moduloId) => {
   return response.data;
 };
 
+export const agregarComponenteAModulo = async (moduloId, datos) => {
+  const response = await api.post(`/modulos/${moduloId}/componentes`, datos);
+  return response.data;
+};
+
+export const actualizarComponenteEnModulo = async (moduloId, componenteId, datos) => {
+  const response = await api.put(`/modulos/${moduloId}/componentes/${componenteId}`, datos);
+  return response.data;
+};
+
+export const eliminarComponenteDelModulo = async (moduloId, componenteId) => {
+  const response = await api.delete(`/modulos/${moduloId}/componentes/${componenteId}`);
+  return response.data;
+};
+
 export const crearModulo = async (datos) => {
   const response = await api.post("/modulos", datos);
   return response.data;

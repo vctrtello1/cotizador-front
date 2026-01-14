@@ -387,6 +387,9 @@ const formData = ref({
     componentes: []
 });
 
+// Componentes originales del módulo (para detectar cuáles son nuevos)
+const componentesOriginales = ref([]);
+
 // Catálogos
 const acabados = ref([]);
 const manosDeObra = ref([]);
@@ -565,18 +568,61 @@ const guardarModulo = async () => {
             codigo: formData.value.codigo,
             descripcion: formData.value.descripcion,
             componentes: formData.value.componentes.map(comp => ({
-                nombre: comp.nombre,
-                codigo: comp.codigo,
-                descripcion: comp.descripcion,
+                id: Number(comp.id),
                 cantidad: comp.cantidad,
                 acabado_id: Number(comp.acabado_id),
                 mano_de_obra_id: Number(comp.mano_de_obra_id)
             }))
         };
 
-        console.log('Actualizando módulo:', datosModulo);
+        console.log('=== ACTUALIZANDO MÓDULO ===');
+        console.log('Formulario completo:', formData.value);
+        console.log('Componentes en formulario:', formData.value.componentes);
+        console.log('Datos a enviar al backend:', datosModulo);
+        console.log('Número de componentes:', datosModulo.componentes.length);
+        
         const response = await actualizarModulo(route.params.id, datosModulo);
-        console.log('Módulo actualizado:', response);
+        console.log('Respuesta del update:', response);
+        
+        // El backend no retorna componentes en el update, así que hacemos una query adicional
+        const moduloCompleto = await getModuloById(route.params.id);
+        console.log('Respuesta completa del servidor (con componentes):', moduloCompleto);
+        
+        // Extraer el módulo de la respuesta
+        let moduloGuardado = moduloCompleto.data || moduloCompleto;
+        
+        console.log('Módulo actualizado:', moduloGuardado);
+        console.log('Propiedades disponibles:', Object.keys(moduloGuardado));
+        console.log('Componentes en respuesta:', moduloGuardado.componentes);
+        
+        // Guardar horas en la API SOLO para los componentes NUEVOS
+        if (moduloGuardado.componentes && moduloGuardado.componentes.length > 0) {
+            const storeHoras = useHorasPorManoDeObraComponente();
+            
+            // Identificar cuáles son componentes nuevos (no estaban en componentesOriginales)
+            const idsOriginales = componentesOriginales.value.map(c => c.id);
+            
+            for (let componente of moduloGuardado.componentes) {
+                // Solo guardar horas si es un componente nuevo
+                if (!idsOriginales.includes(componente.id)) {
+                    try {
+                        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+                            componente.id,
+                            componente.mano_de_obra_id,
+                            { horas: 1 }
+                        );
+                        console.log(`✅ Horas guardadas para componente nuevo ${componente.id}`);
+                    } catch (err) {
+                        console.warn(`⚠️ No se pudo guardar horas para componente ${componente.id}:`, err);
+                    }
+                }
+            }
+            
+            // Actualizar los componentes originales para futuras ediciones
+            componentesOriginales.value = JSON.parse(JSON.stringify(formData.value.componentes));
+        } else {
+            console.warn('⚠️ No hay componentes en la respuesta del servidor');
+        }
 
         exito.value = '✓ Módulo actualizado exitosamente';
         setTimeout(() => {
@@ -609,6 +655,9 @@ const cargarModulo = async () => {
             acabado_id: typeof comp.acabado_id === 'object' ? comp.acabado_id.id : comp.acabado_id,
             mano_de_obra_id: typeof comp.mano_de_obra_id === 'object' ? comp.mano_de_obra_id.id : comp.mano_de_obra_id
         }));
+        
+        // Guardar los componentes originales para detectar cuáles son nuevos
+        componentesOriginales.value = JSON.parse(JSON.stringify(formData.value.componentes));
     } catch (err) {
         console.error('Error cargando módulo:', err);
         error.value = err.response?.data?.message || 'Error al cargar el módulo';
@@ -739,30 +788,78 @@ const abrirModalConfiguracion = async (componente) => {
         codigo: componente.codigo,
         descripcion: componente.descripcion,
         cantidad: 1,
-        acabado_id: acabadoEstandar?.id || '',
-        mano_de_obra_id: manoDeObraEstandar?.id || ''
+        acabado_id: acabadoEstandar?.id ? Number(acabadoEstandar.id) : null,
+        mano_de_obra_id: manoDeObraEstandar?.id ? Number(manoDeObraEstandar.id) : null
     };
+    
+    // Validar que tenga valores por defecto
+    if (!nuevoComponente.acabado_id || !nuevoComponente.mano_de_obra_id) {
+        mostrarMensaje('⚠️ No se pudieron crear los valores por defecto', 'error', 2000);
+        console.error('Faltan valores por defecto:', { acabadoEstandar, manoDeObraEstandar });
+        return;
+    }
     
     // Agregar a la lista de componentes del módulo
     formData.value.componentes.push(nuevoComponente);
-    mostrarModalComponentes.value = false;
     
-    // Guardar horas en la API si tenemos un componente nuevo
-    if (componenteActual.value.id || nuevoComponente.id) {
-        try {
-            const storeHoras = useHorasPorManoDeObraComponente();
-            await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-                nuevoComponente.id,
-                manoDeObraEstandar?.id || 0,
-                { horas: 1 }
+    // Guardar el módulo actualizado en la API inmediatamente
+    try {
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: formData.value.componentes.map(comp => ({
+                id: Number(comp.id),
+                cantidad: comp.cantidad,
+                acabado_id: Number(comp.acabado_id),
+                mano_de_obra_id: Number(comp.mano_de_obra_id)
+            }))
+        };
+        
+        console.log('=== GUARDANDO COMPONENTE EN MODAL ===');
+        console.log('Nuevo componente:', nuevoComponente);
+        console.log('Todos los componentes a guardar:', formData.value.componentes);
+        console.log('Datos a enviar:', datosModulo);
+        
+        const response = await actualizarModulo(route.params.id, datosModulo);
+        
+        // El backend no retorna componentes en el update, así que hacemos una query adicional
+        const moduloCompleto = await getModuloById(route.params.id);
+        let moduloGuardado = moduloCompleto.data || moduloCompleto;
+        
+        console.log('Respuesta completa en abrirModalConfiguracion:', moduloCompleto);
+        console.log('moduloGuardado:', moduloGuardado);
+        console.log('Propiedades de moduloGuardado:', Object.keys(moduloGuardado));
+        console.log('Componentes guardados en abrirModalConfiguracion:', moduloGuardado.componentes);
+        
+        // Guardar horas en la API para el componente nuevo
+        if (moduloGuardado.componentes && moduloGuardado.componentes.length > 0) {
+            const componenteGuardado = moduloGuardado.componentes.find(
+                c => c.componente_id == nuevoComponente.id
             );
-            console.log('✅ Componente guardado con mano de obra en API');
-        } catch (err) {
-            console.warn('⚠️ No se pudo guardar horas en API:', err);
+            
+            if (componenteGuardado) {
+                const storeHoras = useHorasPorManoDeObraComponente();
+                await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+                    componenteGuardado.id,
+                    manoDeObraEstandar?.id || 0,
+                    { horas: 1 }
+                );
+                console.log(`✅ Componente y horas guardados en API`);
+            }
         }
+        
+        mostrarModalComponentes.value = false;
+        mostrarMensaje('✅ Componente agregado y guardado', 'success', 1500);
+        
+        // Actualizar componentes originales
+        componentesOriginales.value = JSON.parse(JSON.stringify(formData.value.componentes));
+    } catch (err) {
+        console.error('❌ Error al guardar componente en API:', err);
+        // Remover el componente de la lista local si no se pudo guardar
+        formData.value.componentes.pop();
+        mostrarMensaje('Error al agregar componente', 'error', 2000);
     }
-    
-    mostrarMensaje('✅ Componente agregado', 'success', 1500);
 };
 
 // Guardar componente del modal

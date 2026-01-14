@@ -369,7 +369,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { crearModulo, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
+import { crearModulo, getModuloById, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
 import { crearAcabado } from '@/http/acabado-api .js';
 import { crearCliente as crearManoDeObra } from '@/http/mano_de_obra-api .js';
 import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
@@ -485,11 +485,11 @@ const validarFormulario = () => {
             error.value = 'Todos los componentes deben tener una cantidad válida';
             return false;
         }
-        if (!componente.acabado_id) {
+        if (!componente.acabado_id || componente.acabado_id === '' || componente.acabado_id === 0) {
             error.value = 'Todos los componentes deben tener un acabado';
             return false;
         }
-        if (!componente.mano_de_obra_id) {
+        if (!componente.mano_de_obra_id || componente.mano_de_obra_id === '' || componente.mano_de_obra_id === 0) {
             error.value = 'Todos los componentes deben tener mano de obra';
             return false;
         }
@@ -561,18 +561,59 @@ const guardarModulo = async () => {
             codigo: formData.value.codigo,
             descripcion: formData.value.descripcion,
             componentes: formData.value.componentes.map(comp => ({
-                nombre: comp.nombre,
-                codigo: comp.codigo,
-                descripcion: comp.descripcion,
+                id: Number(comp.id),
                 cantidad: comp.cantidad,
                 acabado_id: Number(comp.acabado_id),
                 mano_de_obra_id: Number(comp.mano_de_obra_id)
             }))
         };
 
-        console.log('Guardando módulo:', datosModulo);
+        console.log('=== GUARDANDO MÓDULO ===');
+        console.log('Formulario completo:', formData.value);
+        console.log('Componentes en formulario:', formData.value.componentes);
+        console.log('Datos a enviar al backend:', datosModulo);
+        console.log('Número de componentes:', datosModulo.componentes.length);
+        
         const response = await crearModulo(datosModulo);
-        console.log('Módulo guardado:', response);
+        console.log('Respuesta del create:', response);
+        
+        // Extraer el ID del módulo creado
+        let moduloGuardado = response;
+        if (response.data) {
+            moduloGuardado = response.data;
+        } else if (response.modulo) {
+            moduloGuardado = response.modulo;
+        }
+        
+        const moduloId = moduloGuardado.id;
+        
+        // El backend no retorna componentes en el create, así que hacemos una query adicional
+        const moduloCompleto = await getModuloById(moduloId);
+        moduloGuardado = moduloCompleto.data || moduloCompleto;
+        
+        console.log('Respuesta completa del servidor (con componentes):', moduloCompleto);
+        console.log('Módulo guardado:', moduloGuardado);
+        console.log('Componentes en respuesta:', moduloGuardado.componentes);
+        
+        // Guardar horas en la API para cada componente
+        if (moduloGuardado.componentes && moduloGuardado.componentes.length > 0) {
+            const storeHoras = useHorasPorManoDeObraComponente();
+            
+            for (let componente of moduloGuardado.componentes) {
+                try {
+                    await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+                        componente.id,
+                        componente.mano_de_obra_id,
+                        { horas: 1 }
+                    );
+                    console.log(`✅ Horas guardadas para componente ${componente.id}`);
+                } catch (err) {
+                    console.warn(`⚠️ No se pudo guardar horas para componente ${componente.id}:`, err);
+                }
+            }
+        } else {
+            console.warn('⚠️ No hay componentes en la respuesta del servidor');
+        }
 
         exito.value = '✓ Módulo guardado exitosamente';
         setTimeout(() => {
@@ -707,28 +748,20 @@ const abrirModalConfiguracion = async (componente) => {
         codigo: componente.codigo,
         descripcion: componente.descripcion,
         cantidad: 1,
-        acabado_id: acabadoEstandar?.id || '',
-        mano_de_obra_id: manoDeObraEstandar?.id || ''
+        acabado_id: acabadoEstandar?.id ? Number(acabadoEstandar.id) : null,
+        mano_de_obra_id: manoDeObraEstandar?.id ? Number(manoDeObraEstandar.id) : null
     };
+    
+    // Validar que tenga valores por defecto
+    if (!nuevoComponente.acabado_id || !nuevoComponente.mano_de_obra_id) {
+        mostrarMensaje('⚠️ No se pudieron crear los valores por defecto', 'error', 2000);
+        console.error('Faltan valores por defecto:', { acabadoEstandar, manoDeObraEstandar });
+        return;
+    }
     
     // Agregar a la lista de componentes del módulo
     formData.value.componentes.push(nuevoComponente);
     mostrarModalComponentes.value = false;
-    
-    // Guardar horas en la API si tenemos un componente nuevo
-    if (componenteActual.value.id || nuevoComponente.id) {
-        try {
-            const storeHoras = useHorasPorManoDeObraComponente();
-            await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-                nuevoComponente.id,
-                manoDeObraEstandar?.id || 0,
-                { horas: 1 }
-            );
-            console.log('✅ Componente guardado con mano de obra en API');
-        } catch (err) {
-            console.warn('⚠️ No se pudo guardar horas en API:', err);
-        }
-    }
     
     mostrarMensaje('✅ Componente agregado', 'success', 1500);
 };
