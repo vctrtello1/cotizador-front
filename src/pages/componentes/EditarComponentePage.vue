@@ -346,7 +346,8 @@
                 </div>
                 <div class="modal-body">
                     <div v-if="formData.mano_de_obra" class="selected-items">
-                        <div class="selected-item-full">
+                        <!-- Modo Lectura -->
+                        <div v-if="!editandoManoDeObra" class="selected-item-full">
                             <div class="item-info-full">
                                 <div class="item-name">{{ formData.mano_de_obra.nombre }}</div>
                                 <div class="item-code">{{ formData.mano_de_obra.descripcion }}</div>
@@ -359,7 +360,62 @@
                                     <span class="info-value">{{ formData.mano_de_obra.tiempo }} horas</span>
                                 </div>
                             </div>
-                            <button class="btn-remove-large" @click="removerManoDeObra" title="Remover">✕ Quitar</button>
+                            <div class="button-group-vertical">
+                                <button class="btn-edit-item" @click="iniciarEdicionManoDeObra" title="Editar">✏️ Editar</button>
+                                <button class="btn-remove-large" @click="removerManoDeObra" title="Remover">✕ Quitar</button>
+                            </div>
+                        </div>
+
+                        <!-- Modo Edición -->
+                        <div v-else class="edit-form">
+                            <div class="form-group-small">
+                                <label for="nombre-mano">Nombre</label>
+                                <input 
+                                    id="nombre-mano"
+                                    v-model="manoDeObraEditando.nombre"
+                                    type="text"
+                                    placeholder="Nombre de la mano de obra"
+                                    class="form-input-small"
+                                />
+                            </div>
+                            <div class="form-group-small">
+                                <label for="descripcion-mano">Descripción</label>
+                                <textarea 
+                                    id="descripcion-mano"
+                                    v-model="manoDeObraEditando.descripcion"
+                                    placeholder="Descripción de la mano de obra"
+                                    class="form-input-small"
+                                    rows="2"
+                                ></textarea>
+                            </div>
+                            <div class="form-group-small">
+                                <label for="costo-mano">Costo/Hora</label>
+                                <input 
+                                    id="costo-mano"
+                                    v-model.number="manoDeObraEditando.costo_hora"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    class="form-input-small"
+                                />
+                            </div>
+                            <div class="form-group-small">
+                                <label for="tiempo-mano">Tiempo (horas)</label>
+                                <input 
+                                    id="tiempo-mano"
+                                    v-model.number="manoDeObraEditando.tiempo"
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    placeholder="0"
+                                    class="form-input-small"
+                                />
+                            </div>
+                            <div class="button-group-horizontal">
+                                <button class="btn-cancel" @click="cancelarEdicionManoDeObra">Cancelar</button>
+                                <button class="btn-save" @click="guardarManoDeObra">Guardar</button>
+                            </div>
                         </div>
                     </div>
                     <div v-else class="empty-list">
@@ -551,6 +607,10 @@ const herrajesDisponibles = ref([]);
 const busquedaHerraje = ref('');
 const mostrarSelectorHerrajes = ref(false);
 
+// Estado para editar mano de obra
+const editandoManoDeObra = ref(false);
+const manoDeObraEditando = ref(null);
+
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
     try {
@@ -705,6 +765,31 @@ const removerManoDeObra = () => {
 
 const removerAcabado = () => {
     formData.value.acabado = null;
+};
+
+// Funciones para editar mano de obra
+const iniciarEdicionManoDeObra = () => {
+    // Copiar los datos actuales para editar
+    manoDeObraEditando.value = {
+        ...formData.value.mano_de_obra
+    };
+    editandoManoDeObra.value = true;
+};
+
+const guardarManoDeObra = () => {
+    if (manoDeObraEditando.value) {
+        // Actualizar los datos en formData
+        formData.value.mano_de_obra = {
+            ...manoDeObraEditando.value
+        };
+        editandoManoDeObra.value = false;
+        manoDeObraEditando.value = null;
+    }
+};
+
+const cancelarEdicionManoDeObra = () => {
+    editandoManoDeObra.value = false;
+    manoDeObraEditando.value = null;
 };
 
 // Incrementar cantidad de material/herraje
@@ -1717,6 +1802,125 @@ onMounted(() => {
 .empty-list p {
     margin: 0;
     font-size: 16px;
+}
+
+/* Estilos para edición de mano de obra */
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group-small {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group-small label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a4037;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.form-input-small {
+    padding: 10px 12px;
+    border: 2px solid #d4a574;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #5a4037;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+.form-input-small:hover {
+    border-color: #c89564;
+    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
+}
+
+.form-input-small:focus {
+    outline: none;
+    border-color: #c89564;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2);
+    background: white;
+}
+
+.form-input-small::placeholder {
+    color: #d4a574;
+    opacity: 0.5;
+}
+
+.button-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.button-group-horizontal {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.btn-edit-item {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.15);
+}
+
+.btn-edit-item:hover {
+    background: linear-gradient(135deg, #c89564 0%, #b88454 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.25);
+}
+
+.btn-save {
+    flex: 1;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.15);
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
+}
+
+.btn-cancel {
+    flex: 1;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(158, 158, 158, 0.15);
+}
+
+.btn-cancel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(158, 158, 158, 0.25);
 }
 
 .modal-footer {
