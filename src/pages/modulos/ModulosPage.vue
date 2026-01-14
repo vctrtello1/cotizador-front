@@ -127,8 +127,21 @@ const crearModuloNuevo = async () => {
     cargando.value = true;
     error.value = null;
     try {
+        // Obtener módulos existentes para generar nombre consecutivo
+        const modulosExistentes = await fetchModulos();
+        const listaModulos = modulosExistentes.data || modulosExistentes;
+        
+        // Contar módulos que empiezan con "Nuevo Módulo"
+        let contador = 1;
+        const modulosNuevos = listaModulos.filter(m => m.nombre.startsWith('Nuevo Módulo'));
+        if (modulosNuevos.length > 0) {
+            contador = modulosNuevos.length + 1;
+        }
+        
+        const nombreModulo = contador === 1 ? 'Nuevo Módulo' : `Nuevo Módulo ${contador}`;
+        
         const datosModulo = {
-            nombre: 'Nuevo Módulo',
+            nombre: nombreModulo,
             codigo: `MOD_${Date.now()}`,
             descripcion: 'Descripción del módulo',
             componentes: []
