@@ -102,11 +102,11 @@
                         <div v-if="matComp.material?.codigo" class="info-detail">
                             Código: {{ matComp.material.codigo }}
                         </div>
-                        <div v-if="matComp.material?.precio_unitario" class="info-detail">
-                            Precio unitario: ${{ formatCurrency(matComp.material.precio_unitario) }}
+                        <div v-if="matComp.material?.costo_unitario" class="info-detail">
+                            Precio unitario: ${{ formatCurrency(matComp.material.costo_unitario) }}
                         </div>
-                        <div v-if="matComp.material?.precio_unitario && matComp.cantidad" class="info-detail">
-                            Subtotal: ${{ formatCurrency((matComp.material.precio_unitario * matComp.cantidad)) }}
+                        <div v-if="matComp.material?.costo_unitario && matComp.cantidad" class="info-detail">
+                            Subtotal: ${{ formatCurrency((matComp.material.costo_unitario * matComp.cantidad)) }}
                         </div>
                     </div>
                 </div>
@@ -138,11 +138,11 @@
                         <div v-if="herComp.herraje?.codigo" class="info-detail">
                             Código: {{ herComp.herraje.codigo }}
                         </div>
-                        <div v-if="herComp.herraje?.precio_unitario" class="info-detail">
-                            Precio unitario: ${{ formatCurrency(herComp.herraje.precio_unitario) }}
+                        <div v-if="herComp.herraje?.costo_unitario" class="info-detail">
+                            Precio unitario: ${{ formatCurrency(herComp.herraje.costo_unitario) }}
                         </div>
-                        <div v-if="herComp.herraje?.precio_unitario && herComp.cantidad" class="info-detail">
-                            Subtotal: ${{ formatCurrency((herComp.herraje.precio_unitario * herComp.cantidad)) }}
+                        <div v-if="herComp.herraje?.costo_unitario && herComp.cantidad" class="info-detail">
+                            Subtotal: ${{ formatCurrency((herComp.herraje.costo_unitario * herComp.cantidad)) }}
                         </div>
                     </div>
                 </div>
@@ -223,7 +223,7 @@
                                 <div class="item-info">
                                     <div class="item-name">{{ material.material?.nombre }}</div>
                                     <div class="item-code">{{ material.material?.codigo }}</div>
-                                    <div class="item-price">${{ formatCurrency(material.material?.precio_unitario) }}</div>
+                                    <div class="item-price">${{ formatCurrency(material.material?.costo_unitario) }}</div>
                                 </div>
                                 <div class="quantity-input-group">
                                     <label :for="`qty-material-${material.id}`">Cantidad (unidades)</label>
@@ -292,7 +292,7 @@
                                 <div class="item-info">
                                     <div class="item-name">{{ herraje.herraje?.nombre }}</div>
                                     <div class="item-code">{{ herraje.herraje?.codigo }}</div>
-                                    <div class="item-price">${{ formatCurrency(herraje.herraje?.precio_unitario) }}</div>
+                                    <div class="item-price">${{ formatCurrency(herraje.herraje?.costo_unitario) }}</div>
                                 </div>
                                 <div class="quantity-input-group">
                                     <label :for="`qty-herraje-${herraje.id}`">Cantidad (unidades)</label>
@@ -575,7 +575,7 @@
                             </div>
                             <div class="card-body">
                                 <p class="card-label">Precio Unitario</p>
-                                <p class="card-price">${{ formatCurrency(material.precio_unitario) }}</p>
+                                <p class="card-price">${{ formatCurrency(material.costo_unitario) }}</p>
                             </div>
                             <div class="card-footer">
                                 <button class="btn-select">+ Seleccionar</button>
@@ -621,7 +621,7 @@
                             </div>
                             <div class="card-body">
                                 <p class="card-label">Precio Unitario</p>
-                                <p class="card-price">${{ formatCurrency(herraje.precio_unitario) }}</p>
+                                <p class="card-price">${{ formatCurrency(herraje.costo_unitario) }}</p>
                             </div>
                             <div class="card-footer">
                                 <button class="btn-select">+ Seleccionar</button>
@@ -1424,13 +1424,16 @@ const agregarMaterial = async (material) => {
         
         const resultado = await storeMaterialesPorComponente.crearMaterialPorComponenteAction(datosNuevo);
         
+        // Extraer los datos correctamente del resultado (que viene como {data: {...}})
+        const datosResultado = resultado.data || resultado;
+        
         // Agregar a la lista local con el material del selector que ya tiene todos los datos
         materialesDelComponente.value.push({
-            id: resultado.id,
-            componente_id: resultado.componente_id,
-            material_id: resultado.material_id,
-            cantidad: resultado.cantidad,
-            created_at: resultado.created_at,
+            id: datosResultado.id,
+            componente_id: datosResultado.componente_id,
+            material_id: datosResultado.material_id,
+            cantidad: datosResultado.cantidad,
+            created_at: datosResultado.created_at,
             material: { ...material }  // Usar el objeto del selector con todos sus datos
         });
         
@@ -1446,6 +1449,9 @@ const agregarMaterial = async (material) => {
 const agregarHerraje = async (herraje) => {
     try {
         if (!herraje || !herraje.id) return;
+        
+        console.log('📌 Herraje del selector:', herraje);
+        console.log('📌 Propiedades:', Object.keys(herraje));
         
         // Verificar que no exista ya
         const yaExiste = herrajesDelComponente.value.some(h => h.herraje_id === herraje.id);
@@ -1463,13 +1469,19 @@ const agregarHerraje = async (herraje) => {
         
         const resultado = await storeCantidadPorHerraje.crearCantidadPorHerrajeAction(datosNuevo);
         
+        // Extraer los datos correctamente del resultado (que viene como {data: {...}})
+        const datosResultado = resultado.data || resultado;
+        console.log('📌 Resultado completo:', resultado);
+        console.log('📌 datosResultado:', datosResultado);
+        console.log('📌 datosResultado.id:', datosResultado.id);
+        
         // Agregar a la lista local con el herraje del selector que ya tiene todos los datos
         const nuevoHerraje = {
-            id: resultado.id,
-            componente_id: resultado.componente_id,
-            herraje_id: resultado.herraje_id,
-            cantidad: resultado.cantidad,
-            created_at: resultado.created_at,
+            id: datosResultado.id,
+            componente_id: datosResultado.componente_id,
+            herraje_id: datosResultado.herraje_id,
+            cantidad: datosResultado.cantidad,
+            created_at: datosResultado.created_at,
             herraje: { ...herraje }  // Usar el objeto del selector con todos sus datos
         };
         console.log('📌 Nuevo herraje a guardar:', nuevoHerraje);
