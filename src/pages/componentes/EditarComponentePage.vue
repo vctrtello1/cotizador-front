@@ -437,7 +437,8 @@
                 </div>
                 <div class="modal-body">
                     <div v-if="formData.acabado" class="selected-items">
-                        <div class="selected-item-full">
+                        <!-- Modo Lectura -->
+                        <div v-if="!editandoAcabado" class="selected-item-full">
                             <div class="item-info-full">
                                 <div class="item-name">{{ formData.acabado.nombre }}</div>
                                 <div class="item-code">{{ formData.acabado.descripcion }}</div>
@@ -446,7 +447,50 @@
                                     <span class="info-value">${{ formatCurrency(formData.acabado.costo) }}</span>
                                 </div>
                             </div>
-                            <button class="btn-remove-large" @click="removerAcabado" title="Remover">✕ Quitar</button>
+                            <div class="button-group-vertical">
+                                <button class="btn-edit-item" @click="iniciarEdicionAcabado" title="Editar">✏️ Editar</button>
+                                <button class="btn-remove-large" @click="removerAcabado" title="Remover">✕ Quitar</button>
+                            </div>
+                        </div>
+
+                        <!-- Modo Edición -->
+                        <div v-else class="edit-form">
+                            <div class="form-group-small">
+                                <label for="nombre-acabado">Nombre</label>
+                                <input 
+                                    id="nombre-acabado"
+                                    v-model="acabadoEditando.nombre"
+                                    type="text"
+                                    placeholder="Nombre del acabado"
+                                    class="form-input-small"
+                                />
+                            </div>
+                            <div class="form-group-small">
+                                <label for="descripcion-acabado">Descripción</label>
+                                <textarea 
+                                    id="descripcion-acabado"
+                                    v-model="acabadoEditando.descripcion"
+                                    placeholder="Descripción del acabado"
+                                    class="form-input-small"
+                                    rows="2"
+                                ></textarea>
+                            </div>
+                            <div class="form-group-small">
+                                <label for="costo-acabado">Costo</label>
+                                <input 
+                                    id="costo-acabado"
+                                    v-model.number="acabadoEditando.costo"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    class="form-input-small"
+                                />
+                            </div>
+                            <div class="button-group-horizontal">
+                                <button class="btn-cancel" @click="cancelarEdicionAcabado">Cancelar</button>
+                                <button class="btn-save" @click="guardarAcabado">Guardar</button>
+                            </div>
                         </div>
                     </div>
                     <div v-else class="empty-list">
@@ -610,6 +654,10 @@ const mostrarSelectorHerrajes = ref(false);
 // Estado para editar mano de obra
 const editandoManoDeObra = ref(false);
 const manoDeObraEditando = ref(null);
+
+// Estado para editar acabado
+const editandoAcabado = ref(false);
+const acabadoEditando = ref(null);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -790,6 +838,31 @@ const guardarManoDeObra = () => {
 const cancelarEdicionManoDeObra = () => {
     editandoManoDeObra.value = false;
     manoDeObraEditando.value = null;
+};
+
+// Funciones para editar acabado
+const iniciarEdicionAcabado = () => {
+    // Copiar los datos actuales para editar
+    acabadoEditando.value = {
+        ...formData.value.acabado
+    };
+    editandoAcabado.value = true;
+};
+
+const guardarAcabado = () => {
+    if (acabadoEditando.value) {
+        // Actualizar los datos en formData
+        formData.value.acabado = {
+            ...acabadoEditando.value
+        };
+        editandoAcabado.value = false;
+        acabadoEditando.value = null;
+    }
+};
+
+const cancelarEdicionAcabado = () => {
+    editandoAcabado.value = false;
+    acabadoEditando.value = null;
 };
 
 // Incrementar cantidad de material/herraje
