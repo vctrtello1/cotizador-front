@@ -14,6 +14,16 @@
             <button @click="error = null" class="error-close">✕</button>
         </div>
 
+        <!-- Mensaje personalizado (warning/success/info) -->
+        <transition name="slide-down">
+            <div v-if="mensaje" class="custom-message" :class="`message-${tipoMensaje}`">
+                <div class="message-content">
+                    <span class="message-text">{{ mensaje }}</span>
+                    <button @click="cerrarMensaje" class="message-close">✕</button>
+                </div>
+            </div>
+        </transition>
+
         <!-- Loading -->
         <div v-if="cargando" class="loading-state">
             <p>Cargando componente...</p>
@@ -435,6 +445,7 @@
                                     v-model.number="horaActual.horas"
                                     type="number"
                                     min="1"
+                                    max="24"
                                     step="1"
                                     placeholder="1"
                                     @blur="guardarCambiosHoras"
@@ -774,9 +785,28 @@ const formData = ref({
 
 const errors = ref({});
 const error = ref(null);
+const mensaje = ref(null);
+const tipoMensaje = ref(null); // 'success', 'error', 'warning'
 const guardando = ref(false);
 const guardandoHoras = ref(false);
 const cargando = ref(true);
+
+// Función para mostrar mensajes amigables
+const mostrarMensaje = (texto, tipo = 'info', duracion = 3000) => {
+    mensaje.value = texto;
+    tipoMensaje.value = tipo;
+    if (duracion > 0) {
+        setTimeout(() => {
+            mensaje.value = null;
+            tipoMensaje.value = null;
+        }, duracion);
+    }
+};
+
+const cerrarMensaje = () => {
+    mensaje.value = null;
+    tipoMensaje.value = null;
+};
 const cargandoMateriales = ref(false);
 const cargandoHerrajes = ref(false);
 const materialesDelComponente = ref([]);
@@ -1055,11 +1085,6 @@ const guardarCambiosHoras = async () => {
         // Filtrar para obtener el registro de la mano de obra ACTUAL
         const manoDeObraId = formData.value.mano_de_obra?.id;
         console.log('🔍 Buscando registro para mano_de_obra_id:', manoDeObraId);
-        console.log('📊 Registros disponibles:', horasManoDeObra.value.map(h => ({
-            id: h.id,
-            mano_de_obra_id: h.mano_de_obra_id,
-            horas: h.horas
-        })));
 
         // Encontrar el registro que corresponde a la mano de obra actual
         const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
@@ -1072,27 +1097,35 @@ const guardarCambiosHoras = async () => {
         }
 
         const horas = Math.floor(hora.horas || 0);
-        console.log('📊 Horas redondeadas:', horas);
-
-        // Si tiene horas > 0, guardar
-        if (horas > 0) {
-            const datosHora = {
-                componente_id: parseInt(route.params.id),
-                mano_de_obra_id: manoDeObraId,
-                horas: horas
-            };
-
-            console.log('📝 Datos a enviar:', datosHora);
-
-            if (hora.id) {
-                console.log('🔄 Actualizando horas ID:', hora.id);
-                await storeHorasPorManoDeObra.actualizarHorasPorManoDeObraAction(hora.id, datosHora);
-            } else {
-                console.log('🆕 Creando nuevas horas');
-                await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction(datosHora);
-            }
-            console.log('✅ Horas guardadas correctamente');
+        
+        // Validar que no exceda 24 horas
+        if (horas > 24) {
+            mostrarMensaje('⏰ El máximo permitido es 24 horas por componente', 'warning', 3000);
+            hora.horas = 24; // Resetear a 24
+            guardandoHoras.value = false;
+            return;
         }
+
+        // Si horas es 0, establecer a 1
+        const horasFinales = horas === 0 ? 1 : horas;
+        hora.horas = horasFinales; // Actualizar el estado local también
+        
+        const datosHora = {
+            componente_id: parseInt(route.params.id),
+            mano_de_obra_id: manoDeObraId,
+            horas: horasFinales
+        };
+
+        console.log('📝 Datos a enviar:', datosHora);
+
+        if (hora.id) {
+            console.log('🔄 Actualizando horas ID:', hora.id);
+            await storeHorasPorManoDeObra.actualizarHorasPorManoDeObraAction(hora.id, datosHora);
+        } else {
+            console.log('🆕 Creando nuevas horas');
+            await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction(datosHora);
+        }
+        console.log('✅ Horas guardadas correctamente');
     } catch (err) {
         console.error('Error guardando horas:', err);
     } finally {
@@ -1107,6 +1140,13 @@ const incrementarHora = async (index) => {
     const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
     
     if (hora) {
+        // Verificar si excedería las 24 horas
+        const totalActual = totalHoras.value;
+        if (totalActual >= 24) {
+            mostrarMensaje('⏰ Ya has asignado el máximo de 24 horas permitidas', 'warning', 3000);
+            return;
+        }
+        
         hora.horas = Math.floor((hora.horas || 0)) + 1;
         console.log(`✅ Horas incrementadas:`, hora.horas);
         await guardarCambiosHoras();
@@ -1555,6 +1595,111 @@ onMounted(async () => {
 
 .error-close:hover {
     opacity: 0.7;
+}
+
+/* Mensaje personalizado */
+.custom-message {
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    animation: slideDown 0.3s ease-out;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 500px;
+    z-index: 2000;
+    margin: 0;
+}
+
+.message-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+}
+
+.message-text {
+    flex: 1;
+    font-size: 0.95rem;
+}
+
+.message-close {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1.4rem;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+.message-close:hover {
+    opacity: 0.7;
+    transform: scale(1.1);
+}
+
+.message-warning {
+    background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
+    color: #f57f17;
+    border-left: 4px solid #fbc02d;
+}
+
+.message-success {
+    background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+    color: #2e7d32;
+    border-left: 4px solid #4caf50;
+}
+
+.message-error {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #c62828;
+    border-left: 4px solid #f44336;
+}
+
+.message-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    color: #1565c0;
+    border-left: 4px solid #2196f3;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+    transition: all 0.3s ease;
+}
+
+.slide-down-enter-from {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.slide-down-leave-to {
+    opacity: 0;
+    transform: translateY(-20px);
 }
 
 .loading-state {
