@@ -412,6 +412,50 @@
                             + Agregar Mano de Obra
                         </button>
                     </div>
+
+                    <!-- Sección de Horas -->
+                    <div v-if="formData.mano_de_obra && horasManoDeObra.length > 0" class="selected-items">
+                        <h4 class="items-subtitle">⏱️ Horas Asignadas</h4>
+                        <div class="items-grid">
+                            <div v-for="(hora, index) in horasManoDeObra" :key="index" class="selected-item-edit">
+                                <div class="item-info">
+                                    <div class="item-name">Bloque {{ index + 1 }}</div>
+                                    <div class="item-price">${{ formatCurrency(hora.horas * (formData.mano_de_obra?.costo_hora || 0)) }}</div>
+                                </div>
+                                <div class="quantity-input-group">
+                                    <label :for="`qty-horas-${index}`">Horas</label>
+                                    <div class="quantity-controls">
+                                        <button 
+                                            type="button"
+                                            class="btn-qty-control btn-qty-minus"
+                                            @click="decrementarHoras(hora)"
+                                            title="Disminuir"
+                                        >−</button>
+                                        <input 
+                                            :id="`qty-horas-${index}`"
+                                            v-model.number="hora.horas"
+                                            type="number"
+                                            min="0"
+                                            step="0.5"
+                                            placeholder="0"
+                                            @blur="hora.horas = Math.max(0, hora.horas || 0)"
+                                            class="quantity-input"
+                                        />
+                                        <button 
+                                            type="button"
+                                            class="btn-qty-control btn-qty-plus"
+                                            @click="incrementarHoras(hora)"
+                                            title="Aumentar"
+                                        >+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="horas-summary">
+                            <p class="horas-total">Total: <strong>{{ horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</strong></p>
+                            <p class="horas-cost">Costo: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong></p>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn-secondary" @click="mostrarModalManoDeObra = false">Cerrar</button>
@@ -984,6 +1028,17 @@ const guardarManoDeObra = () => {
 const cancelarEdicionManoDeObra = () => {
     editandoManoDeObra.value = false;
     manoDeObraEditando.value = null;
+};
+
+// Funciones para editar horas de mano de obra
+const incrementarHoras = (hora) => {
+    hora.horas = Math.round((hora.horas || 0) * 2 + 1) / 2;
+};
+
+const decrementarHoras = (hora) => {
+    if ((hora.horas || 0) > 0) {
+        hora.horas = Math.round((hora.horas || 0) * 2 - 1) / 2;
+    }
 };
 
 // Funciones para editar acabado
@@ -1879,6 +1934,32 @@ onMounted(async () => {
 .btn-remove:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px rgba(198, 40, 40, 0.15);
+}
+
+.horas-summary {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #f0f4f8 0%, #f8fafc 100%);
+    border-left: 4px solid #059669;
+    border-radius: 6px;
+}
+
+.horas-total {
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a4037;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.horas-cost {
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a4037;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .add-section {
