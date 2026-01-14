@@ -5,7 +5,8 @@ import {
     getHorasPorComponenteId,
     getHorasById,
     crearHoras,
-    actualizarHoras
+    actualizarHoras,
+    eliminarHoras
 } from '@/http/horas_por_mano_de_obra_por_componente-api';
 
 export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-obra-componente', () => {
@@ -148,35 +149,56 @@ export const useHorasPorManoDeObraComponente = defineStore('horas-por-mano-de-ob
             if (horasExistente) {
                 // Si existe, actualizar
                 console.log('✅ Encontrado registro ID:', horasExistente.id);
-                const response = await actualizarHoras(horasExistente.id, datos);
-                console.log('✅ Horas actualizadas:', response);
                 
-                // Actualizar en la lista local
-                const index = horasPorManoDeObraComponente.value.findIndex(h => h.id === horasExistente.id);
-                if (index !== -1) {
-                    horasPorManoDeObraComponente.value[index] = { ...horasPorManoDeObraComponente.value[index], ...datos };
-                }
-                
-                return response;
-            } else {
-                // Si no existe, crear uno nuevo
-                console.log('📦 Creando nuevo registro de horas');
-                const nuosDatos = {
-                    componente_id: componenteId,
-                    mano_de_obra_id: manoDeObraId,
-                    ...datos
-                };
-                const response = await crearHoras(nuosDatos);
-                console.log('✅ Horas creadas:', response);
-                
-                // Agregar a la lista local
-                if (response.data) {
-                    horasPorManoDeObraComponente.value.push(response.data);
+                // Si las horas son 0 o negativas, eliminar el registro
+                if (datos.horas <= 0) {
+                    console.log('🗑️ Eliminando registro porque horas <= 0');
+                    await eliminarHoras(horasExistente.id);
+                    
+                    // Remover de la lista local
+                    const index = horasPorManoDeObraComponente.value.findIndex(h => h.id === horasExistente.id);
+                    if (index !== -1) {
+                        horasPorManoDeObraComponente.value.splice(index, 1);
+                    }
+                    
+                    return { mensaje: 'Registro eliminado' };
                 } else {
-                    horasPorManoDeObraComponente.value.push(response);
+                    // Si las horas son positivas, actualizar
+                    const response = await actualizarHoras(horasExistente.id, datos);
+                    console.log('✅ Horas actualizadas:', response);
+                    
+                    // Actualizar en la lista local
+                    const index = horasPorManoDeObraComponente.value.findIndex(h => h.id === horasExistente.id);
+                    if (index !== -1) {
+                        horasPorManoDeObraComponente.value[index] = { ...horasPorManoDeObraComponente.value[index], ...datos };
+                    }
+                    
+                    return response;
                 }
-                
-                return response;
+            } else {
+                // Si no existe y las horas son positivas, crear uno nuevo
+                if (datos.horas > 0) {
+                    console.log('📦 Creando nuevo registro de horas');
+                    const nuosDatos = {
+                        componente_id: componenteId,
+                        mano_de_obra_id: manoDeObraId,
+                        ...datos
+                    };
+                    const response = await crearHoras(nuosDatos);
+                    console.log('✅ Horas creadas:', response);
+                    
+                    // Agregar a la lista local
+                    if (response.data) {
+                        horasPorManoDeObraComponente.value.push(response.data);
+                    } else {
+                        horasPorManoDeObraComponente.value.push(response);
+                    }
+                    
+                    return response;
+                } else {
+                    console.log('⚠️ No se puede crear registro con horas <= 0');
+                    return { mensaje: 'No se crea registro con horas <= 0' };
+                }
             }
         } catch (err) {
             console.error('❌ Error en actualizarHorasPorManoDeObraComponenteAction:', err);

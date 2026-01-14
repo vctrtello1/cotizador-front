@@ -24,3 +24,8 @@ export const actualizarHoras = async (id, datos) => {
   const response = await api.put(`/horas-de-mano-de-obra-por-componentes/${id}`, datos);
   return response.data;
 };
+
+export const eliminarHoras = async (id) => {
+  const response = await api.delete(`/horas-de-mano-de-obra-por-componentes/${id}`);
+  return response.data;
+};

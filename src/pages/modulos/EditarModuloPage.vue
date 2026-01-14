@@ -720,9 +720,23 @@ const seleccionarAcabado = (acabado) => {
 };
 
 // Seleccionar mano de obra
-const seleccionarManoDeObra = (mano) => {
+const seleccionarManoDeObra = async (mano) => {
+    // Seleccionar la nueva mano de obra e inicializar en 1 hora
+    mano.horas = 1;
     componenteActual.value.mano_de_obra_id = mano.id;
-    componenteActual.value.mano_de_obra_horas = mano.horas || 0;
+    componenteActual.value.mano_de_obra_horas = 1;
+    
+    // Guardar la nueva mano de obra con 1 hora
+    try {
+        const storeHoras = useHorasPorManoDeObraComponente();
+        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+            componenteActual.value.id,
+            mano.id,
+            { horas: 1 }
+        );
+    } catch (err) {
+        console.warn('No se pudo guardar horas=1 para nueva mano de obra:', err);
+    }
 };
 
 // Abrir modal de mano de obra con horas inicializadas en 1
@@ -746,9 +760,9 @@ const incrementarHoras = async (mano) => {
 
 // Decrementar horas de mano de obra
 const decrementarHoras = async (mano) => {
-    if (!mano || (mano.horas || 0) <= 0) return;
+    if (!mano || (mano.horas || 0) <= 1) return;  // No bajar de 1 hora
     
-    mano.horas = Math.max(0, (mano.horas || 0) - 1);
+    mano.horas = (mano.horas || 0) - 1;
     await guardarHorasEnAPI(mano);
 };
 
