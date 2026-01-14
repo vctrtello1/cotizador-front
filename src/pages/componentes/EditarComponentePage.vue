@@ -1352,16 +1352,19 @@ const agregarManoDeObra = async (manoDeObra) => {
             datos.acabado_id = formData.value.acabado.id;
         }
         
-        console.log('📤 Guardando cambio de mano de obra en el servidor...');
+        console.log('📤 1️⃣ Guardando cambio de mano de obra en el servidor...');
         console.log('   Datos:', datos);
         
         const api = (await import('@/http/apl')).default;
         const response = await api.put(`/componentes/${route.params.id}`, datos);
-        console.log('✅ Respuesta del servidor:', response);
+        console.log('✅ 1️⃣ Respuesta del servidor - cambio guardado:', response);
         
         // Solo si el servidor confirmó, actualizar el estado local
+        console.log('📝 2️⃣ Actualizando mano de obra en el estado local...');
+        
         // Limpiar horas de la mano de obra anterior
         if (formData.value.mano_de_obra && formData.value.mano_de_obra.id !== manoDeObra.id) {
+            console.log('   Limpiando horas de mano de obra anterior');
             limpiarHorasManoDeObraAnterior();
         }
         
@@ -1369,42 +1372,43 @@ const agregarManoDeObra = async (manoDeObra) => {
         formData.value.mano_de_obra = {
             ...manoDeObra
         };
+        console.log('✅ 2️⃣ Mano de obra actualizada en estado local');
         
-        // Cerrar modal y limpiar búsqueda
-        mostrarSelectorManoDeObra.value = false;
-        busquedaManoDeObra.value = '';
-        
-        console.log('✅ Modal cerrado');
-        
-        // Cargar horas para la nueva mano de obra
-        console.log('📋 Cargando horas para la nueva mano de obra...');
-        await cargarHorasManoDeObra();
-        
-        // Si no hay horas, crear una inicial con 1 hora
-        if (horasManoDeObra.value.length === 0) {
-            console.log('🆕 Creando primer registro de horas con 1 hora...');
-            try {
-                await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
-                    componente_id: parseInt(route.params.id),
-                    mano_de_obra_id: manoDeObra.id,
-                    horas: 1
-                });
-                console.log('✅ Primer registro de horas creado');
-                // Recargar horas
-                await cargarHorasManoDeObra();
-            } catch (err) {
-                console.error('⚠️ Error creando primer registro de horas:', err);
-            }
+        // Crear registro de horas automáticamente
+        console.log('📋 3️⃣ Creando registro de horas de mano de obra por componente...');
+        try {
+            const horasData = {
+                componente_id: parseInt(route.params.id),
+                mano_de_obra_id: manoDeObra.id,
+                horas: 1  // Crear con 1 hora inicial
+            };
+            console.log('   Datos de horas:', horasData);
+            
+            const horasResponse = await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction(horasData);
+            console.log('✅ 3️⃣ Registro de horas creado:', horasResponse);
+        } catch (err) {
+            console.error('⚠️ 3️⃣ Error creando registro de horas:', err);
+            console.error('   Continuando sin horas iniciales...');
         }
         
-        console.log('✅ Mano de obra actualizada correctamente');
+        // Recargar horas desde el servidor
+        console.log('🔄 4️⃣ Recargando horas desde el servidor...');
+        await cargarHorasManoDeObra();
+        console.log('✅ 4️⃣ Horas recargadas:', horasManoDeObra.value.length);
+        
+        // Cerrar modal y limpiar búsqueda
+        console.log('🚪 5️⃣ Cerrando modal...');
+        mostrarSelectorManoDeObra.value = false;
+        busquedaManoDeObra.value = '';
+        console.log('✅ 5️⃣ Modal cerrado');
+        
+        console.log('🎉 Mano de obra actualizada exitosamente');
     } catch (err) {
         console.error('❌ Error al guardar cambio de mano de obra:', err);
         console.error('   Status:', err.response?.status);
         console.error('   Data:', err.response?.data);
         error.value = 'Error al cambiar la mano de obra: ' + (err.response?.data?.message || err.message);
-        // No cerrar el modal, mostrar el error
-        console.log('📌 Modal se mantiene abierto para reintentar');
+        console.log('📌 Modal se mantiene abierto para que puedas reintentar');
     }
 };
 
