@@ -458,7 +458,7 @@
                             </div>
                             <div class="button-group-vertical">
                                 <button class="btn-edit-item" @click="iniciarEdicionAcabado" title="Editar">✏️ Editar</button>
-                                <button class="btn-remove-large" @click="removerAcabado" title="Remover">✕ Quitar</button>
+                                <button class="btn-change-item" @click="abrirSelectorAcabados" title="Cambiar">🔄 Cambiar</button>
                             </div>
                         </div>
 
@@ -1966,6 +1966,25 @@ onMounted(() => {
 
 .btn-remove-large:hover {
     background: #ff9999;
+    color: white;
+}
+
+.btn-change-item {
+    padding: 8px 12px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #1976d2;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.btn-change-item:hover {
+    background: #90caf9;
     color: white;
 }
 
