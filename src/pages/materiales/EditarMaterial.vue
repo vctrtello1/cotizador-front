@@ -59,7 +59,7 @@
                         <input 
                             v-model="formData.codigo" 
                             type="text" 
-                            class="form-input" 
+                            class="form-input input-codigo" 
                             placeholder="Ej: MAD_PINO_1"
                             @blur="validarCampo('codigo')"
                         >
@@ -705,28 +705,38 @@ watch(() => route.params.id, (newId, oldId) => {
 
 .form-input {
     padding: 14px 16px;
-    border: 2px solid #e8ddd7;
+    border: 2px solid #d4a574;
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
     transition: all 0.3s;
-    background: #faf7f2;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    color: #5a4037;
 }
 
 .form-input::placeholder {
-    color: #bbb;
+    color: #d4a574;
+    opacity: 0.6;
 }
 
 .form-input:hover {
-    background: white;
-    border-color: #d4a574;
+    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
+    border-color: #c89564;
 }
 
 .form-input:focus {
     outline: none;
     background: white;
-    border-color: #d4a574;
-    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.15);
+    border-color: #c89564;
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.2);
+}
+
+/* Estilo especial para el código de material */
+.input-codigo {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: #8b5a2b;
 }
 
 .textarea-input {
