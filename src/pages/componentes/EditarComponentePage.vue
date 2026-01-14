@@ -570,7 +570,7 @@
                     </div>
                     <div class="materiales-grid">
                         <div 
-                            v-for="material in materialesFiltrados()"
+                            v-for="material in materialesFiltrados"
                             :key="material.id"
                             class="material-card"
                             @click="agregarMaterial(material)"
@@ -588,7 +588,7 @@
                             </div>
                         </div>
                     </div>
-                    <div v-if="materialesFiltrados().length === 0" class="empty-list">
+                    <div v-if="materialesFiltrados.length === 0" class="empty-list">
                         <p>📭 No hay materiales disponibles</p>
                     </div>
                 </div>
@@ -616,7 +616,7 @@
                     </div>
                     <div class="materiales-grid">
                         <div 
-                            v-for="herraje in herrajesFiltrados()"
+                            v-for="herraje in herrajesFiltrados"
                             :key="herraje.id"
                             class="material-card"
                             @click="agregarHerraje(herraje)"
@@ -634,7 +634,7 @@
                             </div>
                         </div>
                     </div>
-                    <div v-if="herrajesFiltrados().length === 0" class="empty-list">
+                    <div v-if="herrajesFiltrados.length === 0" class="empty-list">
                         <p>📭 No hay herrajes disponibles</p>
                     </div>
                 </div>
@@ -879,46 +879,20 @@ const cargarMaterialesPorComponente = async () => {
     try {
         cargandoMateriales.value = true;
         
-        // Cargar todos los materiales primero
-        console.log('📚 Cargando catálogo de materiales...');
+        // Cargar todos los materiales y sus relaciones con el componente
         await storeMateriales.fetchMaterialesAction();
-        console.log('✅ Materiales disponibles:', storeMateriales.materiales.length);
-        
-        // Cargar la relación de materiales por componente
-        console.log('📡 Cargando relación de materiales por componente...');
         await storeMaterialesPorComponente.fetchMaterialesPorComponenteAction();
-        console.log('✅ Todos los materiales por componente cargados:');
-        console.log('   Datos completos:', storeMaterialesPorComponente.materialesPorComponente);
-        console.log('   Cantidad total:', storeMaterialesPorComponente.materialesPorComponente.length);
         
-        // Luego filtrar los del componente actual
+        // Filtrar y enriquecer con datos del material
         const componenteId = parseInt(route.params.id);
-        console.log('🔍 Filtrando para componente ID:', componenteId);
-        
         const materialesRelacion = storeMaterialesPorComponente.getMaterialesPorComponente(componenteId);
-        console.log('✅ Relaciones encontradas:', materialesRelacion.length);
         
-        // Enriquecer con los datos del material
-        materialesDelComponente.value = materialesRelacion.map(rel => {
-            const materialData = storeMateriales.materiales.find(m => m.id === rel.material_id);
-            console.log(`   Material ID ${rel.material_id}:`, materialData?.nombre || '❌ NO ENCONTRADO');
-            return {
-                ...rel,
-                material: materialData || {}
-            };
-        });
-        
-        console.log('✅ Materiales del componente (enriquecidos):', materialesDelComponente.value);
-        console.log('   Cantidad:', materialesDelComponente.value.length);
-        
-        // Inspeccionar la estructura
-        if (materialesDelComponente.value.length > 0) {
-            console.log('📋 Primer material enriquecido:');
-            console.log('   Relación:', materialesDelComponente.value[0]);
-            console.log('   Material:', materialesDelComponente.value[0].material);
-        }
+        materialesDelComponente.value = materialesRelacion.map(rel => ({
+            ...rel,
+            material: storeMateriales.materiales.find(m => m.id === rel.material_id) || {}
+        }));
     } catch (err) {
-        console.error('❌ Error cargando materiales por componente:', err);
+        console.error('Error cargando materiales por componente:', err);
     } finally {
         cargandoMateriales.value = false;
     }
@@ -929,46 +903,20 @@ const cargarHerrajesPorComponente = async () => {
     try {
         cargandoHerrajes.value = true;
         
-        // Cargar el catálogo completo de herrajes primero
-        console.log('📚 Cargando catálogo de herrajes...');
+        // Cargar el catálogo completo de herrajes y sus relaciones
         await storeHerrajes.fetchHerralesAction();
-        console.log('✅ Herrajes disponibles:', storeHerrajes.herrajes.length);
-        
-        // Cargar la relación de cantidad por herraje
-        console.log('📡 Cargando relación de cantidad por herraje...');
         await storeCantidadPorHerraje.fetchCantidadPorHerrajeAction();
-        console.log('✅ Todos los herrajes por componente cargados:');
-        console.log('   Datos completos:', storeCantidadPorHerraje.cantidadPorHerraje);
-        console.log('   Cantidad total:', storeCantidadPorHerraje.cantidadPorHerraje.length);
         
-        // Luego filtrar los del componente actual
+        // Filtrar y enriquecer con datos del herraje
         const componenteId = parseInt(route.params.id);
-        console.log('🔍 Filtrando para componente ID:', componenteId);
-        
         const herrajesRelacion = storeCantidadPorHerraje.getCantidadPorComponente(componenteId);
-        console.log('✅ Relaciones encontradas:', herrajesRelacion.length);
         
-        // Enriquecer con los datos del herraje
-        herrajesDelComponente.value = herrajesRelacion.map(rel => {
-            const herrajeData = storeHerrajes.herrajes.find(h => h.id === rel.herraje_id);
-            console.log(`   Herraje ID ${rel.herraje_id}:`, herrajeData?.nombre || '❌ NO ENCONTRADO');
-            return {
-                ...rel,
-                herraje: herrajeData || {}
-            };
-        });
-        
-        console.log('✅ Herrajes del componente (enriquecidos):', herrajesDelComponente.value);
-        console.log('   Cantidad:', herrajesDelComponente.value.length);
-        
-        // Inspeccionar la estructura
-        if (herrajesDelComponente.value.length > 0) {
-            console.log('📋 Primer herraje enriquecido:');
-            console.log('   Relación:', herrajesDelComponente.value[0]);
-            console.log('   Herraje:', herrajesDelComponente.value[0].herraje);
-        }
+        herrajesDelComponente.value = herrajesRelacion.map(rel => ({
+            ...rel,
+            herraje: storeHerrajes.herrajes.find(h => h.id === rel.herraje_id) || {}
+        }));
     } catch (err) {
-        console.error('❌ Error cargando herrajes por componente:', err);
+        console.error('Error cargando herrajes por componente:', err);
     } finally {
         cargandoHerrajes.value = false;
     }
@@ -977,47 +925,24 @@ const cargarHerrajesPorComponente = async () => {
 // Cargar horas de mano de obra por componente
 const cargarHorasManoDeObra = async () => {
     try {
-        const componenteId = route.params.id;
-        console.log('📋 Cargando horas de mano de obra para componente:', componenteId);
-        
-        // Cargar todas las horas disponibles del store
+        const componenteId = parseInt(route.params.id);
         await storeHorasPorManoDeObra.fetchHorasPorManoDeObraComponenteAction();
         
-        // Filtrar las horas para este componente
         const todasLasHoras = storeHorasPorManoDeObra.horasPorManoDeObraComponente;
-        console.log('📡 Todas las horas disponibles:', todasLasHoras.length);
+        horasManoDeObra.value = todasLasHoras.filter(h => parseInt(h.componente_id) === componenteId);
         
-        if (todasLasHoras && todasLasHoras.length > 0) {
-            // Filtrar por componente_id (asegurar que sea comparación numérica)
-            horasManoDeObra.value = todasLasHoras.filter(h => {
-                return parseInt(h.componente_id) === parseInt(componenteId);
+        // Si no hay horas pero hay mano de obra, crear registro inicial
+        if (horasManoDeObra.value.length === 0 && formData.value.mano_de_obra?.id) {
+            await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
+                componente_id: componenteId,
+                mano_de_obra_id: formData.value.mano_de_obra.id,
+                horas: 1
             });
-            console.log('✅ Horas de mano de obra para este componente:', horasManoDeObra.value.length);
-            const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-            console.log('   Total de horas:', totalHoras);
-        } else {
-            horasManoDeObra.value = [];
-            console.log('📭 No hay horas de mano de obra en el sistema');
-            
-            // Si el componente tiene mano de obra pero no hay horas, crear un registro inicial
-            if (formData.value.mano_de_obra && formData.value.mano_de_obra.id) {
-                console.log('🆕 Creando primer registro de horas inicial (1 hora)...');
-                try {
-                    await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
-                        componente_id: parseInt(componenteId),
-                        mano_de_obra_id: formData.value.mano_de_obra.id,
-                        horas: 1
-                    });
-                    console.log('✅ Primer registro de horas creado');
-                    // Recargar horas
-                    await cargarHorasManoDeObra();
-                } catch (err) {
-                    console.error('⚠️ Error creando primer registro de horas:', err);
-                }
-            }
+            // Recargar
+            await cargarHorasManoDeObra();
         }
     } catch (err) {
-        console.error('❌ Error cargando horas de mano de obra:', err);
+        console.error('Error cargando horas de mano de obra:', err);
         horasManoDeObra.value = [];
     }
 };
@@ -1040,22 +965,22 @@ const formatCurrency = (value) => {
     return parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-// Métodos para remover elementos de los modales
-const removerMaterial = (id) => {
-    formData.value.materiales = formData.value.materiales.filter(m => m.id !== id);
+// Métodos genéricos para remover elementos
+const removerDelFormulario = (tipo, id) => {
+    switch(tipo) {
+        case 'material':
+            formData.value.materiales = formData.value.materiales.filter(m => m.id !== id);
+            break;
+        case 'herraje':
+            formData.value.herrajes = formData.value.herrajes.filter(h => h.id !== id);
+            break;
+    }
 };
 
-const removerHerraje = (id) => {
-    formData.value.herrajes = formData.value.herrajes.filter(h => h.id !== id);
-};
-
-const removerManoDeObra = () => {
-    formData.value.mano_de_obra = null;
-};
-
-const removerAcabado = () => {
-    formData.value.acabado = null;
-};
+const removerMaterial = (id) => removerDelFormulario('material', id);
+const removerHerraje = (id) => removerDelFormulario('herraje', id);
+const removerManoDeObra = () => { formData.value.mano_de_obra = null; };
+const removerAcabado = () => { formData.value.acabado = null; };
 
 // Funciones para editar mano de obra
 const iniciarEdicionManoDeObra = () => {
@@ -1271,50 +1196,55 @@ const decrementarCantidad = (item) => {
     }
 };
 
-// Cargar materiales disponibles
-const cargarMateriales = async () => {
+// Cargar catálogos de forma genérica
+const cargarCatalogo = async (endpoint, targetRef) => {
     try {
         const api = (await import('@/http/apl')).default;
-        const response = await api.get('/materiales');
+        const response = await api.get(endpoint);
         const data = response.data.data || response.data || [];
-        materialesDisponibles.value = Array.isArray(data) ? data : [];
-        console.log('Materiales disponibles:', materialesDisponibles.value);
+        targetRef.value = Array.isArray(data) ? data : [];
     } catch (err) {
-        console.error('Error al cargar materiales:', err);
-        materialesDisponibles.value = [];
+        console.error(`Error cargando ${endpoint}:`, err);
+        targetRef.value = [];
     }
 };
 
-// Abrir selector de materiales
-const abrirSelectorMateriales = async () => {
-    await cargarMateriales();
-    mostrarSelectorMateriales.value = true;
+// Abrir selectores genérico
+const abrirSelector = async (endpoint, catalogRef, showRef) => {
+    await cargarCatalogo(endpoint, catalogRef);
+    showRef.value = true;
 };
 
-// Cargar herrajes disponibles
-const cargarHerrajes = async () => {
-    try {
-        const api = (await import('@/http/apl')).default;
-        const response = await api.get('/herrajes');
-        const data = response.data.data || response.data || [];
-        herrajesDisponibles.value = Array.isArray(data) ? data : [];
-        console.log('Herrajes disponibles:', herrajesDisponibles.value);
-    } catch (err) {
-        console.error('Error al cargar herrajes:', err);
-        herrajesDisponibles.value = [];
-    }
+const abrirSelectorMateriales = () => abrirSelector('/materiales', materialesDisponibles, mostrarSelectorMateriales);
+const abrirSelectorHerrajes = () => abrirSelector('/herrajes', herrajesDisponibles, mostrarSelectorHerrajes);
+
+// Helper para filtrar por búsqueda y por items existentes
+const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
+    const filtrados = catalog.filter(item => 
+        !itemsExistentes.some(existing => existing.id === item.id)
+    );
+    
+    if (!busqueda.trim()) return filtrados;
+    
+    const busquedaLower = busqueda.toLowerCase();
+    return filtrados.filter(item => 
+        item.nombre.toLowerCase().includes(busquedaLower) ||
+        item.codigo.toLowerCase().includes(busquedaLower)
+    );
 };
 
-// Abrir selector de herrajes
-const abrirSelectorHerrajes = async () => {
-    await cargarHerrajes();
-    mostrarSelectorHerrajes.value = true;
-};
+// Computed properties para filtros
+const materialesFiltrados = computed(() => 
+    filtrarCatalogo(materialesDisponibles.value, busquedaMaterial.value, formData.value.materiales)
+);
 
-// Agregar material seleccionado
+const herrajesFiltrados = computed(() => 
+    filtrarCatalogo(herrajesDisponibles.value, busquedaHerraje.value, formData.value.herrajes)
+);
+
+// Métodos simplificados
 const agregarMaterial = (material) => {
     if (material && !formData.value.materiales.some(m => m.id === material.id)) {
-        // Agregar el material con cantidad inicial de 1
         formData.value.materiales.push({
             ...material,
             cantidad: material.cantidad || 1
@@ -1324,51 +1254,13 @@ const agregarMaterial = (material) => {
     }
 };
 
-// Agregar herraje seleccionado
 const agregarHerraje = (herraje) => {
     if (herraje && !formData.value.herrajes.some(h => h.id === herraje.id)) {
-        // Agregar el herraje con cantidad inicial de 1
         formData.value.herrajes.push({
             ...herraje,
             cantidad: herraje.cantidad || 1
         });
     }
-};
-
-// Filtrar materiales disponibles
-const materialesFiltrados = () => {
-    const filtrados = materialesDisponibles.value.filter(m => 
-        !formData.value.materiales.some(mat => mat.id === m.id)
-    );
-    
-    // Filtrar por búsqueda
-    if (busquedaMaterial.value.trim()) {
-        const busqueda = busquedaMaterial.value.toLowerCase();
-        return filtrados.filter(m => 
-            m.nombre.toLowerCase().includes(busqueda) ||
-            m.codigo.toLowerCase().includes(busqueda)
-        );
-    }
-    
-    return filtrados;
-};
-
-// Filtrar herrajes disponibles
-const herrajesFiltrados = () => {
-    const filtrados = herrajesDisponibles.value.filter(h => 
-        !formData.value.herrajes.some(her => her.id === h.id)
-    );
-    
-    // Filtrar por búsqueda
-    if (busquedaHerraje.value.trim()) {
-        const busqueda = busquedaHerraje.value.toLowerCase();
-        return filtrados.filter(h => 
-            h.nombre.toLowerCase().includes(busqueda) ||
-            h.codigo.toLowerCase().includes(busqueda)
-        );
-    }
-    
-    return filtrados;
 };
 
 // Cargar acabados disponibles
