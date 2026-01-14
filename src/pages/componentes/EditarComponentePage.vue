@@ -261,14 +261,35 @@
                     <button class="modal-close" @click="mostrarModalHerrajes = false">✕</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Sección para agregar nuevo herraje -->
+                    <div class="add-section">
+                        <button 
+                            type="button" 
+                            class="btn-add-material"
+                            @click="abrirSelectorHerrajes()"
+                        >+ Agregar Herraje</button>
+                    </div>
+
+                    <!-- Sección de herrajes seleccionados -->
                     <div v-if="formData.herrajes && formData.herrajes.length > 0" class="selected-items">
                         <h4 class="items-subtitle">Herrajes Seleccionados</h4>
                         <div class="items-grid">
-                            <div v-for="herraje in formData.herrajes" :key="herraje.id" class="selected-item">
+                            <div v-for="herraje in formData.herrajes" :key="herraje.id" class="selected-item-edit">
                                 <div class="item-info">
                                     <div class="item-name">{{ herraje.nombre }}</div>
                                     <div class="item-code">{{ herraje.codigo }}</div>
                                     <div class="item-price">${{ formatCurrency(herraje.precio_unitario) }}</div>
+                                </div>
+                                <div class="quantity-input-group">
+                                    <label :for="`qty-herraje-${herraje.id}`">Cantidad</label>
+                                    <input 
+                                        :id="`qty-herraje-${herraje.id}`"
+                                        v-model.number="herraje.cantidad"
+                                        type="number"
+                                        min="1"
+                                        placeholder="1"
+                                        class="quantity-input"
+                                    />
                                 </div>
                                 <button class="btn-remove" @click="removerHerraje(herraje.id)" title="Remover">×</button>
                             </div>
@@ -395,6 +416,52 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Selector de Herrajes -->
+        <div v-if="mostrarSelectorHerrajes" class="modal-overlay" @click.self="mostrarSelectorHerrajes = false">
+            <div class="modal-content modal-content-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">🔩 Seleccionar Herrajes</h3>
+                    <button class="modal-close" @click="mostrarSelectorHerrajes = false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="search-section">
+                        <input 
+                            v-model="busquedaHerraje"
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar herraje..."
+                        />
+                    </div>
+                    <div class="materiales-grid">
+                        <div 
+                            v-for="herraje in herrajesFiltrados()"
+                            :key="herraje.id"
+                            class="material-card"
+                            @click="agregarHerraje(herraje)"
+                        >
+                            <div class="card-header">
+                                <div class="card-name">{{ herraje.nombre }}</div>
+                                <div class="card-badge">{{ herraje.codigo }}</div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-label">Precio Unitario</p>
+                                <p class="card-price">${{ formatCurrency(herraje.precio_unitario) }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-select">+ Seleccionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="herrajesFiltrados().length === 0" class="empty-list">
+                        <p>📭 No hay herrajes disponibles</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarSelectorHerrajes = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -446,6 +513,11 @@ const mostrarSelectorMateriales = ref(false);
 const materialesDisponibles = ref([]);
 const materialSeleccionadoId = ref(null);
 const busquedaMaterial = ref('');
+
+// Datos para seleccionar herrajes
+const herrajesDisponibles = ref([]);
+const busquedaHerraje = ref('');
+const mostrarSelectorHerrajes = ref(false);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -622,6 +694,27 @@ const abrirSelectorMateriales = async () => {
     await cargarMateriales();
     mostrarSelectorMateriales.value = true;
 };
+
+// Cargar herrajes disponibles
+const cargarHerrajes = async () => {
+    try {
+        const api = (await import('@/http/apl')).default;
+        const response = await api.get('/herrajes');
+        const data = response.data.data || response.data || [];
+        herrajesDisponibles.value = Array.isArray(data) ? data : [];
+        console.log('Herrajes disponibles:', herrajesDisponibles.value);
+    } catch (err) {
+        console.error('Error al cargar herrajes:', err);
+        herrajesDisponibles.value = [];
+    }
+};
+
+// Abrir selector de herrajes
+const abrirSelectorHerrajes = async () => {
+    await cargarHerrajes();
+    mostrarSelectorHerrajes.value = true;
+};
+
 // Agregar material seleccionado
 const agregarMaterial = (material) => {
     if (material && !formData.value.materiales.some(m => m.id === material.id)) {
@@ -632,6 +725,17 @@ const agregarMaterial = (material) => {
         });
         mostrarSelectorMateriales.value = false;
         busquedaMaterial.value = '';
+    }
+};
+
+// Agregar herraje seleccionado
+const agregarHerraje = (herraje) => {
+    if (herraje && !formData.value.herrajes.some(h => h.id === herraje.id)) {
+        // Agregar el herraje con cantidad inicial de 1
+        formData.value.herrajes.push({
+            ...herraje,
+            cantidad: herraje.cantidad || 1
+        });
     }
 };
 
@@ -647,6 +751,24 @@ const materialesFiltrados = () => {
         return filtrados.filter(m => 
             m.nombre.toLowerCase().includes(busqueda) ||
             m.codigo.toLowerCase().includes(busqueda)
+        );
+    }
+    
+    return filtrados;
+};
+
+// Filtrar herrajes disponibles
+const herrajesFiltrados = () => {
+    const filtrados = herrajesDisponibles.value.filter(h => 
+        !formData.value.herrajes.some(her => her.id === h.id)
+    );
+    
+    // Filtrar por búsqueda
+    if (busquedaHerraje.value.trim()) {
+        const busqueda = busquedaHerraje.value.toLowerCase();
+        return filtrados.filter(h => 
+            h.nombre.toLowerCase().includes(busqueda) ||
+            h.codigo.toLowerCase().includes(busqueda)
         );
     }
     
