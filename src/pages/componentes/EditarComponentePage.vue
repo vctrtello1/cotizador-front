@@ -1026,97 +1026,51 @@ const cancelarEdicionManoDeObra = () => {
 
 // Funciones para editar horas de mano de obra
 const guardarCambiosHoras = async () => {
-    // Evitar guardar múltiples veces simultáneamente
-    if (guardandoHoras.value) {
-        console.log('⏳ Ya hay un guardado en progreso, ignorando solicitud...');
-        return;
-    }
+    if (guardandoHoras.value) return; // Evitar guardados simultáneos
     
     guardandoHoras.value = true;
-    
     try {
-        console.log('💾 Guardando cambios de horas en la API...');
-            console.log('   Estado actual de horasManoDeObra:', horasManoDeObra.value);
-            
-            // Crear promesas para actualizar cada hora
-            const promesas = horasManoDeObra.value.map(hora => {
-                console.log('📤 Enviando:', { id: hora.id, horas: Math.floor(hora.horas || 0) });
-                return storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
-                    id: hora.id,
-                    componente_id: route.params.id,
-                    mano_de_obra_id: formData.value.mano_de_obra?.id,
-                    horas: Math.floor(hora.horas || 0)
-                });
-            });
-            
-            const resultados = await Promise.allSettled(promesas);
-            
-            // Procesar resultados
-            const exitosos = resultados.filter(r => r.status === 'fulfilled').length;
-            const errores = resultados.filter(r => r.status === 'rejected').length;
-            
-            // Mostrar detalles de los errores
-            resultados.forEach((resultado, index) => {
-                if (resultado.status === 'rejected') {
-                    console.error(`❌ Error en hora ${index + 1}:`, resultado.reason);
-                }
-            });
-            
-            console.log(`✅ Horas guardadas: ${exitosos} exitosas, ${errores} con error`);
-            console.log('   Estado después de guardar:', horasManoDeObra.value);
+        const promesas = horasManoDeObra.value
+            .filter(hora => (hora.horas || 0) > 0)
+            .map(hora => storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
+                id: hora.id,
+                componente_id: route.params.id,
+                mano_de_obra_id: formData.value.mano_de_obra?.id,
+                horas: Math.floor(hora.horas)
+            }));
+        
+        if (promesas.length > 0) {
+            await Promise.allSettled(promesas);
+        }
     } catch (err) {
-        console.error('❌ Error guardando horas:', err);
+        console.error('Error guardando horas:', err);
     } finally {
         guardandoHoras.value = false;
     }
 };
 
 const incrementarHorasTotal = async () => {
-    console.log('➕ INICIO: Incrementando horas');
-    console.log('   ANTES - totalHoras.value:', totalHoras.value);
-    console.log('   ANTES - horasManoDeObra:', horasManoDeObra.value.map((h, i) => ({ bloque: i, horas: h.horas })));
-    
-    if (horasManoDeObra.value.length > 0) {
-        // Incrementar el último bloque (el más reciente/general)
-        const ultimoBloque = horasManoDeObra.value[horasManoDeObra.value.length - 1];
-        if (ultimoBloque) {
-            const horasAnteriores = ultimoBloque.horas;
-            ultimoBloque.horas = Math.floor((ultimoBloque.horas || 0)) + 1;
-            console.log('   CAMBIO APLICADO - último bloque:', horasAnteriores, '→', ultimoBloque.horas);
-            console.log('   DESPUÉS - totalHoras.value:', totalHoras.value);
-            await guardarCambiosHoras();
-            console.log('   FINAL - totalHoras.value:', totalHoras.value);
-            console.log('   FINAL - horasManoDeObra:', horasManoDeObra.value.map((h, i) => ({ bloque: i, horas: h.horas })));
-        }
-    }
-    console.log('➕ FIN: Incrementando horas');
+    if (horasManoDeObra.value.length === 0) return;
+    const ultimoBloque = horasManoDeObra.value[horasManoDeObra.value.length - 1];
+    ultimoBloque.horas = Math.floor((ultimoBloque.horas || 0)) + 1;
+    await guardarCambiosHoras();
 };
 
 const decrementarHorasTotal = async () => {
-    console.log('➖ Decrementando horas');
-    if (horasManoDeObra.value.length > 0) {
-        const totalActual = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-        // Mínimo 1 hora total (el backend requiere al menos 1 hora)
-        if (totalActual > 1) {
-            // Encontrar el primer bloque con horas > 0 para decrementar
-            let decrementado = false;
-            for (let i = 0; i < horasManoDeObra.value.length; i++) {
-                if (horasManoDeObra.value[i].horas > 0) {
-                    const horasAnteriores = horasManoDeObra.value[i].horas;
-                    horasManoDeObra.value[i].horas = Math.max(0, horasManoDeObra.value[i].horas - 1);
-                    console.log(`   Bloque ${i}: ${horasAnteriores} → ${horasManoDeObra.value[i].horas}`);
-                    decrementado = true;
-                    break;
-                }
-            }
-            if (decrementado) {
-                console.log('   Total calculado:', totalHoras.value);
-                await guardarCambiosHoras();
-            }
-        } else {
-            console.log('   No se puede decrementar, ya está en mínimo (1 hora total)');
-        }
-    }
+    if (horasManoDeObra.value.length === 0) return;
+    
+    const totalActual = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
+    if (totalActual <= 1) return; // Mínimo 1 hora total
+    
+    // Encontrar y decrementar el primer bloque con horas > 0
+    const bloqueIndex = horasManoDeObra.value.findIndex(h => h.horas > 0);
+    if (bloqueIndex === -1) return;
+    
+    horasManoDeObra.value[bloqueIndex].horas = Math.max(0, horasManoDeObra.value[bloqueIndex].horas - 1);
+    await guardarCambiosHoras();
+    
+    // Limpiar bloques vacíos
+    horasManoDeObra.value = horasManoDeObra.value.filter(hora => (hora.horas || 0) > 0);
 };
 
 const actualizarHorasTotal = async (event) => {
