@@ -1004,13 +1004,30 @@ const removerDelFormulario = (tipo, id) => {
             formData.value.materiales = formData.value.materiales.filter(m => m.id !== id);
             break;
         case 'herraje':
-            formData.value.herrajes = formData.value.herrajes.filter(h => h.id !== id);
+            removerHerraje(id);
             break;
     }
 };
 
 const removerMaterial = (id) => removerDelFormulario('material', id);
-const removerHerraje = (id) => removerDelFormulario('herraje', id);
+const removerHerraje = async (herrajeId) => {
+    try {
+        // Encontrar el registro de cantidad-por-herraje para este herraje
+        const herrajeComp = herrajesDelComponente.value.find(h => h.herraje_id === herrajeId);
+        
+        if (herrajeComp && herrajeComp.id) {
+            // Eliminar del backend
+            await storeCantidadPorHerraje.eliminarCantidadPorHerrajeAction(herrajeComp.id);
+            
+            // Actualizar lista local
+            herrajesDelComponente.value = herrajesDelComponente.value.filter(h => h.id !== herrajeComp.id);
+            //mostrarMensaje('✅ Herraje eliminado', 'success', 2000);
+        }
+    } catch (err) {
+        console.error('Error eliminando herraje:', err);
+        mostrarMensaje('❌ Error al eliminar herraje', 'error', 3000);
+    }
+};
 const removerManoDeObra = () => { formData.value.mano_de_obra = null; };
 const removerAcabado = () => { formData.value.acabado = null; };
 
@@ -1268,7 +1285,6 @@ const guardarCantidadHerraje = async (herraje) => {
         // Actualizar en el backend
         const resultado = await storeCantidadPorHerraje.actualizarCantidadPorHerrajeAction(herrajeComp.id, datosActualizar);
         console.log('✅ Respuesta del API:', resultado);
-        mostrarMensaje(`✅ Cantidad actualizada a ${cantidadFinal}`, 'success', 2000);
     } catch (err) {
         console.error('❌ Error guardando cantidad de herraje:', err);
         mostrarMensaje('❌ Error al actualizar cantidad de herraje', 'error', 3000);
@@ -1299,9 +1315,12 @@ const abrirSelectorHerrajes = () => abrirSelector('/herrajes', herrajesDisponibl
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
-    const filtrados = catalog.filter(item => 
-        !itemsExistentes.some(existing => existing.id === item.id)
-    );
+    // itemsExistentes puede ser un array de objetos o un array de IDs
+    const existentesIds = Array.isArray(itemsExistentes) 
+        ? itemsExistentes.map(item => typeof item === 'object' ? item.id : item)
+        : [];
+    
+    const filtrados = catalog.filter(item => !existentesIds.includes(item.id));
     
     if (!busqueda.trim()) return filtrados;
     
@@ -1317,9 +1336,10 @@ const materialesFiltrados = computed(() =>
     filtrarCatalogo(materialesDisponibles.value, busquedaMaterial.value, formData.value.materiales)
 );
 
-const herrajesFiltrados = computed(() => 
-    filtrarCatalogo(herrajesDisponibles.value, busquedaHerraje.value, formData.value.herrajes)
-);
+const herrajesFiltrados = computed(() => {
+    const herrajesAgregados = herrajesDelComponente.value.map(h => h.herraje_id);
+    return filtrarCatalogo(herrajesDisponibles.value, busquedaHerraje.value, herrajesAgregados);
+});
 
 // Métodos simplificados
 const agregarMaterial = (material) => {
@@ -1333,12 +1353,38 @@ const agregarMaterial = (material) => {
     }
 };
 
-const agregarHerraje = (herraje) => {
-    if (herraje && !formData.value.herrajes.some(h => h.id === herraje.id)) {
-        formData.value.herrajes.push({
-            ...herraje,
-            cantidad: herraje.cantidad || 1
+const agregarHerraje = async (herraje) => {
+    try {
+        if (!herraje || !herraje.id) return;
+        
+        // Verificar que no exista ya
+        const yaExiste = herrajesDelComponente.value.some(h => h.herraje_id === herraje.id);
+        if (yaExiste) {
+            mostrarMensaje('⚠️ Este herraje ya está agregado', 'warning', 2000);
+            return;
+        }
+        
+        // Crear el registro en el backend
+        const datosNuevo = {
+            componente_id: parseInt(route.params.id),
+            herraje_id: herraje.id,
+            cantidad: 1
+        };
+        
+        const resultado = await storeCantidadPorHerraje.crearCantidadPorHerrajeAction(datosNuevo);
+        
+        // Agregar a la lista local
+        herrajesDelComponente.value.push({
+            ...resultado,
+            herraje: herraje
         });
+        
+        mostrarMensaje('✅ Herraje agregado', 'success', 2000);
+        mostrarSelectorHerrajes.value = false;
+        busquedaHerraje.value = '';
+    } catch (err) {
+        console.error('Error agregando herraje:', err);
+        mostrarMensaje('❌ Error al agregar herraje', 'error', 3000);
     }
 };
 

@@ -24,3 +24,8 @@ export const actualizarCantidadPorHerraje = async (id, datos) => {
   const response = await api.put(`/cantidad-por-herrajes/${id}`, datos);
   return response.data;
 };
+
+export const eliminarCantidadPorHerraje = async (id) => {
+  const response = await api.delete(`/cantidad-por-herrajes/${id}`);
+  return response.data;
+};

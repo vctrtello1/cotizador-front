@@ -5,7 +5,8 @@ import {
     getCantidadPorHerrajeId,
     getCantidadPorHerrajeById,
     crearCantidadPorHerraje,
-    actualizarCantidadPorHerraje 
+    actualizarCantidadPorHerraje,
+    eliminarCantidadPorHerraje 
 } from '@/http/cantidad_por_herraje-api';
 
 export const useCantidadPorHerraje = defineStore('cantidad-por-herraje', () => {
@@ -100,6 +101,24 @@ export const useCantidadPorHerraje = defineStore('cantidad-por-herraje', () => {
         }
     };
 
+    const eliminarCantidadPorHerrajeAction = async (id) => {
+        loading.value = true;
+        error.value = null;
+        try {
+            await eliminarCantidadPorHerraje(id);
+            console.log('Cantidad por herraje eliminada:', id);
+            // Eliminar del array local
+            cantidadPorHerraje.value = cantidadPorHerraje.value.filter(h => h.id !== id);
+            return true;
+        } catch (err) {
+            console.error('Error eliminando cantidad por herraje en store:', err);
+            error.value = err.message || 'Error al eliminar cantidad por herraje';
+            throw error.value;
+        } finally {
+            loading.value = false;
+        }
+    };
+
     const getCantidadPorComponente = (componenteId) => {
         return cantidadPorHerraje.value.filter(
             herraje => herraje.componente_id === componenteId
@@ -118,6 +137,7 @@ export const useCantidadPorHerraje = defineStore('cantidad-por-herraje', () => {
         getCantidadPorHerrajeByIdAction,
         crearCantidadPorHerrajeAction,
         actualizarCantidadPorHerrajeAction,
+        eliminarCantidadPorHerrajeAction,
         getCantidadPorComponente,
         getCantidadHerrajesPorComponente
     };
