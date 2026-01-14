@@ -362,7 +362,7 @@
                             </div>
                             <div class="button-group-vertical">
                                 <button class="btn-edit-item" @click="iniciarEdicionManoDeObra" title="Editar">✏️ Editar</button>
-                                <button class="btn-remove-large" @click="removerManoDeObra" title="Remover">✕ Quitar</button>
+                                <button class="btn-change-item" @click="abrirSelectorManoDeObra" title="Cambiar">🔄 Cambiar</button>
                             </div>
                         </div>
 
@@ -418,8 +418,10 @@
                             </div>
                         </div>
                     </div>
-                    <div v-else class="empty-list">
-                        <p>📭 No hay mano de obra asignada</p>
+                    <div v-else class="add-section">
+                        <button type="button" class="btn-add-material" @click="abrirSelectorManoDeObra">
+                            + Agregar Mano de Obra
+                        </button>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -603,6 +605,52 @@
             </div>
         </div>
 
+        <!-- Modal Selector de Mano de Obra -->
+        <div v-if="mostrarSelectorManoDeObra" class="modal-overlay" @click.self="mostrarSelectorManoDeObra = false">
+            <div class="modal-content modal-content-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">👷 Seleccionar Mano de Obra</h3>
+                    <button class="modal-close" @click="mostrarSelectorManoDeObra = false">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="search-section">
+                        <input 
+                            v-model="busquedaManoDeObra"
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar mano de obra..."
+                        />
+                    </div>
+                    <div class="materiales-grid">
+                        <div 
+                            v-for="manoDeObra in manoDeObraFiltrada()"
+                            :key="manoDeObra.id"
+                            class="material-card"
+                            @click="agregarManoDeObra(manoDeObra)"
+                        >
+                            <div class="card-header">
+                                <div class="card-name">{{ manoDeObra.nombre }}</div>
+                                <div class="card-badge">{{ manoDeObra.codigo }}</div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-label">Costo/Hora</p>
+                                <p class="card-price">${{ formatCurrency(manoDeObra.costo_hora) }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-select">+ Seleccionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="manoDeObraFiltrada().length === 0" class="empty-list">
+                        <p>📭 No hay mano de obra disponible</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarSelectorManoDeObra = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal Selector de Acabados -->
         <div v-if="mostrarSelectorAcabados" class="modal-overlay" @click.self="mostrarSelectorAcabados = false">
             <div class="modal-content modal-content-large">
@@ -708,6 +756,11 @@ const mostrarSelectorHerrajes = ref(false);
 // Estado para editar mano de obra
 const editandoManoDeObra = ref(false);
 const manoDeObraEditando = ref(null);
+
+// Datos para seleccionar mano de obra
+const manoDeObraDisponible = ref([]);
+const busquedaManoDeObra = ref('');
+const mostrarSelectorManoDeObra = ref(false);
 
 // Estado para editar acabado
 const editandoAcabado = ref(false);
@@ -1052,6 +1105,49 @@ const cargarAcabados = async () => {
         console.error('Error al cargar acabados:', err);
         acabadosDisponibles.value = [];
     }
+};
+
+// Cargar mano de obra disponible
+const cargarManoDeObraDisponible = async () => {
+    try {
+        const api = (await import('@/http/apl')).default;
+        const response = await api.get('/mano-de-obras');
+        const data = response.data.data || response.data || [];
+        manoDeObraDisponible.value = Array.isArray(data) ? data : [];
+        console.log('Mano de obra disponible:', manoDeObraDisponible.value);
+    } catch (err) {
+        console.error('Error al cargar mano de obra:', err);
+        manoDeObraDisponible.value = [];
+    }
+};
+
+// Abrir selector de mano de obra
+const abrirSelectorManoDeObra = async () => {
+    await cargarManoDeObraDisponible();
+    mostrarSelectorManoDeObra.value = true;
+};
+
+// Agregar mano de obra seleccionada
+const agregarManoDeObra = (manoDeObra) => {
+    if (manoDeObra) {
+        formData.value.mano_de_obra = {
+            ...manoDeObra
+        };
+        mostrarSelectorManoDeObra.value = false;
+        busquedaManoDeObra.value = '';
+    }
+};
+
+// Filtrar mano de obra disponible
+const manoDeObraFiltrada = () => {
+    if (busquedaManoDeObra.value.trim()) {
+        const busqueda = busquedaManoDeObra.value.toLowerCase();
+        return manoDeObraDisponible.value.filter(m => 
+            m.nombre.toLowerCase().includes(busqueda) ||
+            (m.codigo && m.codigo.toLowerCase().includes(busqueda))
+        );
+    }
+    return manoDeObraDisponible.value;
 };
 
 // Abrir selector de acabados
