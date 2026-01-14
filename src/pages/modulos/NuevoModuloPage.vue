@@ -794,16 +794,31 @@ const guardarHorasEnAPI = async (mano) => {
     }
 };
 
+// Guardar cambios de cantidad (solo actualiza el estado local, se guarda con Guardar Módulo)
+const guardarCambiosComponente = async () => {
+    if (!componenteActual.value) return;
+    
+    // Actualizar el componente en formData para reflejar los cambios
+    const indiceComponente = formData.value.componentes.findIndex(c => c.id === componenteActual.value.id);
+    if (indiceComponente !== -1) {
+        formData.value.componentes[indiceComponente].cantidad = componenteActual.value.cantidad;
+    }
+    
+    mostrarMensaje('✅ Cantidad actualizada', 'success', 1000);
+};
+
 // Incrementar cantidad de componente
-const incrementarCantidad = () => {
+const incrementarCantidad = async () => {
     if (!componenteActual.value) return;
     componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) + 1;
+    await guardarCambiosComponente();
 };
 
 // Decrementar cantidad de componente
-const decrementarCantidad = () => {
+const decrementarCantidad = async () => {
     if (!componenteActual.value || (componenteActual.value.cantidad || 0) <= 1) return;  // No bajar de 1
     componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) - 1;
+    await guardarCambiosComponente();
 };
 
 // Confirmar selección de mano de obra y guardar horas

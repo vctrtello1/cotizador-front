@@ -328,6 +328,7 @@ const mostrarModal = ref(false);
 const mostrarModalComponentes = ref(false);
 const mostrarModalSeleccionarAcabado = ref(false);
 const mostrarModalSeleccionarManoDeObra = ref(false);
+const indiceComponenteActual = ref(-1);  // Índice del componente siendo editado
 const componenteActual = ref({
     id: null,
     nombre: '',
@@ -728,6 +729,11 @@ const abrirModalConfiguracion = async (componente) => {
     
     // Asignar al componenteActual y mostrar modal para configurar
     componenteActual.value = nuevoComponente;
+    
+    // Agregar el componente a formData INMEDIATAMENTE para poder editarlo
+    formData.value.componentes.push({...nuevoComponente});
+    indiceComponenteActual.value = formData.value.componentes.length - 1;
+    
     mostrarModal.value = true;
     mostrarModalComponentes.value = false;
 };
@@ -739,7 +745,11 @@ const guardarComponente = () => {
         return;
     }
     
-    formData.value.componentes.push({...componenteActual.value});
+    // El componente ya está en formData, solo actualizar sus valores
+    if (indiceComponenteActual.value !== -1) {
+        formData.value.componentes[indiceComponenteActual.value] = {...componenteActual.value};
+    }
+    
     cerrarModal();
 };
 
@@ -747,6 +757,7 @@ const guardarComponente = () => {
 const cerrarModal = () => {
     mostrarModal.value = false;
     componenteSeleccionado.value = '';
+    indiceComponenteActual.value = -1;  // Resetear el índice
     componenteActual.value = {
         id: null,
         nombre: '',
@@ -833,16 +844,55 @@ const guardarHorasEnAPI = async (mano) => {
     }
 };
 
+// Guardar cambios de cantidad en la API
+const guardarCambiosComponente = async () => {
+    if (!componenteActual.value) return;
+    
+    try {
+        cargando.value = true;
+        
+        // Pequeño delay para asegurar que el v-model actualiza
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Usar el índice almacenado para actualizar el componente en formData
+        if (indiceComponenteActual.value !== -1) {
+            formData.value.componentes[indiceComponenteActual.value].cantidad = componenteActual.value.cantidad;
+        }
+        
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: formData.value.componentes.map(comp => ({
+                id: Number(comp.id),
+                cantidad: comp.cantidad,
+                acabado_id: Number(comp.acabado_id),
+                mano_de_obra_id: Number(comp.mano_de_obra_id)
+            }))
+        };
+        
+        await actualizarModulo(route.params.id, datosModulo);
+        mostrarMensaje('✅ Cantidad actualizada', 'success', 1500);
+    } catch (err) {
+        console.error('Error al guardar cambios:', err);
+        mostrarMensaje('Error al guardar cambios', 'error', 2000);
+    } finally {
+        cargando.value = false;
+    }
+};
+
 // Incrementar cantidad de componente
-const incrementarCantidad = () => {
+const incrementarCantidad = async () => {
     if (!componenteActual.value) return;
     componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) + 1;
+    await guardarCambiosComponente();
 };
 
 // Decrementar cantidad de componente
-const decrementarCantidad = () => {
+const decrementarCantidad = async () => {
     if (!componenteActual.value || (componenteActual.value.cantidad || 0) <= 1) return;  // No bajar de 1
     componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) - 1;
+    await guardarCambiosComponente();
 };
 
 // Confirmar selección de mano de obra y guardar horas
