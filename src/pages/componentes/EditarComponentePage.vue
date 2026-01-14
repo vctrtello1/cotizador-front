@@ -416,44 +416,38 @@
                     <!-- Sección de Horas -->
                     <div v-if="formData.mano_de_obra && horasManoDeObra.length > 0" class="selected-items">
                         <h4 class="items-subtitle">⏱️ Horas Asignadas</h4>
-                        <div class="items-grid">
-                            <div v-for="(hora, index) in horasManoDeObra" :key="index" class="selected-item-edit">
-                                <div class="item-info">
-                                    <div class="item-name">Bloque {{ index + 1 }}</div>
-                                    <div class="item-price">${{ formatCurrency(hora.horas * (formData.mano_de_obra?.costo_hora || 0)) }}</div>
-                                </div>
-                                <div class="quantity-input-group">
-                                    <label :for="`qty-horas-${index}`">Horas</label>
-                                    <div class="quantity-controls">
-                                        <button 
-                                            type="button"
-                                            class="btn-qty-control btn-qty-minus"
-                                            @click="decrementarHoras(hora)"
-                                            title="Disminuir"
-                                        >−</button>
-                                        <input 
-                                            :id="`qty-horas-${index}`"
-                                            v-model.number="hora.horas"
-                                            type="number"
-                                            min="0"
-                                            step="0.5"
-                                            placeholder="0"
-                                            @blur="hora.horas = Math.max(0, hora.horas || 0)"
-                                            class="quantity-input"
-                                        />
-                                        <button 
-                                            type="button"
-                                            class="btn-qty-control btn-qty-plus"
-                                            @click="incrementarHoras(hora)"
-                                            title="Aumentar"
-                                        >+</button>
-                                    </div>
-                                </div>
+                        <div class="horas-counter">
+                            <div class="counter-info">
+                                <div class="counter-label">Total de Horas</div>
+                                <div class="counter-value">{{ horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</div>
+                            </div>
+                            <div class="quantity-controls">
+                                <button 
+                                    type="button"
+                                    class="btn-qty-control btn-qty-minus"
+                                    @click="decrementarHorasTotal"
+                                    title="Disminuir"
+                                >−</button>
+                                <input 
+                                    id="qty-horas-total"
+                                    :value="horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0)"
+                                    type="number"
+                                    min="0"
+                                    step="0.5"
+                                    placeholder="0"
+                                    @input="actualizarHorasTotal"
+                                    class="quantity-input"
+                                />
+                                <button 
+                                    type="button"
+                                    class="btn-qty-control btn-qty-plus"
+                                    @click="incrementarHorasTotal"
+                                    title="Aumentar"
+                                >+</button>
                             </div>
                         </div>
                         <div class="horas-summary">
-                            <p class="horas-total">Total: <strong>{{ horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</strong></p>
-                            <p class="horas-cost">Costo: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong></p>
+                            <p class="horas-cost">Costo total: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong></p>
                         </div>
                     </div>
                 </div>
@@ -1031,13 +1025,44 @@ const cancelarEdicionManoDeObra = () => {
 };
 
 // Funciones para editar horas de mano de obra
-const incrementarHoras = (hora) => {
-    hora.horas = Math.round((hora.horas || 0) * 2 + 1) / 2;
+const incrementarHorasTotal = () => {
+    if (horasManoDeObra.value.length > 0) {
+        const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
+        const nuevasHoras = Math.round((totalHoras + 0.5) * 2) / 2;
+        const diferencia = nuevasHoras - totalHoras;
+        
+        // Agregar la diferencia al primer bloque
+        if (horasManoDeObra.value[0]) {
+            horasManoDeObra.value[0].horas = (horasManoDeObra.value[0].horas || 0) + diferencia;
+        }
+    }
 };
 
-const decrementarHoras = (hora) => {
-    if ((hora.horas || 0) > 0) {
-        hora.horas = Math.round((hora.horas || 0) * 2 - 1) / 2;
+const decrementarHorasTotal = () => {
+    if (horasManoDeObra.value.length > 0) {
+        const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
+        if (totalHoras > 0) {
+            const nuevasHoras = Math.round((totalHoras - 0.5) * 2) / 2;
+            const diferencia = nuevasHoras - totalHoras;
+            
+            // Restar la diferencia del primer bloque
+            if (horasManoDeObra.value[0]) {
+                horasManoDeObra.value[0].horas = Math.max(0, (horasManoDeObra.value[0].horas || 0) + diferencia);
+            }
+        }
+    }
+};
+
+const actualizarHorasTotal = (event) => {
+    if (horasManoDeObra.value.length > 0) {
+        const nuevoTotal = parseFloat(event.target.value) || 0;
+        const totalActual = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
+        const diferencia = nuevoTotal - totalActual;
+        
+        // Agregar la diferencia al primer bloque
+        if (horasManoDeObra.value[0]) {
+            horasManoDeObra.value[0].horas = Math.max(0, (horasManoDeObra.value[0].horas || 0) + diferencia);
+        }
     }
 };
 
@@ -1942,6 +1967,48 @@ onMounted(async () => {
     background: linear-gradient(135deg, #f0f4f8 0%, #f8fafc 100%);
     border-left: 4px solid #059669;
     border-radius: 6px;
+}
+
+.horas-counter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border-left: 4px solid #d4a574;
+    border-radius: 8px;
+    gap: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
+}
+
+.horas-counter:hover {
+    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.15);
+    transform: translateY(-2px);
+    border-left-color: #c89564;
+}
+
+.counter-info {
+    flex: 1;
+}
+
+.counter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5a4037;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+}
+
+.counter-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #5a4037;
 }
 
 .horas-total {
