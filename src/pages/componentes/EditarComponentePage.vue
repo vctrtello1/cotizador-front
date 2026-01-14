@@ -222,11 +222,22 @@
                     <div v-if="formData.materiales && formData.materiales.length > 0" class="selected-items">
                         <h4 class="items-subtitle">Materiales Seleccionados</h4>
                         <div class="items-grid">
-                            <div v-for="material in formData.materiales" :key="material.id" class="selected-item">
+                            <div v-for="material in formData.materiales" :key="material.id" class="selected-item-edit">
                                 <div class="item-info">
                                     <div class="item-name">{{ material.nombre }}</div>
                                     <div class="item-code">{{ material.codigo }}</div>
                                     <div class="item-price">${{ formatCurrency(material.precio_unitario) }}</div>
+                                </div>
+                                <div class="quantity-input-group">
+                                    <label :for="`qty-material-${material.id}`">Cantidad</label>
+                                    <input 
+                                        :id="`qty-material-${material.id}`"
+                                        v-model.number="material.cantidad"
+                                        type="number"
+                                        min="1"
+                                        placeholder="1"
+                                        class="quantity-input"
+                                    />
                                 </div>
                                 <button class="btn-remove" @click="removerMaterial(material.id)" title="Remover">×</button>
                             </div>
@@ -611,11 +622,14 @@ const abrirSelectorMateriales = async () => {
     await cargarMateriales();
     mostrarSelectorMateriales.value = true;
 };
-
 // Agregar material seleccionado
 const agregarMaterial = (material) => {
     if (material && !formData.value.materiales.some(m => m.id === material.id)) {
-        formData.value.materiales.push(material);
+        // Agregar el material con cantidad inicial de 1
+        formData.value.materiales.push({
+            ...material,
+            cantidad: material.cantidad || 1
+        });
         mostrarSelectorMateriales.value = false;
         busquedaMaterial.value = '';
     }
@@ -1087,6 +1101,58 @@ onMounted(() => {
     border-left: 4px solid #d4a574;
     border-radius: 6px;
     gap: 12px;
+}
+
+.selected-item-edit {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border-left: 4px solid #d4a574;
+    border-radius: 6px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.quantity-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.quantity-input-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b7355;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.quantity-input {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid #d4a574;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a4037;
+    text-align: center;
+    background: white;
+    transition: all 0.2s;
+}
+
+.quantity-input:focus {
+    outline: none;
+    border-color: #c89564;
+    box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.2);
+    background: #fff9f0;
+}
+
+.quantity-input::placeholder {
+    color: #d4a574;
+    opacity: 0.6;
 }
 
 .item-info {
