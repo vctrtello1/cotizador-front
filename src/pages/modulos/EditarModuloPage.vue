@@ -1,10 +1,9 @@
 <template>
-    <div class="editar-modulo-container">
-        <!-- Header -->
-        <div class="page-header">
-            <button class="btn-back" @click="$router.push('/modulos')">← Volver</button>
-            <h1 class="page-title">Editar Módulo</h1>
-        </div>
+    <div class="nuevo-modulo-container">
+        <!-- Botón para volver -->
+        <button class="btn-back" @click="$router.push('/modulos')">← Volver</button>
+
+        <h1 class="page-title">Editar Módulo</h1>
 
         <!-- Mensaje de error -->
         <div v-if="error" class="error-message">
@@ -28,145 +27,67 @@
             </div>
         </transition>
 
-        <!-- Loading -->
-        <div v-if="cargando" class="loading-state">
-            <p>Cargando módulo...</p>
-        </div>
-
         <!-- Formulario -->
-        <template v-else>
-            <!-- Información del Módulo -->
-            <div class="info-card">
-                <h2 class="section-title">Información del Módulo</h2>
-                <div class="info-grid">
-                    <div class="form-group">
-                        <label class="form-label">Nombre del Módulo *</label>
-                        <input 
-                            v-model="formData.nombre" 
-                            type="text" 
-                            class="form-input" 
-                            placeholder="Ej: Comedor Moderno"
-                            @blur="validarCampo('nombre')"
-                        >
-                        <span v-if="erroresValidacion.nombre" class="error-text">{{ erroresValidacion.nombre }}</span>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Código del Módulo *</label>
-                        <input 
-                            v-model="formData.codigo" 
-                            type="text" 
-                            class="form-input" 
-                            placeholder="Ej: COM_MODERNO"
-                            @blur="validarCampo('codigo')"
-                        >
-                        <span v-if="erroresValidacion.codigo" class="error-text">{{ erroresValidacion.codigo }}</span>
-                    </div>
-
-                    <div class="form-group full-width">
-                        <label class="form-label">Descripción del Módulo</label>
-                        <textarea 
-                            v-model="formData.descripcion" 
-                            class="form-input textarea-input" 
-                            placeholder="Descripción detallada del módulo"
-                            rows="3"
-                        ></textarea>
-                    </div>
+        <form @submit.prevent="guardarModulo" class="form">
+            <!-- Información básica -->
+            <div class="form-section">
+                <h2>Información del Módulo</h2>
+                <div class="form-group">
+                    <label>Nombre del Módulo *</label>
+                    <input v-model="formData.nombre" type="text" required placeholder="Ej: Comedor Moderno">
+                </div>
+                <div class="form-group">
+                    <label>Código del Módulo *</label>
+                    <input v-model="formData.codigo" type="text" required placeholder="Ej: COM_MODERNO">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea v-model="formData.descripcion" placeholder="Descripción detallada"></textarea>
                 </div>
             </div>
 
             <!-- Componentes del Módulo -->
-            <div class="componentes-section">
-                <div class="componentes-header">
-                    <h2 class="section-title">Componentes del Módulo</h2>
-                    <button class="btn-primary" @click="mostrarModalComponentes = true">+ Seleccionar Componentes</button>
+            <div class="form-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Componentes del Módulo</h2>
+                    <button type="button" class="btn btn-primary" @click="mostrarModalComponentes = true">
+                        ➕ Agregar Componente
+                    </button>
                 </div>
 
-                <div v-if="formData.componentes.length === 0" class="empty-state">
-                    <p>No hay componentes seleccionados. Elige uno del desplegable arriba.</p>
+                <div v-if="formData.componentes.length === 0" class="empty-message">
+                    No hay componentes seleccionados
                 </div>
 
-                <div v-else class="componentes-list">
-                    <div v-for="(componente, idx) in formData.componentes" :key="idx" class="componente-row">
-                        <div class="componente-info">
-                            <div class="componente-name">
-                                <strong>{{ componente.nombre }}</strong>
-                                <span class="componente-codigo">{{ componente.codigo }}</span>
-                            </div>
-                            <div class="componente-detalles">
-                                <span v-if="componente.acabado_id" class="detalle-badge">
-                                    Acabado: {{ obtenerNombreAcabado(componente.acabado_id) }}
-                                </span>
-                                <span v-if="componente.mano_de_obra_id" class="detalle-badge">
-                                    M.O: {{ obtenerNombreManodeObra(componente.mano_de_obra_id) }}
-                                </span>
+                <div v-else class="componentes-grid">
+                    <div v-for="(comp, idx) in formData.componentes" :key="idx" class="componente-item">
+                        <div class="componente-body">
+                            <h4>{{ comp.nombre }}</h4>
+                            <p class="componente-codigo">{{ comp.codigo }}</p>
+                            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                                <p><strong>Cantidad:</strong> {{ comp.cantidad }}</p>
+                                <p><strong>Acabado:</strong> {{ obtenerNombreAcabado(comp.acabado_id) }}</p>
+                                <p><strong>Mano de Obra:</strong> {{ obtenerNombreManodeObra(comp.mano_de_obra_id) }}</p>
                             </div>
                         </div>
-
-                        <div class="componente-controls">
-                            <div class="quantity-input">
-                                <label>Cantidad:</label>
-                                <input 
-                                    v-model.number="componente.cantidad" 
-                                    type="number" 
-                                    min="1" 
-                                    class="form-input"
-                                >
-                            </div>
-
-                            <div class="select-input">
-                                <label>Acabado:</label>
-                                <select v-model="componente.acabado_id" class="form-input">
-                                    <option value="">Seleccionar...</option>
-                                    <option v-for="acabado in acabados" :key="acabado.id" :value="acabado.id">
-                                        {{ acabado.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="select-input">
-                                <label>Mano de Obra:</label>
-                                <select v-model="componente.mano_de_obra_id" class="form-input">
-                                    <option value="">Seleccionar...</option>
-                                    <option v-for="mano in manosDeObra" :key="mano.id" :value="mano.id">
-                                        {{ mano.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <button class="btn-delete-small" @click="eliminarComponente(idx)">Eliminar</button>
-                        </div>
+                        <button type="button" class="btn-small btn-danger" @click="eliminarComponente(idx)">
+                            🗑️
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Resumen de Costos -->
-            <div v-if="formData.componentes.length > 0" class="resumen-card">
-                <h2 class="section-title">Resumen de Costos</h2>
-                <div class="resumen-grid">
-                    <div class="resumen-item">
-                        <label>Cantidad de Componentes</label>
-                        <span class="resumen-valor">{{ formData.componentes.length }}</span>
-                    </div>
-                    <div class="resumen-item">
-                        <label>Costo Total Aproximado</label>
-                        <span class="resumen-valor">${{ formatCurrency(calcularCostoTotal()) }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botones de Acción -->
-            <div class="action-buttons">
-                <button class="btn-secondary" @click="$router.push('/modulos')">Cancelar</button>
-                <button 
-                    class="btn-primary" 
-                    @click="guardarModulo"
-                    :disabled="cargando"
-                >
-                    {{ cargando ? 'Guardando...' : 'Guardar Cambios' }}
+            <!-- Botones -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" @click="$router.push('/modulos')">
+                    ✕ Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" :disabled="cargando">
+                    <span v-if="cargando">⏳ Guardando...</span>
+                    <span v-else>✓ Guardar Módulo</span>
                 </button>
             </div>
-        </template>
+        </form>
 
         <!-- Modal para seleccionar componentes -->
         <div v-if="mostrarModalComponentes" class="modal-overlay" @click.self="mostrarModalComponentes = false">
@@ -1000,432 +921,98 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.editar-modulo-container {
-    max-width: 1200px;
+.nuevo-modulo-container {
+    max-width: 900px;
     margin: 0 auto;
-    padding: 40px 20px;
-    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
-    min-height: 100vh;
-}
-
-.page-header {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 30px;
+    padding: 2rem;
 }
 
 .btn-back {
-    padding: 8px 16px;
-    background: #d4a574;
-    color: white;
+    background: none;
     border: none;
-    border-radius: 4px;
+    color: #d4a574;
+    font-size: 1rem;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
 }
 
 .btn-back:hover {
-    background: #c89564;
-    transform: translateX(-2px);
+    opacity: 0.7;
 }
 
 .page-title {
-    font-size: 32px;
-    font-weight: 700;
-    color: #5a4037;
-    margin: 0;
+    font-size: 2rem;
+    margin: 1rem 0 2rem 0;
+    color: #333;
 }
 
-.error-message,
-.success-message {
-    padding: 16px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 500;
-    animation: slideDown 0.3s ease-out;
-}
-
-.error-message {
-    background: #fee;
-    color: #c33;
-    border-left: 4px solid #c33;
-}
-
-.success-message {
-    background: #efe;
-    color: #3c3;
-    border-left: 4px solid #3c3;
-}
-
-.error-close {
-    background: none;
-    border: none;
-    color: inherit;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 0 8px;
-}
-
-.loading-state {
-    padding: 60px 20px;
-    text-align: center;
+.form {
     background: white;
-    border-radius: 12px;
-    color: #999;
-}
-
-.custom-message {
-    padding: 16px 20px;
+    border: 1px solid #e0d0c0;
     border-radius: 8px;
-    margin-bottom: 20px;
-    animation: slideDown 0.3s ease-out;
+    padding: 2rem;
+    margin-bottom: 2rem;
 }
 
-.message-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+.form-section {
+    margin-bottom: 2rem;
 }
 
-.message-text {
-    flex: 1;
-    font-weight: 500;
-}
-
-.message-close {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.message-success {
-    background: #efe;
-    color: #3c3;
-    border-left: 4px solid #3c3;
-}
-
-.message-error {
-    background: #fee;
-    color: #c33;
-    border-left: 4px solid #c33;
-}
-
-.message-warning {
-    background: #ffeaa7;
-    color: #d63031;
-    border-left: 4px solid #d63031;
-}
-
-.message-info {
-    background: #e8f4f8;
-    color: #0984e3;
-    border-left: 4px solid #0984e3;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.info-card,
-.resumen-card {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #ede7e0;
-}
-
-.section-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #5a4037;
-    margin: 0 0 20px 0;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f5f1ed;
-}
-
-.info-grid,
-.componente-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+.form-section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+    border-bottom: 2px solid #d4a574;
+    padding-bottom: 0.5rem;
 }
 
 .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    margin-bottom: 1.5rem;
 }
 
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-.form-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #5a4037;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.form-input {
-    padding: 12px 16px;
-    border: 1px solid #d4a574;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-    transition: all 0.3s;
-    background: white;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: #b8860b;
-    box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
-}
-
-.textarea-input {
-    resize: vertical;
-    min-height: 80px;
-}
-
-.error-text {
-    color: #c33;
-    font-size: 12px;
-    margin-top: -4px;
-}
-
-/* Componentes */
-.componentes-section {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #ede7e0;
-}
-
-.componentes-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-}
-
-.componentes-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.componente-card {
-    border: 1px solid #ede7e0;
-    border-radius: 8px;
-    padding: 20px;
-    background: #faf7f2;
-}
-
-.componente-row {
-    border: 1px solid #ede7e0;
-    border-radius: 8px;
-    padding: 16px;
-    background: #faf7f2;
-    margin-bottom: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.componente-info {
-    border-bottom: 1px solid #e0d7d0;
-    padding-bottom: 12px;
-}
-
-.componente-name {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.componente-name strong {
-    color: #5a4037;
-    font-size: 15px;
-}
-
-.componente-codigo {
-    background: #d4a574;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.componente-detalles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.detalle-badge {
-    background: #f0e6d8;
-    color: #5a4037;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.componente-controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    align-items: flex-end;
-}
-
-.quantity-input,
-.select-input {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.quantity-input label,
-.select-input label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #5a4037;
-}
-
-.quantity-input input,
-.select-input select {
-    padding: 6px 8px;
-    font-size: 13px;
-    border: 1px solid #d4a574;
-    border-radius: 4px;
-    background: white;
-}
-
-.componente-header {
-    margin-bottom: 20px;
-}
-
-.componente-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.componente-title h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #5a4037;
-    margin: 0;
-}
-
-.btn-delete-small {
-    padding: 6px 12px;
-    background: #fee;
-    color: #c33;
-    border: 1px solid #c33;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.btn-delete-small:hover {
-    background: #c33;
-    color: white;
-}
-
-.empty-state {
-    padding: 40px 20px;
-    text-align: center;
-    color: #999;
-    background: #faf7f2;
-    border-radius: 8px;
-    border: 2px dashed #d4a574;
-}
-
-.empty-state p {
-    margin: 0;
-    font-size: 14px;
-}
-
-/* Resumen */
-.resumen-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.resumen-item {
-    padding: 20px;
-    background: #faf7f2;
-    border-radius: 8px;
-    border-left: 4px solid #d4a574;
-}
-
-.resumen-item label {
+.form-group label {
     display: block;
-    font-size: 12px;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #333;
 }
 
-.resumen-valor {
-    font-size: 24px;
-    font-weight: 700;
-    color: #5a4037;
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d4c4b8;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
 }
 
-/* Botones de acción */
-.action-buttons {
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.1);
+}
+
+.form-actions {
     display: flex;
-    gap: 15px;
+    gap: 1rem;
     justify-content: flex-end;
-    margin-top: 40px;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0d0c0;
 }
 
-.btn-primary,
-.btn-secondary {
-    padding: 12px 30px;
+.btn {
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .btn-primary {
@@ -1434,65 +1021,74 @@ onMounted(() => {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #c89564;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+    background: #c49464;
 }
 
 .btn-primary:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
 .btn-secondary {
-    background: #f5f1ed;
-    color: #5a4037;
-    border: 1px solid #d4a574;
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #d0d0d0;
 }
 
 .btn-secondary:hover {
-    background: #ede7e0;
-    border-color: #c89564;
+    background: #e8e8e8;
 }
 
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.btn-danger {
+    background: #ff6b6b;
+    color: white;
+    padding: 0.5rem 1rem;
 }
 
-@media (max-width: 768px) {
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .page-title {
-        font-size: 24px;
-    }
-
-    .info-grid,
-    .componente-grid,
-    .resumen-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .action-buttons {
-        flex-direction: column-reverse;
-    }
-
-    .btn-primary,
-    .btn-secondary {
-        width: 100%;
-    }
+.btn-danger:hover {
+    background: #ff5252;
 }
 
-/* Modal Styles */
+.empty-message {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+    font-style: italic;
+}
+
+.componentes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.componente-item {
+    border: 1px solid #d4c4b8;
+    border-radius: 6px;
+    padding: 1rem;
+    background: #fafaf8;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.componente-body {
+    flex: 1;
+}
+
+.componente-body h4 {
+    margin: 0 0 0.25rem 0;
+    color: #333;
+}
+
+.componente-codigo {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #999;
+}
+
+/* Modales */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1508,34 +1104,31 @@ onMounted(() => {
 
 .modal-content {
     background: white;
-    border-radius: 12px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: auto;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
 }
 
 .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e0d0c0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px;
-    border-bottom: 1px solid #e0d7d0;
-    background: #faf7f2;
 }
 
 .modal-header h3 {
     margin: 0;
-    color: #5a4037;
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 1.3rem;
+    color: #333;
 }
 
 .modal-close {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 1.5rem;
     cursor: pointer;
     color: #999;
     padding: 0;
@@ -1544,340 +1137,245 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s;
 }
 
 .modal-close:hover {
-    background: #e0d7d0;
-    color: #5a4037;
+    color: #d4a574;
 }
 
 .modal-body {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.modal-item {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.modal-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #5a4037;
-}
-
-.modal-value {
-    padding: 10px 12px;
-    background: #faf7f2;
-    border: 1px solid #e0d7d0;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #5a4037;
+    padding: 1.5rem;
 }
 
 .modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e0d0c0;
     display: flex;
-    gap: 12px;
-    padding: 24px;
-    border-top: 1px solid #e0d7d0;
-    background: #faf7f2;
+    gap: 1rem;
+    justify-content: flex-end;
 }
 
-.modal-footer button {
-    flex: 1;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-size: 14px;
+.modal-item {
+    margin-bottom: 1.5rem;
+}
+
+.modal-label {
+    display: block;
     font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
+    margin-bottom: 0.5rem;
+    color: #333;
 }
 
-/* Modal de Componentes */
+.modal-value {
+    padding: 0.75rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+    color: #666;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d4c4b8;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.1);
+}
+
+.btn-select-modal {
+    width: 100%;
+    padding: 0.75rem;
+    text-align: left;
+    background: white;
+    border: 1px solid #d4c4b8;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-select-modal:hover {
+    border-color: #d4a574;
+}
+
+/* Modal para componentes */
 .modal-componentes {
-    max-width: 700px;
+    max-width: 500px;
 }
 
 .modal-componentes-body {
-    max-height: 500px;
+    max-height: 400px;
     overflow-y: auto;
 }
 
 .componentes-lista {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0.75rem;
 }
 
-.componente-item {
+.componente-item-modal {
+    padding: 1rem;
+    border: 1px solid #d4c4b8;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
-    background: #faf7f2;
-    border: 2px solid #e0d7d0;
-    border-radius: 8px;
-    transition: all 0.2s;
-    cursor: pointer;
 }
 
-.componente-item:not(.componente-item-disabled):hover {
-    background: #f5f1ed;
+.componente-item {
+    background: #fafaf8;
+}
+
+.componente-item:hover:not(.componente-item-disabled) {
+    background: #f0e8e0;
     border-color: #d4a574;
-    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.15);
-    transform: translateX(4px);
 }
 
 .componente-item-disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-}
-
-.componente-info-modal {
-    flex: 1;
+    background: #f0f0f0;
 }
 
 .componente-info-modal h4 {
-    margin: 0;
-    color: #5a4037;
-    font-size: 15px;
-    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: #333;
 }
 
 .componente-info-modal p {
-    margin: 4px 0 0 0;
+    margin: 0;
+    font-size: 0.85rem;
     color: #999;
-    font-size: 12px;
 }
 
-.componente-item-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #efe;
-    color: #3c3;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
+.componente-item-badge,
 .componente-item-icon {
     color: #d4a574;
-    font-size: 18px;
     font-weight: bold;
-    margin-left: 16px;
-    transition: transform 0.2s;
 }
 
-.componente-item:not(.componente-item-disabled):hover .componente-item-icon {
-    transform: translateX(4px);
-}
-
-.btn-add-component {
-    padding: 6px 16px;
-    background: #d4a574;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.3s;
-    white-space: nowrap;
-}
-
-.btn-add-component:hover:not(:disabled) {
-    background: #c5965c;
-}
-
-.btn-add-component:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.componente-detalles {
-    display: flex;
-    gap: 12px;
-    margin-top: 6px;
-    flex-wrap: wrap;
-}
-
-.detalle-badge {
-    display: inline-block;
-    background: #f0e6d8;
-    color: #5a4037;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-/* Botón para abrir modal de selección */
-.btn-select-modal {
-    width: 100%;
-    padding: 12px 16px;
-    background: white;
-    border: 2px solid #d4a574;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #5a4037;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-align: left;
-    font-weight: 500;
-}
-
-.btn-select-modal:hover {
-    border-color: #b8860b;
-    background: #faf7f2;
-}
-
-.btn-select-modal:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
-}
-
-/* Modal de selección */
+/* Modal selección */
 .modal-seleccion {
-    max-width: 600px;
+    max-width: 500px;
 }
 
 .modal-seleccion-body {
-    max-height: 500px;
+    max-height: 400px;
     overflow-y: auto;
 }
 
 .items-lista {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0.75rem;
 }
 
 .item-seleccion {
-    padding: 16px;
-    background: #faf7f2;
-    border: 2px solid #e0d7d0;
-    border-radius: 8px;
+    padding: 1rem;
+    border: 2px solid #d4c4b8;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
 }
 
 .item-seleccion:hover {
     border-color: #d4a574;
-    background: #f5f1ed;
+    background: #f5f5f5;
 }
 
-.item-seleccion.item-seleccionado {
+.item-seleccionado {
     border-color: #d4a574;
-    background: #fff9f0;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
-}
-
-.item-info {
-    flex: 1;
+    background: #fffbf6;
 }
 
 .item-info h4 {
-    margin: 0 0 6px 0;
-    color: #5a4037;
-    font-size: 15px;
-    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: #333;
 }
 
-.item-codigo,
-.item-descripcion,
-.item-horas,
-.item-costo-hora,
-.item-precio {
-    margin: 4px 0;
-    color: #666;
-    font-size: 13px;
+.item-codigo {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #999;
 }
 
 .item-descripcion {
-    color: #999;
-    font-style: italic;
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: #666;
 }
 
 .item-precio {
-    color: #5a4037;
-    font-weight: 600;
+    margin: 0.5rem 0 0 0;
+    font-size: 0.95rem;
+    color: #d4a574;
 }
 
+.item-checkmark {
+    color: #d4a574;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Horas editor */
 .item-details {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e0d7d0;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e0d0c0;
 }
 
 .detail-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
 }
 
 .detail-row.total {
     font-weight: 600;
-    color: #5a4037;
-    padding-top: 6px;
-    border-top: 1px solid #ede7e0;
+    color: #d4a574;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e0d0c0;
 }
 
 .detail-label {
-    color: #999;
-    font-weight: 500;
+    color: #666;
 }
 
 .detail-value {
-    color: #5a4037;
-    font-weight: 600;
+    color: #333;
 }
 
 .horas-editor {
     display: flex;
+    gap: 0.5rem;
     align-items: center;
-    gap: 6px;
 }
 
 .input-horas {
     width: 50px;
-    padding: 4px 8px;
-    border: 1px solid #d4a574;
-    border-radius: 4px;
+    padding: 0.4rem;
     text-align: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: #5a4037;
-}
-
-.input-horas:focus {
-    outline: none;
-    border-color: #b8860b;
-    box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.1);
+    border: 1px solid #d4c4b8;
+    border-radius: 4px;
 }
 
 .horas-unit {
+    font-size: 0.85rem;
     color: #999;
-    font-size: 12px;
-    font-weight: 500;
 }
 
 .btn-horas-moins,
@@ -1903,15 +1401,116 @@ onMounted(() => {
     color: white;
 }
 
-.btn-horas-moins:active,
-.btn-horas-plus:active {
-    transform: scale(0.95);
+/* Estado de carga */
+.loading-state {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
 }
 
-.item-checkmark {
-    color: #4caf50;
-    font-size: 24px;
-    font-weight: bold;
-    flex-shrink: 0;
+/* Mensajes de error */
+.error-message {
+    background: #ffe0e0;
+    border: 1px solid #ff9999;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.error-message span {
+    color: #c00;
+}
+
+.error-close {
+    background: none;
+    border: none;
+    color: #c00;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.error-close:hover {
+    opacity: 0.7;
+}
+
+.error-text {
+    color: #c00;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Transiciones */
+.slide-down-enter-active {
+    transition: all 0.3s ease;
+}
+
+.slide-down-leave-active {
+    transition: all 0.2s ease;
+}
+
+.slide-down-enter-from {
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.slide-down-leave-to {
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.custom-message {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.message-warning {
+    background: #fff9e6;
+    border: 1px solid #ffe58f;
+    color: #cc8d00;
+}
+
+.message-success {
+    background: #e6ffe6;
+    border: 1px solid #b3ffb3;
+    color: #00aa00;
+}
+
+.message-info {
+    background: #e6f7ff;
+    border: 1px solid #91d5ff;
+    color: #0050b3;
+}
+
+.message-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.message-close:hover {
+    opacity: 0.7;
+}
+
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
 }
 </style>
