@@ -365,6 +365,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { crearModulo, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
+import { crearAcabado } from '@/http/acabado-api .js';
 import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
 
 const router = useRouter();
@@ -644,13 +645,37 @@ watch(componenteSeleccionado, (nuevoComponenteId) => {
 });
 
 // Abrir modal de configuración para agregar componente
-const abrirModalConfiguracion = (componente) => {
+const abrirModalConfiguracion = async (componente) => {
+    // Buscar o crear el acabado estándar de roble
+    let acabadoEstandar = acabados.value.find(a => a.nombre && a.nombre.toLowerCase().includes('estándar') && a.nombre.toLowerCase().includes('roble'));
+    
+    if (!acabadoEstandar) {
+        // Si no existe, intentar crearlo
+        try {
+            const nuevoAcabado = await crearAcabado({
+                nombre: 'Estándar de Roble',
+                codigo: 'EST_ROBLE',
+                descripcion: 'Acabado estándar de roble',
+                costo: 0
+            });
+            
+            // Agregar a la lista de acabados
+            const acabadoCreado = nuevoAcabado.data || nuevoAcabado;
+            acabados.value.push(acabadoCreado);
+            acabadoEstandar = acabadoCreado;
+            
+            console.log('✅ Acabado estándar creado:', acabadoEstandar);
+        } catch (err) {
+            console.warn('⚠️ No se pudo crear acabado estándar:', err);
+        }
+    }
+    
     componenteActual.value = {
         id: componente.id,
         nombre: componente.nombre,
         codigo: componente.codigo,
         cantidad: 1,
-        acabado_id: '',
+        acabado_id: acabadoEstandar?.id || '',
         mano_de_obra_id: ''
     };
     mostrarModal.value = true;
