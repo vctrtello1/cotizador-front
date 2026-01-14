@@ -171,6 +171,9 @@
                         <div v-if="horasManoDeObra.length > 0" class="info-detail">
                             Horas asignadas: <strong>{{ horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</strong>
                         </div>
+                        <div v-if="horasManoDeObra.length > 0" class="info-detail">
+                            Costo total: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong>
+                        </div>
                     </div>
                 </div>
                 <div v-else class="empty-info">Sin mano de obra asignada</div>
@@ -921,6 +924,18 @@ const cargarHorasManoDeObra = async () => {
         console.error('❌ Error cargando horas de mano de obra:', err);
         horasManoDeObra.value = [];
     }
+};
+
+// Calcular costo total de mano de obra
+const calcularCostoManoDeObra = () => {
+    if (!formData.value.mano_de_obra || horasManoDeObra.value.length === 0) {
+        return 0;
+    }
+    
+    const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
+    const costoHora = parseFloat(formData.value.mano_de_obra.costo_hora) || 0;
+    
+    return totalHoras * costoHora;
 };
 
 // Formatear moneda
