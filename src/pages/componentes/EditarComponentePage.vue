@@ -403,7 +403,10 @@
                             </div>
                             <div class="button-group-horizontal">
                                 <button class="btn-cancel" @click="cancelarEdicionManoDeObra">Cancelar</button>
-                                <button class="btn-save" @click="guardarManoDeObra">Guardar</button>
+                                <button class="btn-save" @click="guardarManoDeObra" :disabled="guardandoManoDeObra">
+                                    <span v-if="guardandoManoDeObra">⏳ Guardando...</span>
+                                    <span v-else>Guardar</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -728,6 +731,7 @@ import { useCantidadPorHerraje } from '@/stores/cantidad-por-herraje';
 import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
 import { useMateriales } from '@/stores/materiales';
 import { useHerrajes } from '@/stores/herrajes';
+import { useManosDeObraStore } from '@/stores/mano-de-obra';
 
 const router = useRouter();
 const route = useRoute();
@@ -736,6 +740,7 @@ const storeCantidadPorHerraje = useCantidadPorHerraje();
 const storeHorasPorManoDeObra = useHorasPorManoDeObraComponente();
 const storeMateriales = useMateriales();
 const storeHerrajes = useHerrajes();
+const storeManosDeObra = useManosDeObraStore();
 
 // Estado
 const formData = ref({
@@ -784,6 +789,7 @@ const mostrarSelectorHerrajes = ref(false);
 // Estado para editar mano de obra
 const editandoManoDeObra = ref(false);
 const manoDeObraEditando = ref(null);
+const guardandoManoDeObra = ref(false);
 
 // Datos para seleccionar mano de obra
 const manoDeObraDisponible = ref([]);
@@ -1008,14 +1014,46 @@ const iniciarEdicionManoDeObra = () => {
     editandoManoDeObra.value = true;
 };
 
-const guardarManoDeObra = () => {
-    if (manoDeObraEditando.value) {
+const guardarManoDeObra = async () => {
+    if (!manoDeObraEditando.value) {
+        console.warn('⚠️ No hay datos de mano de obra para guardar');
+        return;
+    }
+    
+    guardandoManoDeObra.value = true;
+    try {
+        console.log('📝 Iniciando guardado de mano de obra...');
+        console.log('   ID:', manoDeObraEditando.value.id);
+        console.log('   Datos a guardar:', manoDeObraEditando.value);
+        
+        const datosActualizados = {
+            nombre: manoDeObraEditando.value.nombre,
+            descripcion: manoDeObraEditando.value.descripcion,
+            costo_hora: manoDeObraEditando.value.costo_hora,
+        };
+        
+        console.log('📤 Enviando datos a la API:', datosActualizados);
+        
+        // Guardar en la API usando el store
+        const respuesta = await storeManosDeObra.actualizarManoDeObra(manoDeObraEditando.value.id, datosActualizados);
+        
+        console.log('✅ Respuesta de la API:', respuesta);
+        
         // Actualizar los datos en formData
         formData.value.mano_de_obra = {
             ...manoDeObraEditando.value
         };
+        
         editandoManoDeObra.value = false;
         manoDeObraEditando.value = null;
+        
+        console.log('✅ Mano de obra actualizada correctamente');
+    } catch (err) {
+        console.error('❌ Error al guardar mano de obra:', err);
+        console.error('   Detalles del error:', err.response?.data || err.message);
+        error.value = 'Error al guardar los cambios en la mano de obra: ' + (err.response?.data?.message || err.message);
+    } finally {
+        guardandoManoDeObra.value = false;
     }
 };
 
@@ -1262,20 +1300,53 @@ const limpiarHorasManoDeObraAnterior = () => {
 
 const agregarManoDeObra = async (manoDeObra) => {
     if (manoDeObra) {
+        console.log('📝 Cambiando mano de obra a:', manoDeObra.nombre);
+        
         // Limpiar horas de la mano de obra anterior
         if (formData.value.mano_de_obra && formData.value.mano_de_obra.id !== manoDeObra.id) {
             limpiarHorasManoDeObraAnterior();
         }
         
-        // Cambiar a la nueva mano de obra
-        formData.value.mano_de_obra = {
-            ...manoDeObra
-        };
-        mostrarSelectorManoDeObra.value = false;
-        busquedaManoDeObra.value = '';
-        
-        // Cargar horas para la nueva mano de obra
-        await cargarHorasManoDeObra();
+        try {
+            // Cambiar a la nueva mano de obra
+            formData.value.mano_de_obra = {
+                ...manoDeObra
+            };
+            
+            // Guardar el cambio en la API inmediatamente
+            console.log('📤 Guardando cambio de mano de obra en el componente...');
+            const datos = {
+                nombre: formData.value.nombre.trim(),
+                codigo: formData.value.codigo.trim(),
+                descripcion: formData.value.descripcion.trim(),
+                costo_unitario: parseFloat(formData.value.costo_unitario),
+                mano_de_obra_id: manoDeObra.id,
+            };
+            
+            // Agregar acabado_id si existe
+            if (formData.value.acabado && formData.value.acabado.id) {
+                datos.acabado_id = formData.value.acabado.id;
+            }
+            
+            console.log('📋 Datos a enviar:', datos);
+            
+            const api = (await import('@/http/apl')).default;
+            const response = await api.put(`/componentes/${route.params.id}`, datos);
+            console.log('✅ Respuesta del servidor:', response);
+            
+            mostrarSelectorManoDeObra.value = false;
+            busquedaManoDeObra.value = '';
+            
+            // Cargar horas para la nueva mano de obra
+            await cargarHorasManoDeObra();
+            
+            console.log('✅ Mano de obra actualizada en la API correctamente');
+        } catch (err) {
+            console.error('❌ Error al guardar cambio de mano de obra:', err);
+            console.error('   Status:', err.response?.status);
+            console.error('   Data:', err.response?.data);
+            error.value = 'Error al cambiar la mano de obra: ' + (err.response?.data?.message || err.message);
+        }
     }
 };
 
@@ -1351,15 +1422,27 @@ const guardarComponente = async () => {
             costo_unitario: parseFloat(formData.value.costo_unitario),
         };
         
-        console.log('Guardando cambios:', datos);
+        // Agregar mano_de_obra_id si existe
+        if (formData.value.mano_de_obra && formData.value.mano_de_obra.id) {
+            datos.mano_de_obra_id = formData.value.mano_de_obra.id;
+        }
         
-        // TODO: Implementar actualización en la API cuando esté disponible
-        // await actualizarComponente(route.params.id, datos);
+        // Agregar acabado_id si existe
+        if (formData.value.acabado && formData.value.acabado.id) {
+            datos.acabado_id = formData.value.acabado.id;
+        }
         
+        console.log('Guardando cambios del componente:', datos);
+        
+        const api = (await import('@/http/apl')).default;
+        await api.put(`/componentes/${route.params.id}`, datos);
+        
+        console.log('✅ Componente actualizado correctamente');
         router.push('/componentes');
     } catch (err) {
         error.value = 'Error al guardar los cambios';
         console.error(err);
+        console.error('Detalles:', err.response?.data);
     } finally {
         guardando.value = false;
     }

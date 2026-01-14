@@ -14,3 +14,8 @@ export const crearCliente = async (datos) => {
   const response = await api.post("/mano-de-obras", datos);
   return response.data;
 };
+
+export const actualizarManoDeObra = async (id, datos) => {
+  const response = await api.put(`/mano-de-obras/${id}`, datos);
+  return response.data;
+};

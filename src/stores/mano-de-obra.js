@@ -2,7 +2,8 @@ import { defineStore } from "pinia";
 import { ref } from "vue"; 
 import { 
   fetchClientes as fetchManosDeObraApi, 
-  getClienteById as getManosDeObraById 
+  getClienteById as getManosDeObraById,
+  actualizarManoDeObra as actualizarManoDeObraApi
 } from "../http/mano_de_obra-api .js";
 
 export const useManosDeObraStore = defineStore("manosDeObra", () => {
@@ -41,10 +42,29 @@ export const useManosDeObraStore = defineStore("manosDeObra", () => {
     }
   };
 
+  const actualizarManoDeObra = async (id, datos) => {
+    try {
+      const response = await actualizarManoDeObraApi(id, datos);
+      console.log("Mano de obra actualizada:", response);
+      
+      // Actualizar el estado local si es necesario
+      const index = manosDeObra.value.findIndex(m => m.id === id);
+      if (index !== -1) {
+        manosDeObra.value[index] = { ...manosDeObra.value[index], ...datos };
+      }
+      
+      return response.data || response;
+    } catch (error) {
+      console.error("⚠️ Error actualizando mano-de-obra:", error);
+      throw error;
+    }
+  };
+
   return {
     manosDeObra,
     loading,
     fetchManosDeObra,
     getManosDeObraByIdStore,
+    actualizarManoDeObra,
   };
 });
