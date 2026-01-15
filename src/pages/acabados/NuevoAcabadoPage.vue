@@ -62,17 +62,17 @@
             </div>
 
             <div class="form-group">
-                <label for="precio">Precio *</label>
+                <label for="costo">Costo *</label>
                 <input
-                    v-model.number="formData.precio"
+                    v-model.number="formData.costo"
                     type="number"
-                    id="precio"
+                    id="costo"
                     step="0.01"
                     min="0"
                     placeholder="0.00"
                     required
                 />
-                <span v-if="errors.precio" class="error-text">{{ errors.precio }}</span>
+                <span v-if="errors.costo" class="error-text">{{ errors.costo }}</span>
             </div>
 
             <div class="form-actions">
@@ -98,7 +98,7 @@ const formData = ref({
     codigo: '',
     descripcion: 'Descripción del acabado',
     tipo: 'Pintura',
-    precio: 100.00,
+    costo: 100.00,
 });
 
 const errors = ref({});
@@ -114,8 +114,8 @@ const validar = () => {
         errors.value.nombre = 'El nombre es requerido';
     }
     
-    if (formData.value.precio === '' || formData.value.precio <= 0) {
-        errors.value.precio = 'El precio debe ser mayor a 0';
+    if (formData.value.costo === '' || formData.value.costo <= 0) {
+        errors.value.costo = 'El costo debe ser mayor a 0';
     }
     
     return Object.keys(errors.value).length === 0;
@@ -123,7 +123,10 @@ const validar = () => {
 
 // Guardar acabado
 const guardarAcabado = async () => {
-    if (!validar()) return;
+    if (!validar()) {
+        console.log('Validación fallida, errores:', errors.value);
+        return;
+    }
     
     try {
         guardando.value = true;
@@ -134,7 +137,7 @@ const guardarAcabado = async () => {
             codigo: formData.value.codigo.trim(),
             descripcion: formData.value.descripcion.trim(),
             tipo: formData.value.tipo.trim(),
-            precio: parseFloat(formData.value.precio),
+            costo: parseFloat(formData.value.costo),
         };
         
         console.log('Guardando acabado:', datos);
@@ -144,10 +147,14 @@ const guardarAcabado = async () => {
         console.log('ID del acabado:', acabadoId);
         
         exito.value = '✓ Acabado guardado exitosamente';
-        router.push('/acabados');
+        console.log('Redirigiendo a /editar-acabado/' + acabadoId);
+        
+        // Redirigir después de un pequeño delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        router.push(`/editar-acabado/${acabadoId}`);
     } catch (err) {
         console.error('Error guardando acabado:', err);
-        error.value = err.response?.data?.message || 'Error al guardar el acabado';
+        error.value = err.response?.data?.message || err.message || 'Error al guardar el acabado';
     } finally {
         guardando.value = false;
     }

@@ -278,8 +278,10 @@ const guardarComponente = async () => {
         console.log('ID del componente:', componenteId);
 
         exito.value = '✓ Componente guardado exitosamente';
-        // Redirigir inmediatamente sin mostrar la página
-        router.push(`/editar-componente/${componenteId}`);
+        // Redirigir a la página de edición del componente
+        setTimeout(() => {
+            router.push(`/editar-componente/${componenteId}`);
+        }, 500);
     } catch (err) {
         console.error('Error guardando componente:', err);
         error.value = err.response?.data?.message || 'Error al guardar el componente';

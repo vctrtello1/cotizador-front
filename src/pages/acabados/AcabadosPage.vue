@@ -3,7 +3,7 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Acabados</h1>
-            <button class="btn-primary" @click="$router.push('/nuevo-acabado')">+ Nuevo Acabado</button>
+            <button class="btn-primary" @click="$router.push('/nuevo-acabado')">✨ Nuevo Acabado</button>
         </div>
 
         <!-- Mensaje de error -->
@@ -26,7 +26,7 @@
         <!-- Empty State -->
         <div v-else-if="acabados.length === 0" class="empty-state">
             <p>No hay acabados registrados.</p>
-            <button class="btn-primary" @click="$router.push('/nuevo-acabado')">Crear Primer Acabado</button>
+            <button class="btn-primary" @click="$router.push('/nuevo-acabado')">✨ Crear Primer Acabado</button>
         </div>
 
         <!-- Acabados Grid -->
