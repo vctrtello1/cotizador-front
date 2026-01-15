@@ -223,11 +223,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalSeleccionarAcabado = false">Cancelar</button>
-                    <button class="btn-primary" @click="mostrarModalSeleccionarAcabado = false" :disabled="!componenteActual.acabado_id">Confirmar</button>
-                </div>
             </div>
         </div>
 
@@ -289,10 +284,6 @@
                     </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalSeleccionarManoDeObra = false">Cancelar</button>
-                    <button class="btn-primary" @click="confirmarManoDeObra" :disabled="!componenteActual.mano_de_obra_id">Confirmar</button>
-                </div>
             </div>
         </div>
     </div>
