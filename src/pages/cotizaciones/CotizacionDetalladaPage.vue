@@ -12,7 +12,7 @@
             <div class="header-actions">
                 <button class="btn-action" title="Descargar PDF">📥</button>
                 <button class="btn-action" title="Imprimir">🖨️</button>
-                <button class="btn-action" title="Editar">✏️</button>
+                <button class="btn-action" @click="$router.push(`/editar-cotizacion/${cotizacion.id}`)" title="Editar">✏️</button>
             </div>
         </div>
 

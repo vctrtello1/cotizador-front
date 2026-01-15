@@ -1,6 +1,7 @@
 import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage.vue";
 import CotizacionDetalladaPage from "@/pages/cotizaciones/CotizacionDetalladaPage.vue";
 import NuevaCotizacionPage from "@/pages/cotizaciones/NuevaCotizacionPage.vue";
+import EditarCotizacionPage from "@/pages/cotizaciones/EditarCotizacionPage.vue";
 import NuevoModuloPage from "@/pages/modulos/NuevoModuloPage.vue";
 import EditarModuloPage from "@/pages/modulos/EditarModuloPage.vue";
 import ModulosPage from "@/pages/modulos/ModulosPage.vue";
@@ -39,6 +40,11 @@ export const routes = [
         path: "/cotizacion-detallada/:id",
         name: "CotizacionDetallada",
         component: CotizacionDetalladaPage,
+    },
+    {
+        path: "/editar-cotizacion/:id",
+        name: "EditarCotizacion",
+        component: EditarCotizacionPage,
     },
     {
         path: "/modulos",
