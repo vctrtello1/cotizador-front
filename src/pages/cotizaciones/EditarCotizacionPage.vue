@@ -145,14 +145,16 @@
 
                     <!-- Selector de módulos modal -->
                     <div v-if="mostrarSelectorModulos" class="modal-overlay" @click="cerrarSelectorModulos">
-                        <div class="modal-content modal-modulos" @click.stop>
-                            <div class="modal-header">
-                                <h3>Agregar Módulo</h3>
-                                <button class="btn-close" @click="cerrarSelectorModulos">✕</button>
+                        <div class="modal-content modal-modulos-mejorado" @click.stop>
+                            <div class="modal-header-modulos">
+                                <div class="modal-icon">🧩</div>
+                                <h3>Selecciona un Módulo</h3>
+                                <button class="btn-close-modulos" @click="cerrarSelectorModulos">✕</button>
                             </div>
 
-                            <div class="modal-body modal-modulos-body">
-                                <div v-if="modulosDisponibles.length === 0" class="empty-state">
+                            <div class="modal-body-modulos">
+                                <div v-if="modulosDisponibles.length === 0" class="empty-state-mejorado">
+                                    <div class="empty-icon">📦</div>
                                     <p>No hay módulos disponibles para agregar</p>
                                 </div>
 
@@ -164,6 +166,7 @@
                                         @click="seleccionarModulo(modulo)"
                                     >
                                         <div class="modulo-card-header">
+                                            <div class="modulo-icon">🏗️</div>
                                             <h4>{{ modulo.nombre }}</h4>
                                         </div>
                                         <div class="modulo-card-body">
@@ -176,7 +179,7 @@
                                             </div>
                                         </div>
                                         <div class="modulo-card-action">
-                                            <span>Seleccionar ➜</span>
+                                            <span>✓ Seleccionar</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1046,6 +1049,92 @@ onMounted(() => {
     max-width: 600px;
 }
 
+/* ===== MODAL: Selector de Módulos Mejorado ===== */
+.modal-modulos-mejorado {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header-modulos {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    padding: 30px;
+    text-align: center;
+    position: relative;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.modal-header-modulos .modal-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    display: block;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header-modulos h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-close-modulos {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
+.btn-close-modulos:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modal-body-modulos {
+    padding: 30px;
+    overflow-y: auto;
+    max-height: calc(85vh - 140px);
+}
+
+.empty-state-mejorado {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.empty-state-mejorado .empty-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state-mejorado p {
+    font-size: 18px;
+    color: #999;
+    margin: 0;
+}
+
 .modal-modulos-body {
     max-height: 450px;
     overflow-y: auto;
@@ -1062,37 +1151,48 @@ onMounted(() => {
 .modulos-grid-selector {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.2rem;
-    padding: 1rem 0;
+    gap: 1.5rem;
+    padding: 0;
 }
 
 .modulo-card-selector {
     background: white;
     border: 2px solid #e8ddd7;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .modulo-card-selector:hover {
     border-color: #d4a574;
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.2);
-    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(212, 165, 116, 0.3);
+    transform: translateY(-8px) scale(1.02);
 }
 
 .modulo-card-header {
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    padding: 1rem;
+    padding: 1.2rem;
     color: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modulo-card-header .modulo-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 .modulo-card-header h4 {
     margin: 0;
     font-size: 1.05rem;
     font-weight: 600;
+    flex: 1;
 }
 
 .modulo-card-body {
@@ -1135,18 +1235,25 @@ onMounted(() => {
 }
 
 .modulo-card-action {
-    background: #f9f7f4;
-    padding: 0.8rem;
+    padding: 16px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     text-align: center;
-    color: #d4a574;
+    color: #ffffff;
     font-weight: 600;
-    font-size: 0.9rem;
-    border-top: 1px solid #e8ddd7;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.modulo-card-action span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .modulo-card-selector:hover .modulo-card-action {
-    background: #d4a574;
-    color: white;
+    background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
+    padding: 18px 16px;
 }
 
 /* Estilos legacy para compatibilidad */
