@@ -137,7 +137,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { crearComponente } from '@/http/componentes-api';
+import { crearComponente, fetchComponentes } from '@/http/componentes-api';
 import { fetchAcabados } from '@/http/acabado-api .js';
 import { fetchClientes as fetchManoDeObra } from '@/http/mano_de_obra-api .js';
 
@@ -145,8 +145,8 @@ const router = useRouter();
 
 // Estado del formulario
 const formData = ref({
-    nombre: 'Componente Nuevo',
-    codigo: 'COMP_' + Date.now().toString().slice(-6),
+    nombre: '',
+    codigo: '',
     descripcion: 'Descripción del componente',
     unidad_medida: 'Pieza',
     cantidad_disponible: 100,
@@ -277,10 +277,17 @@ const guardarComponente = async () => {
         console.log('Primer componente guardado:', response);
         console.log('ID del primer componente:', primerComponenteId);
 
+        // Obtener número del nombre actual (ej: "Componente Nuevo 1" -> 1)
+        const nombreActual = formData.value.nombre;
+        const match = nombreActual.match(/Componente Nuevo (\d+)/);
+        const numeroActual = match ? parseInt(match[1]) : 1;
+        const proximoNumero = numeroActual + 1;
+
         // Crear segundo componente consecutivo
         const datosComponente2 = {
             ...datosComponente,
-            codigo: 'COMP_' + Date.now().toString().slice(-5)
+            nombre: `Componente Nuevo ${proximoNumero}`,
+            codigo: `COMP_${proximoNumero}_${Date.now().toString().slice(-4)}`
         };
         const response2 = await crearComponente(datosComponente2);
         console.log('Segundo componente guardado:', response2);
@@ -299,6 +306,22 @@ const guardarComponente = async () => {
 
 onMounted(async () => {
     console.log('NuevoComponente mounted');
+    
+    // Cargar componentes existentes para generar nombre incremental
+    let numeroComponente = 1;
+    try {
+        const response = await fetchComponentes();
+        const componentesExistentes = Array.isArray(response) ? response : (response.data || []);
+        // Contar componentes con nombre "Componente Nuevo X" para obtener el siguiente número
+        const componentesNuevos = componentesExistentes.filter(c => 
+            c.nombre && c.nombre.startsWith('Componente Nuevo')
+        );
+        numeroComponente = componentesNuevos.length + 1;
+        console.log('Número de componentes nuevos existentes:', componentesNuevos.length);
+    } catch (err) {
+        console.error('Error contando componentes existentes:', err);
+    }
+    
     // Cargar acabados disponibles
     try {
         const response = await fetchAcabados();
@@ -328,6 +351,12 @@ onMounted(async () => {
     } catch (err) {
         console.error('Error cargando mano de obra:', err);
     }
+    
+    // Actualizar nombres con número incremental
+    formData.value.nombre = `Componente Nuevo ${numeroComponente}`;
+    formData.value.codigo = `COMP_${numeroComponente}_${Date.now().toString().slice(-4)}`;
+    console.log('Nombre asignado:', formData.value.nombre);
+    console.log('Código asignado:', formData.value.codigo);
     
     // Guardar automáticamente el componente con datos por defecto
     await guardarComponente();
