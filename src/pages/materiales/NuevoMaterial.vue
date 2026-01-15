@@ -174,9 +174,6 @@ onMounted(async () => {
     formData.value.codigo = `MAT_${numeroMaterial}_${Date.now().toString().slice(-4)}`;
     console.log('Nombre asignado:', formData.value.nombre);
     console.log('Código asignado:', formData.value.codigo);
-    
-    // Guardar automáticamente el material con datos por defecto
-    await guardarMaterial();
 });
 </script>
 
