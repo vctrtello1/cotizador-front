@@ -64,7 +64,7 @@
                 <p>¿Estás seguro de que deseas eliminar este componente?</p>
                 <div class="modal-actions">
                     <button class="btn-secondary" @click="modalEliminar = false">Cancelar</button>
-                    <button class="btn-delete" @click="eliminarComponente">Eliminar</button>
+                    <button class="btn-delete" @click="eliminarComponenteFunc">Eliminar</button>
                 </div>
             </div>
         </div>
@@ -74,7 +74,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { fetchComponentes } from '@/http/componentes-api';
+import { fetchComponentes, eliminarComponente } from '@/http/componentes-api';
 
 const router = useRouter();
 
@@ -117,10 +117,23 @@ const confirmarEliminar = (id) => {
 };
 
 // Eliminar componente
-const eliminarComponente = async () => {
-    // TODO: Implementar eliminación cuando la API esté disponible
-    error.value = 'La funcionalidad de eliminación aún no está disponible';
-    modalEliminar.value = false;
+const eliminarComponenteFunc = async () => {
+    try {
+        error.value = null;
+        await eliminarComponente(componenteAEliminar.value);
+        exito.value = '✓ Componente eliminado exitosamente';
+        modalEliminar.value = false;
+        componenteAEliminar.value = null;
+        // Recargar la lista de componentes
+        await cargarComponentes();
+        setTimeout(() => {
+            exito.value = null;
+        }, 3000);
+    } catch (err) {
+        console.error('Error eliminando componente:', err);
+        error.value = err.response?.data?.message || 'Error al eliminar el componente';
+        modalEliminar.value = false;
+    }
 };
 
 // Format currency

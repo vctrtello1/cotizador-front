@@ -14,3 +14,8 @@ export const crearComponente = async (datos) => {
   const response = await api.post("/componentes", datos);
   return response.data;
 };
+
+export const eliminarComponente = async (id) => {
+  const response = await api.delete(`/componentes/${id}`);
+  return response.data;
+};

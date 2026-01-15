@@ -138,18 +138,26 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { crearComponente } from '@/http/componentes-api';
+import { fetchAcabados } from '@/http/acabado-api .js';
+import { fetchClientes as fetchManoDeObra } from '@/http/mano_de_obra-api .js';
 
 const router = useRouter();
 
 // Estado del formulario
 const formData = ref({
-    nombre: '',
-    codigo: '',
-    descripcion: '',
-    unidad_medida: '',
-    cantidad_disponible: 0,
-    costo_unitario: 0
+    nombre: 'Componente Nuevo',
+    codigo: 'COMP_' + Date.now().toString().slice(-6),
+    descripcion: 'Descripción del componente',
+    unidad_medida: 'Pieza',
+    cantidad_disponible: 100,
+    costo_unitario: 50.00,
+    acabado_id: null,
+    mano_de_obra_id: null
 });
+
+// Acabados y mano de obra disponibles
+const acabados = ref([]);
+const manosDeObra = ref([]);
 
 // Estado de UI
 const error = ref(null);
@@ -258,16 +266,28 @@ const guardarComponente = async () => {
             descripcion: formData.value.descripcion,
             unidad_medida: formData.value.unidad_medida,
             cantidad_disponible: formData.value.cantidad_disponible,
-            costo_unitario: formData.value.costo_unitario
+            costo_unitario: formData.value.costo_unitario,
+            acabado_id: formData.value.acabado_id,
+            mano_de_obra_id: formData.value.mano_de_obra_id
         };
 
         console.log('Guardando componente:', datosComponente);
         const response = await crearComponente(datosComponente);
-        console.log('Componente guardado:', response);
+        const primerComponenteId = response.data?.id || response.id;
+        console.log('Primer componente guardado:', response);
+        console.log('ID del primer componente:', primerComponenteId);
 
-        exito.value = '✓ Componente guardado exitosamente';
+        // Crear segundo componente consecutivo
+        const datosComponente2 = {
+            ...datosComponente,
+            codigo: 'COMP_' + Date.now().toString().slice(-5)
+        };
+        const response2 = await crearComponente(datosComponente2);
+        console.log('Segundo componente guardado:', response2);
+
+        exito.value = '✓ Componentes guardados exitosamente';
         setTimeout(() => {
-            router.push('/componentes');
+            router.push(`/editar-componente/${primerComponenteId}`);
         }, 1500);
     } catch (err) {
         console.error('Error guardando componente:', err);
@@ -277,8 +297,40 @@ const guardarComponente = async () => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     console.log('NuevoComponente mounted');
+    // Cargar acabados disponibles
+    try {
+        const response = await fetchAcabados();
+        acabados.value = Array.isArray(response) ? response : (response.data || []);
+        console.log('Acabados cargados:', acabados.value);
+        
+        // Usar el primer acabado disponible si existe
+        if (acabados.value.length > 0) {
+            formData.value.acabado_id = acabados.value[0].id;
+            console.log('Acabado por defecto asignado:', acabados.value[0].id);
+        }
+    } catch (err) {
+        console.error('Error cargando acabados:', err);
+    }
+    
+    // Cargar mano de obra disponible
+    try {
+        const response = await fetchManoDeObra();
+        manosDeObra.value = Array.isArray(response) ? response : (response.data || []);
+        console.log('Manos de obra cargadas:', manosDeObra.value);
+        
+        // Usar la primera mano de obra disponible si existe
+        if (manosDeObra.value.length > 0) {
+            formData.value.mano_de_obra_id = manosDeObra.value[0].id;
+            console.log('Mano de obra por defecto asignada:', manosDeObra.value[0].id);
+        }
+    } catch (err) {
+        console.error('Error cargando mano de obra:', err);
+    }
+    
+    // Guardar automáticamente el componente con datos por defecto
+    await guardarComponente();
 });
 </script>
 
