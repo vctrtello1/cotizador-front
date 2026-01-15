@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { crearMaterial } from '@/http/materiales-api';
+import { crearMaterial, fetchMateriales } from '@/http/materiales-api';
 import { useTiposDeMaterial } from '@/stores/tipo-de-material';
 
 const router = useRouter();
@@ -13,12 +13,12 @@ const formData = ref({
     codigo: '',
     tipo: '',
     tipo_de_material_id: null,
-    descripcion: '',
-    unidad_medida: '',
-    alto: 0,
-    ancho: 0,
-    largo: 0,
-    precio_unitario: 0
+    descripcion: 'Descripción del material',
+    unidad_medida: 'Metro',
+    alto: 1,
+    ancho: 1,
+    largo: 1,
+    precio_unitario: 100
 });
 
 // ============ ESTADO DE UI ============
@@ -36,9 +36,6 @@ const erroresValidacion = ref({
     precio_unitario: null
 });
 
-// ============ COMPUTED PROPERTIES ============
-const hasErrors = computed(() => Object.values(erroresValidacion.value).some(e => e !== null));
-
 // ============ MÉTODOS DE VALIDACIÓN ============
 const reglas = {
     nombre: (valor) => valor.trim() ? null : 'El nombre es requerido',
@@ -55,7 +52,7 @@ const validarCampo = (campo) => {
 
 const validarFormulario = () => {
     Object.keys(reglas).forEach(campo => validarCampo(campo));
-    return !hasErrors.value;
+    return !Object.values(erroresValidacion.value).some(e => e !== null);
 };
 
 // ============ MÉTODOS DE FORMATO ============
@@ -96,11 +93,16 @@ const guardarMaterial = async () => {
             precio_unitario: parseFloat(formData.value.precio_unitario) || 0
         };
 
+        console.log('Guardando material:', datosMaterial);
         const response = await crearMaterial(datosMaterial);
-        exito.value = '✓ Material guardado exitosamente';
+        const materialId = response.data?.id || response.id;
+        console.log('Material guardado:', response);
+        console.log('ID del material:', materialId);
         
-        setTimeout(() => router.push('/materiales'), 1500);
+        exito.value = '✓ Material guardado exitosamente';
+        router.push('/materiales');
     } catch (err) {
+        console.error('Error guardando material:', err);
         error.value = err.response?.data?.message || err.response?.data?.error || 'Error al guardar el material';
     } finally {
         cargando.value = false;
@@ -113,7 +115,15 @@ const cargarTiposDeMaterial = async () => {
         tiposLoading.value = true;
         await tiposDeMaterialStore.fetchTiposDeMaterialAction();
         tiposDeMaterial.value = tiposDeMaterialStore.tiposDeMaterial;
+        
+        // Usar el primer tipo disponible si existe
+        if (tiposDeMaterial.value.length > 0) {
+            formData.value.tipo = tiposDeMaterial.value[0].nombre;
+            formData.value.tipo_de_material_id = tiposDeMaterial.value[0].id;
+            console.log('Tipo de material por defecto asignado:', tiposDeMaterial.value[0].id);
+        }
     } catch (err) {
+        console.error('Error cargando tipos de material:', err);
         error.value = 'Error al cargar los tipos de material';
     } finally {
         tiposLoading.value = false;
@@ -138,8 +148,35 @@ const seleccionarTipo = (tipo) => {
 };
 
 // ============ LIFECYCLE HOOKS ============
-onMounted(() => {
-    cargarTiposDeMaterial();
+onMounted(async () => {
+    console.log('NuevoMaterial mounted');
+    
+    // Cargar materiales existentes para generar nombre incremental
+    let numeroMaterial = 1;
+    try {
+        const response = await fetchMateriales();
+        const materialesExistentes = Array.isArray(response) ? response : (response.data || []);
+        // Contar materiales con nombre "Material Nuevo X" para obtener el siguiente número
+        const materialesNuevos = materialesExistentes.filter(m => 
+            m.nombre && m.nombre.startsWith('Material Nuevo')
+        );
+        numeroMaterial = materialesNuevos.length + 1;
+        console.log('Número de materiales nuevos existentes:', materialesNuevos.length);
+    } catch (err) {
+        console.error('Error contando materiales existentes:', err);
+    }
+    
+    // Cargar tipos de material
+    await cargarTiposDeMaterial();
+    
+    // Actualizar nombres con número incremental
+    formData.value.nombre = `Material Nuevo ${numeroMaterial}`;
+    formData.value.codigo = `MAT_${numeroMaterial}_${Date.now().toString().slice(-4)}`;
+    console.log('Nombre asignado:', formData.value.nombre);
+    console.log('Código asignado:', formData.value.codigo);
+    
+    // Guardar automáticamente el material con datos por defecto
+    await guardarMaterial();
 });
 </script>
 

@@ -2,7 +2,7 @@
     <div class="form-container">
         <!-- Header -->
         <div class="form-header">
-            <h1 class="form-title">{{ isEditing ? 'Editar Acabado' : 'Nuevo Acabado' }}</h1>
+            <h1 class="form-title">Nuevo Acabado</h1>
         </div>
 
         <!-- Mensaje de error -->
@@ -11,8 +11,14 @@
             <button @click="error = null" class="error-close">✕</button>
         </div>
 
-        <!-- Formulario -->
-        <form @submit.prevent="guardarAcabado" class="form-content">
+        <!-- Mensaje de éxito -->
+        <div v-if="exito" class="success-message">
+            <span>✓ {{ exito }}</span>
+            <button @click="exito = null" class="error-close">✕</button>
+        </div>
+
+        <!-- Formulario oculto - No se muestra -->
+        <form @submit.prevent="guardarAcabado" class="form-content" style="display: none;">
             <div class="form-group">
                 <label for="nombre">Nombre *</label>
                 <input
@@ -80,48 +86,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { getAcabadoById, crearAcabado, actualizarAcabado } from '@/http/acabado-api .js';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { crearAcabado, fetchAcabados } from '@/http/acabado-api .js';
 
 const router = useRouter();
-const route = useRoute();
 
 // Estado
 const formData = ref({
     nombre: '',
     codigo: '',
-    descripcion: '',
-    tipo: '',
-    precio: '',
+    descripcion: 'Descripción del acabado',
+    tipo: 'Pintura',
+    precio: 100.00,
 });
 
 const errors = ref({});
 const error = ref(null);
+const exito = ref(null);
 const guardando = ref(false);
-
-// Computed
-const isEditing = computed(() => !!route.params.id);
-
-// Cargar acabado si es edición
-const cargarAcabado = async () => {
-    try {
-        if (isEditing.value) {
-            const response = await getAcabadoById(route.params.id);
-            const data = response.data || response;
-            formData.value = {
-                nombre: data.nombre || '',
-                codigo: data.codigo || '',
-                descripcion: data.descripcion || '',
-                tipo: data.tipo || '',
-                precio: data.precio || '',
-            };
-        }
-    } catch (err) {
-        error.value = 'Error al cargar el acabado';
-        console.error(err);
-    }
-};
 
 // Validar formulario
 const validar = () => {
@@ -154,26 +137,49 @@ const guardarAcabado = async () => {
             precio: parseFloat(formData.value.precio),
         };
         
-        if (isEditing.value) {
-            // Editar acabado
-            await actualizarAcabado(route.params.id, datos);
-        } else {
-            // Crear nuevo acabado
-            await crearAcabado(datos);
-        }
+        console.log('Guardando acabado:', datos);
+        const response = await crearAcabado(datos);
+        const acabadoId = response.data?.id || response.id;
+        console.log('Acabado guardado:', response);
+        console.log('ID del acabado:', acabadoId);
         
+        exito.value = '✓ Acabado guardado exitosamente';
         router.push('/acabados');
     } catch (err) {
-        error.value = 'Error al guardar el acabado';
-        console.error(err);
+        console.error('Error guardando acabado:', err);
+        error.value = err.response?.data?.message || 'Error al guardar el acabado';
     } finally {
         guardando.value = false;
     }
 };
 
 // Cargar datos al montar
-onMounted(() => {
-    cargarAcabado();
+onMounted(async () => {
+    console.log('NuevoAcabado mounted');
+    
+    // Cargar acabados existentes para generar nombre incremental
+    let numeroAcabado = 1;
+    try {
+        const response = await fetchAcabados();
+        const acabadosExistentes = Array.isArray(response) ? response : (response.data || []);
+        // Contar acabados con nombre "Acabado Nuevo X" para obtener el siguiente número
+        const acabadosNuevos = acabadosExistentes.filter(a => 
+            a.nombre && a.nombre.startsWith('Acabado Nuevo')
+        );
+        numeroAcabado = acabadosNuevos.length + 1;
+        console.log('Número de acabados nuevos existentes:', acabadosNuevos.length);
+    } catch (err) {
+        console.error('Error contando acabados existentes:', err);
+    }
+    
+    // Actualizar nombres con número incremental
+    formData.value.nombre = `Acabado Nuevo ${numeroAcabado}`;
+    formData.value.codigo = `ACB_${numeroAcabado}_${Date.now().toString().slice(-4)}`;
+    console.log('Nombre asignado:', formData.value.nombre);
+    console.log('Código asignado:', formData.value.codigo);
+    
+    // Guardar automáticamente el acabado con datos por defecto
+    await guardarAcabado();
 });
 </script>
 

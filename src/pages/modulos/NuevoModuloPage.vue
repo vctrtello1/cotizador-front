@@ -914,8 +914,70 @@ const confirmarManoDeObra = async () => {
 };
 
 // Lifecycle
-onMounted(() => {
-    cargarCatalogos();
+onMounted(async () => {
+    console.log('NuevoModulo mounted');
+    
+    // Cargar módulos existentes para generar nombre incremental
+    let numeroModulo = 1;
+    try {
+        const response = await fetchModulos();
+        const modulosExistentes = Array.isArray(response) ? response : (response.data || []);
+        // Contar módulos con nombre "Módulo Nuevo X" para obtener el siguiente número
+        const modulosNuevos = modulosExistentes.filter(m => 
+            m.nombre && m.nombre.startsWith('Módulo Nuevo')
+        );
+        numeroModulo = modulosNuevos.length + 1;
+        console.log('Número de módulos nuevos existentes:', modulosNuevos.length);
+    } catch (err) {
+        console.error('Error contando módulos existentes:', err);
+    }
+    
+    // Cargar catálogos primero
+    try {
+        cargandoCatalogos.value = true;
+        
+        const [acabadosRes, manosDeObraRes] = await Promise.all([
+            fetchAcabados(),
+            fetchManosDeObra()
+        ]);
+
+        acabados.value = acabadosRes.data || [];
+        manosDeObra.value = manosDeObraRes.data || [];
+        
+        console.log('Catálogos cargados');
+    } catch (err) {
+        console.error('Error cargando catálogos:', err);
+    } finally {
+        cargandoCatalogos.value = false;
+    }
+    
+    // Actualizar nombres con número incremental
+    formData.value.nombre = `Módulo Nuevo ${numeroModulo}`;
+    formData.value.codigo = `MOD_${numeroModulo}_${Date.now().toString().slice(-4)}`;
+    console.log('Nombre asignado:', formData.value.nombre);
+    console.log('Código asignado:', formData.value.codigo);
+    
+    // Guardar automáticamente el módulo con datos por defecto (sin componentes)
+    try {
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: []
+        };
+        
+        console.log('Guardando módulo:', datosModulo);
+        const response = await crearModulo(datosModulo);
+        const moduloId = response.data?.id || response.id;
+        console.log('Módulo guardado:', response);
+        console.log('ID del módulo:', moduloId);
+        
+        exito.value = '✓ Módulo guardado exitosamente';
+        router.push(`/editar-modulo/${moduloId}`);
+    } catch (err) {
+        console.error('Error guardando módulo:', err);
+        error.value = err.response?.data?.message || 'Error al guardar el módulo';
+    }
 });
 </script>
 
