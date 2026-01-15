@@ -187,40 +187,52 @@
                     <!-- Modal para definir cantidad del módulo -->
                     <template v-if="moduloSeleccionadoModal && !cargandoModuloModal">
                         <div class="modal-overlay" @click="cerrarModalCantidad">
-                            <div class="modal-content modal-cantidad" @click.stop>
-                                <div class="modal-header">
-                                    <h3>Definir Cantidad</h3>
-                                    <button class="btn-close" @click="cerrarModalCantidad">✕</button>
+                            <div class="modal-content modal-cantidad-mejorado" @click.stop>
+                                <div class="modal-header-cantidad">
+                                    <div class="modal-icon">📦</div>
+                                    <h3>¿Cuántos módulos necesitas?</h3>
+                                    <button class="btn-close-cantidad" @click="cerrarModalCantidad">✕</button>
                                 </div>
 
-                                <div class="modal-body">
-                                    <div class="modal-item">
-                                        <label class="modal-label">Módulo:</label>
-                                        <div class="modal-value">{{ moduloSeleccionadoModal.nombre }}</div>
+                                <div class="modal-body-cantidad">
+                                    <div class="modulo-preview">
+                                        <div class="preview-icon">🧩</div>
+                                        <div class="preview-info">
+                                            <h4>{{ moduloSeleccionadoModal.nombre }}</h4>
+                                            <p v-if="moduloSeleccionadoModal.descripcion">{{ moduloSeleccionadoModal.descripcion }}</p>
+                                        </div>
                                     </div>
 
-                                    <div class="modal-item">
-                                        <label class="modal-label">Cantidad *</label>
-                                        <div class="cantidad-editor">
-                                            <button type="button" class="btn-cantidad-minus" @click="decrementarCantidad">−</button>
-                                            <input 
-                                                v-model.number="cantidadNuevaModulo" 
-                                                type="number" 
-                                                min="1"
-                                                step="1"
-                                                class="input-cantidad-modal"
-                                                @keyup.enter="confirmarAgregarModulo"
-                                            >
-                                            
-                                            <button type="button" class="btn-cantidad-plus" @click="incrementarCantidad">+</button>
+                                    <div class="cantidad-section">
+                                        <label class="cantidad-label">Cantidad de módulos</label>
+                                        <div class="cantidad-control">
+                                            <button type="button" class="btn-cantidad-control minus" @click="decrementarCantidad" :disabled="cantidadNuevaModulo <= 1">
+                                                <span>−</span>
+                                            </button>
+                                            <div class="cantidad-display">
+                                                <input 
+                                                    v-model.number="cantidadNuevaModulo" 
+                                                    type="number" 
+                                                    min="1"
+                                                    step="1"
+                                                    class="input-cantidad-mejorado"
+                                                    @keyup.enter="confirmarAgregarModulo"
+                                                >
+                                                <span class="cantidad-unidad">módulos</span>
+                                            </div>
+                                            <button type="button" class="btn-cantidad-control plus" @click="incrementarCantidad">
+                                                <span>+</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="modal-footer">
-                                    <button @click="cerrarModalCantidad" class="btn-cancel">Cancelar</button>
-                                    <button @click="confirmarAgregarModulo" class="btn-primary">
-                                        ✓ Agregar Módulo
+                                <div class="modal-footer-cantidad">
+                                    <button @click="cerrarModalCantidad" class="btn-modal-cancel">
+                                        <span>✕</span> Cancelar
+                                    </button>
+                                    <button @click="confirmarAgregarModulo" class="btn-modal-confirm">
+                                        <span>✓</span> Agregar a Cotización
                                     </button>
                                 </div>
                             </div>
@@ -1191,6 +1203,218 @@ onMounted(() => {
     margin-left: 1rem;
 }
 
+/* Modal mejorado de cantidad */
+.modal-cantidad-mejorado {
+    max-width: 480px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.modal-header-cantidad {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+}
+
+.modal-header-cantidad .modal-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-header-cantidad h3 {
+    color: white;
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.btn-close-cantidad {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-close-cantidad:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.modal-body-cantidad {
+    padding: 2rem;
+}
+
+.modulo-preview {
+    background: #f9f7f4;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.preview-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+}
+
+.preview-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: #2c2c2c;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.preview-info p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.cantidad-section {
+    text-align: center;
+}
+
+.cantidad-label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cantidad-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.btn-cantidad-control {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #d4a574;
+    background: white;
+    color: #d4a574;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-cantidad-control:hover:not(:disabled) {
+    background: #d4a574;
+    color: white;
+    transform: scale(1.1);
+}
+
+.btn-cantidad-control:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.btn-cantidad-control.minus span {
+    margin-bottom: 2px;
+}
+
+.cantidad-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.input-cantidad-mejorado {
+    width: 80px;
+    height: 60px;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c2c2c;
+    border: 3px solid #e8ddd7;
+    border-radius: 12px;
+    background: #fef5e7;
+    transition: all 0.2s;
+}
+
+.input-cantidad-mejorado:focus {
+    outline: none;
+    border-color: #d4a574;
+    background: white;
+}
+
+.cantidad-unidad {
+    font-size: 0.85rem;
+    color: #999;
+    font-weight: 500;
+}
+
+.modal-footer-cantidad {
+    padding: 1.5rem 2rem;
+    background: #f9f7f4;
+    display: flex;
+    gap: 1rem;
+    border-top: 1px solid #e8ddd7;
+}
+
+.btn-modal-cancel,
+.btn-modal-confirm {
+    flex: 1;
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-modal-cancel {
+    background: white;
+    color: #666;
+    border: 2px solid #e0e0e0;
+}
+
+.btn-modal-cancel:hover {
+    background: #f5f5f5;
+    border-color: #d0d0d0;
+}
+
+.btn-modal-confirm {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+}
+
+.btn-modal-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+}
+
+/* Legacy styles */
 .modal-cantidad {
     max-width: 400px;
 }
