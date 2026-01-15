@@ -188,10 +188,6 @@
                     </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="cerrarModal">Cancelar</button>
-                    <button class="btn-primary" @click="guardarComponente">Guardar Componente</button>
-                </div>
             </div>
         </div>
 
