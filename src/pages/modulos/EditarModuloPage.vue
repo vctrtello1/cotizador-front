@@ -661,96 +661,129 @@ watch(componenteSeleccionado, (nuevoComponenteId) => {
 
 // Abrir modal de configuración para agregar componente
 const abrirModalConfiguracion = async (componente) => {
-    // Buscar o crear el acabado estándar de roble
-    let acabadoEstandar = acabados.value.find(a => a.nombre && a.nombre.toLowerCase().includes('estándar') && a.nombre.toLowerCase().includes('roble'));
-    
-    if (!acabadoEstandar) {
-        // Si no existe, intentar crearlo
-        try {
-            const nuevoAcabado = await crearAcabado({
-                nombre: 'Estándar de Roble',
-                codigo: 'EST_ROBLE',
-                descripcion: 'Acabado estándar de roble',
-                costo: 0
-            });
-            
-            // Agregar a la lista de acabados
-            const acabadoCreado = nuevoAcabado.data || nuevoAcabado;
-            acabados.value.push(acabadoCreado);
-            acabadoEstandar = acabadoCreado;
-            
-            console.log('✅ Acabado estándar creado:', acabadoEstandar);
-        } catch (err) {
-            console.warn('⚠️ No se pudo crear acabado estándar:', err);
+    try {
+        cargando.value = true;
+        
+        // Buscar o crear el acabado estándar de roble
+        let acabadoEstandar = acabados.value.find(a => a.nombre && a.nombre.toLowerCase().includes('estándar') && a.nombre.toLowerCase().includes('roble'));
+        
+        if (!acabadoEstandar) {
+            // Si no existe, intentar crearlo
+            try {
+                const nuevoAcabado = await crearAcabado({
+                    nombre: 'Estándar de Roble',
+                    codigo: 'EST_ROBLE',
+                    descripcion: 'Acabado estándar de roble',
+                    costo: 0
+                });
+                
+                // Agregar a la lista de acabados
+                const acabadoCreado = nuevoAcabado.data || nuevoAcabado;
+                acabados.value.push(acabadoCreado);
+                acabadoEstandar = acabadoCreado;
+            } catch (err) {
+                console.warn('⚠️ No se pudo crear acabado estándar:', err);
+            }
         }
-    }
-    
-    // Buscar o crear la mano de obra estándar
-    let manoDeObraEstandar = manosDeObra.value.find(m => m.nombre && m.nombre.toLowerCase().includes('estándar'));
-    
-    if (!manoDeObraEstandar) {
-        // Si no existe, intentar crearla
-        try {
-            const nuevaMano = await crearManoDeObra({
-                nombre: 'Mano de Obra Estándar',
-                codigo: 'MO_EST',
-                descripcion: 'Mano de obra estándar',
-                costo_hora: 0
-            });
-            
-            // Agregar a la lista de manos de obra
-            const manoCreada = nuevaMano.data || nuevaMano;
-            manosDeObra.value.push(manoCreada);
-            manoDeObraEstandar = manoCreada;
-            
-            console.log('✅ Mano de obra estándar creada:', manoDeObraEstandar);
-        } catch (err) {
-            console.warn('⚠️ No se pudo crear mano de obra estándar:', err);
+        
+        // Buscar o crear la mano de obra estándar
+        let manoDeObraEstandar = manosDeObra.value.find(m => m.nombre && m.nombre.toLowerCase().includes('estándar'));
+        
+        if (!manoDeObraEstandar) {
+            // Si no existe, intentar crearla
+            try {
+                const nuevaMano = await crearManoDeObra({
+                    nombre: 'Mano de Obra Estándar',
+                    codigo: 'MO_EST',
+                    descripcion: 'Mano de obra estándar',
+                    costo_hora: 0
+                });
+                
+                // Agregar a la lista de manos de obra
+                const manoCreada = nuevaMano.data || nuevaMano;
+                manosDeObra.value.push(manoCreada);
+                manoDeObraEstandar = manoCreada;
+            } catch (err) {
+                console.warn('⚠️ No se pudo crear mano de obra estándar:', err);
+            }
         }
+        
+        // Crear el componente con valores por defecto
+        const nuevoComponente = {
+            id: componente.id,
+            nombre: componente.nombre,
+            codigo: componente.codigo,
+            descripcion: componente.descripcion,
+            cantidad: 1,
+            acabado_id: acabadoEstandar?.id ? Number(acabadoEstandar.id) : null,
+            mano_de_obra_id: manoDeObraEstandar?.id ? Number(manoDeObraEstandar.id) : null
+        };
+        
+        // Validar que tenga valores por defecto
+        if (!nuevoComponente.acabado_id || !nuevoComponente.mano_de_obra_id) {
+            mostrarMensaje('⚠️ No se pudieron crear los valores por defecto', 'error', 2000);
+            console.error('Faltan valores por defecto:', { acabadoEstandar, manoDeObraEstandar });
+            return;
+        }
+        
+        // Asignar al componenteActual y mostrar modal para editar
+        componenteActual.value = nuevoComponente;
+        indiceComponenteActual.value = -1;  // Marcar como nuevo (no existe en formData aún)
+        
+        mostrarModal.value = true;
+        mostrarModalComponentes.value = false;
+    } catch (err) {
+        console.error('❌ Error al abrir configuración:', err);
+        mostrarMensaje('Error al abrir configuración', 'error', 2000);
+    } finally {
+        cargando.value = false;
     }
-    
-    // Crear el componente con valores por defecto
-    const nuevoComponente = {
-        id: componente.id,
-        nombre: componente.nombre,
-        codigo: componente.codigo,
-        descripcion: componente.descripcion,
-        cantidad: 1,
-        acabado_id: acabadoEstandar?.id ? Number(acabadoEstandar.id) : null,
-        mano_de_obra_id: manoDeObraEstandar?.id ? Number(manoDeObraEstandar.id) : null
-    };
-    
-    // Validar que tenga valores por defecto
-    if (!nuevoComponente.acabado_id || !nuevoComponente.mano_de_obra_id) {
-        mostrarMensaje('⚠️ No se pudieron crear los valores por defecto', 'error', 2000);
-        console.error('Faltan valores por defecto:', { acabadoEstandar, manoDeObraEstandar });
-        return;
-    }
-    
-    // Asignar al componenteActual y mostrar modal para configurar
-    componenteActual.value = nuevoComponente;
-    
-    // Agregar el componente a formData INMEDIATAMENTE para poder editarlo
-    formData.value.componentes.push({...nuevoComponente});
-    indiceComponenteActual.value = formData.value.componentes.length - 1;
-    
-    mostrarModal.value = true;
-    mostrarModalComponentes.value = false;
 };
 
-// Guardar componente del modal
-const guardarComponente = () => {
+// Guardar componente (nuevo o editado) en la API
+const guardarComponente = async () => {
     if (!componenteActual.value.acabado_id || !componenteActual.value.mano_de_obra_id) {
         error.value = 'Debe seleccionar acabado y mano de obra';
         return;
     }
     
-    // El componente ya está en formData, solo actualizar sus valores
-    if (indiceComponenteActual.value !== -1) {
-        formData.value.componentes[indiceComponenteActual.value] = {...componenteActual.value};
+    try {
+        cargando.value = true;
+        
+        // Si es un componente nuevo (índice = -1), agregarlo a formData
+        if (indiceComponenteActual.value === -1) {
+            formData.value.componentes.push({...componenteActual.value});
+        } else {
+            // Si es existente, actualizar sus valores
+            formData.value.componentes[indiceComponenteActual.value] = {...componenteActual.value};
+        }
+        
+        // Guardar en la API
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: formData.value.componentes.map(comp => ({
+                id: Number(comp.id),
+                cantidad: comp.cantidad,
+                acabado_id: Number(comp.acabado_id),
+                mano_de_obra_id: Number(comp.mano_de_obra_id)
+            }))
+        };
+        
+        await actualizarModulo(route.params.id, datosModulo);
+        mostrarMensaje('✅ Componente guardado', 'success', 1500);
+        cerrarModal();
+    } catch (err) {
+        console.error('❌ Error al guardar componente:', err);
+        mostrarMensaje('Error al guardar componente', 'error', 2000);
+        // Revertir si falla
+        if (indiceComponenteActual.value === -1) {
+            formData.value.componentes.pop();
+        }
+    } finally {
+        cargando.value = false;
     }
-    
-    cerrarModal();
 };
 
 // Cerrar modal
