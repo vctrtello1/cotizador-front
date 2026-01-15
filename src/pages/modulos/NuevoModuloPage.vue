@@ -159,6 +159,8 @@
                                 min="1"
                                 step="1"
                                 class="input-horas"
+                                @keyup.enter="guardarCantidad"
+                                @blur="guardarCantidad"
                             >
                             <span class="horas-unit">unidades</span>
                             <button type="button" class="btn-horas-plus" @click="incrementarCantidad">+</button>
@@ -854,13 +856,27 @@ const guardarHorasEnAPI = async (mano) => {
 const guardarCambiosComponente = async () => {
     if (!componenteActual.value) return;
     
-    // Actualizar el componente en formData para reflejar los cambios
-    const indiceComponente = formData.value.componentes.findIndex(c => c.id === componenteActual.value.id);
-    if (indiceComponente !== -1) {
-        formData.value.componentes[indiceComponente].cantidad = componenteActual.value.cantidad;
+    try {
+        cargando.value = true;
+        
+        // Pequeño delay para asegurar que el v-model actualiza
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Actualizar el componente en formData para reflejar los cambios
+        const indiceComponente = formData.value.componentes.findIndex(c => c.id === componenteActual.value.id);
+        if (indiceComponente !== -1) {
+            formData.value.componentes[indiceComponente].cantidad = componenteActual.value.cantidad;
+        }
+        
+        // Si el módulo ya existe (tiene ID), guardar en la API
+        // En nuevo módulo, solo se guarda cuando se crea el módulo
+        mostrarMensaje('✅ Cantidad actualizada', 'success', 1000);
+    } catch (err) {
+        console.error('Error al guardar cambios:', err);
+        mostrarMensaje('Error al guardar cambios', 'error', 2000);
+    } finally {
+        cargando.value = false;
     }
-    
-    mostrarMensaje('✅ Cantidad actualizada', 'success', 1000);
 };
 
 // Incrementar cantidad de componente
@@ -874,6 +890,14 @@ const incrementarCantidad = async () => {
 const decrementarCantidad = async () => {
     if (!componenteActual.value || (componenteActual.value.cantidad || 0) <= 1) return;  // No bajar de 1
     componenteActual.value.cantidad = (componenteActual.value.cantidad || 0) - 1;
+    await guardarCambiosComponente();
+};
+
+// Guardar cantidad cuando se cambia en el input (enter o blur)
+const guardarCantidad = async () => {
+    if (!componenteActual.value || componenteActual.value.cantidad < 1) {
+        componenteActual.value.cantidad = 1;
+    }
     await guardarCambiosComponente();
 };
 
