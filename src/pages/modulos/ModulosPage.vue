@@ -54,14 +54,18 @@
 
                 <div v-if="modulo.componentes && modulo.componentes.length > 0" class="componentes-list">
                     <div class="list-header">
-                        <label>🔗 Componentes:</label>
+                        <label>🔗 Componentes incluidos:</label>
                     </div>
                     <ul>
-                        <li v-for="comp in modulo.componentes.slice(0, 3)" :key="comp.id">
-                            <span class="component-bullet">•</span> {{ comp.nombre }}
+                        <li v-for="comp in getComponentesConCantidad(modulo.componentes).slice(0, 4)" :key="comp.nombre" class="component-item">
+                            <span class="component-bullet">•</span>
+                            <span class="component-info">
+                                <span class="component-quantity">{{ comp.cantidad }}×</span>
+                                <span class="component-name">{{ comp.nombre }}</span>
+                            </span>
                         </li>
-                        <li v-if="modulo.componentes.length > 3" class="mas-items">
-                            <span class="more-badge">+{{ modulo.componentes.length - 3 }}</span> más
+                        <li v-if="getComponentesConCantidad(modulo.componentes).length > 4" class="mas-items">
+                            <span class="more-badge">+{{ getComponentesConCantidad(modulo.componentes).length - 4 }}</span> más
                         </li>
                     </ul>
                 </div>
@@ -177,6 +181,23 @@ const eliminarModulo = async () => {
         console.error('Error eliminando módulo:', err);
         error.value = err.response?.data?.message || 'Error al eliminar el módulo';
     }
+};
+
+// Agrupar componentes y contar cantidades
+const getComponentesConCantidad = (componentes) => {
+    if (!componentes || componentes.length === 0) return [];
+    
+    const map = {};
+    componentes.forEach(comp => {
+        const nombre = comp.nombre;
+        if (map[nombre]) {
+            map[nombre].cantidad++;
+        } else {
+            map[nombre] = { nombre, cantidad: 1 };
+        }
+    });
+    
+    return Object.values(map).sort((a, b) => b.cantidad - a.cantidad);
 };
 
 // Lifecycle
@@ -435,11 +456,48 @@ onMounted(() => {
     padding-left: 4px;
 }
 
+.component-item {
+    gap: 10px;
+}
+
 .component-bullet {
     color: #d4a574;
     font-weight: bold;
     font-size: 16px;
     line-height: 1;
+    flex-shrink: 0;
+}
+
+.component-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.component-quantity {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+    min-width: 35px;
+    text-align: center;
+}
+
+.component-name {
+    color: #666;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.component-item:hover .component-name {
+    color: #5a4037;
 }
 
 .mas-items {
