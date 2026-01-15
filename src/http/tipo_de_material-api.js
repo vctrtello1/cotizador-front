@@ -14,3 +14,13 @@ export const crearTipoDeMaterial = async (datos) => {
   const response = await api.post("/tipo-de-materiales", datos);
   return response.data;
 };
+
+export const actualizarTipoDeMaterial = async (id, datos) => {
+  const response = await api.put(`/tipo-de-materiales/${id}`, datos);
+  return response.data;
+};
+
+export const eliminarTipoAPI = async (id) => {
+  const response = await api.delete(`/tipo-de-materiales/${id}`);
+  return response.data;
+};

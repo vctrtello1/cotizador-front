@@ -13,6 +13,8 @@ import EditarMaterial from "@/pages/materiales/EditarMaterial.vue";
 import AcabadosPage from "@/pages/acabados/AcabadosPage.vue";
 import NuevoAcabadoPage from "@/pages/acabados/NuevoAcabadoPage.vue";
 import EditarAcabadoPage from "@/pages/acabados/EditarAcabadoPage.vue";
+import TiposDeMateriales from "@/pages/tiipoDeMaterial/TiposDeMateriales.vue";
+import ManoDeObraPage from "@/pages/mano-de-obra/ManoDeObraPage.vue";
 
 export const routes = [
     {
@@ -93,6 +95,16 @@ export const routes = [
         path: "/editar-acabado/:id",
         name: "EditarAcabado",
         component: EditarAcabadoPage,
+    },
+    {
+        path: "/tipo-de-material",
+        name: "TiposDeMateriales",
+        component: TiposDeMateriales,
+    },
+    {
+        path: "/mano-de-obra",
+        name: "ManoDeObra",
+        component: ManoDeObraPage,
     }
 
 ];
