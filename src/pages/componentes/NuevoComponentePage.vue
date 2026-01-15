@@ -273,29 +273,13 @@ const guardarComponente = async () => {
 
         console.log('Guardando componente:', datosComponente);
         const response = await crearComponente(datosComponente);
-        const primerComponenteId = response.data?.id || response.id;
-        console.log('Primer componente guardado:', response);
-        console.log('ID del primer componente:', primerComponenteId);
+        const componenteId = response.data?.id || response.id;
+        console.log('Componente guardado:', response);
+        console.log('ID del componente:', componenteId);
 
-        // Obtener número del nombre actual (ej: "Componente Nuevo 1" -> 1)
-        const nombreActual = formData.value.nombre;
-        const match = nombreActual.match(/Componente Nuevo (\d+)/);
-        const numeroActual = match ? parseInt(match[1]) : 1;
-        const proximoNumero = numeroActual + 1;
-
-        // Crear segundo componente consecutivo
-        const datosComponente2 = {
-            ...datosComponente,
-            nombre: `Componente Nuevo ${proximoNumero}`,
-            codigo: `COMP_${proximoNumero}_${Date.now().toString().slice(-4)}`
-        };
-        const response2 = await crearComponente(datosComponente2);
-        console.log('Segundo componente guardado:', response2);
-
-        exito.value = '✓ Componentes guardados exitosamente';
-        setTimeout(() => {
-            router.push(`/editar-componente/${primerComponenteId}`);
-        }, 1500);
+        exito.value = '✓ Componente guardado exitosamente';
+        // Redirigir inmediatamente sin mostrar la página
+        router.push(`/editar-componente/${componenteId}`);
     } catch (err) {
         console.error('Error guardando componente:', err);
         error.value = err.response?.data?.message || 'Error al guardar el componente';
