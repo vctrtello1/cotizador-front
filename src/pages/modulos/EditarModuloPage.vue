@@ -970,6 +970,7 @@ const incrementarHoras = async (mano) => {
     if (!mano) return;
     
     mano.horas = (mano.horas || 0) + 1;
+    componenteActual.value.mano_de_obra_id = mano.id;
     await guardarHorasEnAPI(mano);
 };
 
@@ -978,6 +979,7 @@ const decrementarHoras = async (mano) => {
     if (!mano || (mano.horas || 0) <= 1) return;  // No bajar de 1 hora
     
     mano.horas = (mano.horas || 0) - 1;
+    componenteActual.value.mano_de_obra_id = mano.id;
     await guardarHorasEnAPI(mano);
 };
 
