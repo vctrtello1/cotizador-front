@@ -1022,7 +1022,7 @@ onMounted(() => {
 }
 
 .form-actions {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     gap: 1.2rem;
     justify-content: flex-end;
     align-items: center;
@@ -1118,9 +1118,9 @@ onMounted(() => {
     border-radius: 10px;
     padding: 1.5rem;
     background: linear-gradient(135deg, #fffbf6 0%, #fffef9 100%);
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -1133,7 +1133,7 @@ onMounted(() => {
 }
 
 .componente-body {
-    flex: 1;
+    flex: 1 1 100%;
 }
 
 .componente-body h4 {
@@ -1155,9 +1155,10 @@ onMounted(() => {
 }
 
 .componente-item > div:last-child {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     gap: 0.6rem;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 /* Modales */
@@ -1168,7 +1169,7 @@ onMounted(() => {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
-    display: flex;
+    display: flex; flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     z-index: 1000;
@@ -1199,7 +1200,7 @@ onMounted(() => {
 .modal-header {
     padding: 2rem;
     border-bottom: 2px solid #f0e8e0;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     background: linear-gradient(135deg, #fffbf6 0%, #fffef9 100%);
@@ -1222,7 +1223,7 @@ onMounted(() => {
     padding: 0;
     width: 40px;
     height: 40px;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
@@ -1241,7 +1242,7 @@ onMounted(() => {
 .modal-footer {
     padding: 1.5rem 2rem;
     border-top: 2px solid #f0e8e0;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     gap: 1rem;
     justify-content: flex-end;
 }
@@ -1298,7 +1299,7 @@ onMounted(() => {
 }
 
 .form-actions {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     gap: 1.2rem;
     justify-content: flex-end;
     align-items: center;
@@ -1394,9 +1395,9 @@ onMounted(() => {
     border-radius: 10px;
     padding: 1.5rem;
     background: linear-gradient(135deg, #fffbf6 0%, #fffef9 100%);
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -1409,7 +1410,7 @@ onMounted(() => {
 }
 
 .componente-body {
-    flex: 1;
+    flex: 1 1 100%;
 }
 
 .componente-body h4 {
@@ -1431,9 +1432,10 @@ onMounted(() => {
 }
 
 .componente-item > div:last-child {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     gap: 0.6rem;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 /* Modales */
@@ -1444,7 +1446,7 @@ onMounted(() => {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
-    display: flex;
+    display: flex; flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     z-index: 1000;
@@ -1475,7 +1477,7 @@ onMounted(() => {
 .modal-header {
     padding: 2rem;
     border-bottom: 2px solid #f0e8e0;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     background: linear-gradient(135deg, #fffbf6 0%, #fffef9 100%);
@@ -1498,7 +1500,7 @@ onMounted(() => {
     padding: 0;
     width: 40px;
     height: 40px;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
@@ -1517,7 +1519,7 @@ onMounted(() => {
 .modal-footer {
     padding: 1.5rem 2rem;
     border-top: 2px solid #f0e8e0;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     gap: 1rem;
     justify-content: flex-end;
 }
@@ -1603,7 +1605,7 @@ onMounted(() => {
 }
 
 .componentes-lista {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     flex-direction: column;
     gap: 0.75rem;
 }
@@ -1614,7 +1616,7 @@ onMounted(() => {
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
 }
@@ -1662,7 +1664,7 @@ onMounted(() => {
 }
 
 .items-lista {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     flex-direction: column;
     gap: 0.75rem;
 }
@@ -1673,9 +1675,9 @@ onMounted(() => {
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .item-seleccion:hover {
@@ -1725,7 +1727,7 @@ onMounted(() => {
 }
 
 .detail-row {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
@@ -1749,7 +1751,7 @@ onMounted(() => {
 }
 
 .horas-editor {
-    display: flex;
+    display: flex; flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
 }
@@ -1782,7 +1784,7 @@ onMounted(() => {
     font-size: 14px;
     font-weight: 600;
     transition: all 0.2s;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     align-items: center;
     justify-content: center;
 }
@@ -1807,7 +1809,7 @@ onMounted(() => {
     border-radius: 4px;
     padding: 1rem;
     margin-bottom: 1.5rem;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
 }
@@ -1861,7 +1863,7 @@ onMounted(() => {
     padding: 1rem;
     border-radius: 4px;
     margin-bottom: 1.5rem;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
 }
@@ -1892,7 +1894,7 @@ onMounted(() => {
     padding: 0;
     width: 24px;
     height: 24px;
-    display: flex;
+    display: flex; flex-wrap: wrap;
     align-items: center;
     justify-content: center;
 }

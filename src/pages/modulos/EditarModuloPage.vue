@@ -1296,8 +1296,9 @@ onMounted(() => {
     padding: 1.5rem;
     background: linear-gradient(135deg, #fffbf6 0%, #fffef9 100%);
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -1310,7 +1311,7 @@ onMounted(() => {
 }
 
 .componente-body {
-    flex: 1;
+    flex: 1 1 100%;
 }
 
 .componente-body h4 {
@@ -1335,6 +1336,7 @@ onMounted(() => {
     display: flex;
     gap: 0.6rem;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 /* Modales */
