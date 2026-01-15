@@ -788,7 +788,6 @@ const seleccionarManoDeObra = async (mano) => {
         }
         
         mostrarMensaje('✅ Mano de obra actualizada', 'success', 1000);
-        mostrarModalSeleccionarManoDeObra.value = false;
     } catch (err) {
         console.error('❌ Error al guardar mano de obra:', err);
         mostrarMensaje('Error al guardar mano de obra', 'error', 2000);
