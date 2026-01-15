@@ -190,10 +190,11 @@ const getComponentesConCantidad = (componentes) => {
     const map = {};
     componentes.forEach(comp => {
         const nombre = comp.nombre;
+        const cantidad = comp.cantidad || 1; // Usar la cantidad del componente si existe
         if (map[nombre]) {
-            map[nombre].cantidad++;
+            map[nombre].cantidad += cantidad;
         } else {
-            map[nombre] = { nombre, cantidad: 1 };
+            map[nombre] = { nombre, cantidad };
         }
     });
     
