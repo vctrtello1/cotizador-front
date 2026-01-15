@@ -131,8 +131,8 @@
                             <div class="card-footer">
                                 <div class="price-section">
                                     <div class="price-item">
-                                        <span class="label">Costo Total:</span>
-                                        <span class="value">${{ formatCurrency(modulo.costo_total) }}</span>
+                                        <span class="label">Precio Unitario:</span>
+                                        <span class="value">${{ formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo)) }}</span>
                                     </div>
                                     <div class="price-item subtotal">
                                         <span class="label">Subtotal:</span>
@@ -165,9 +165,7 @@
                                     >
                                         <div class="modulo-info">
                                             <h4>{{ modulo.nombre }}</h4>
-                                            <p class="modulo-codigo">{{ modulo.codigo }}</p>
-                                            <p v-if="modulo.descripcion" class="modulo-descripcion">{{ modulo.descripcion }}</p>
-                                            <div class="modulo-price">Precio: <strong>${{ formatCurrency(modulo.precio || calcularPrecioUnitarioModulo(modulo)) }}</strong></div>
+                                            <div class="modulo-price">Precio: <strong>${{ formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo)) }}</strong></div>
                                         </div>
                                         <div class="modulo-selector-icon">➜</div>
                                     </div>
@@ -189,16 +187,6 @@
                                     <div class="modal-item">
                                         <label class="modal-label">Módulo:</label>
                                         <div class="modal-value">{{ moduloSeleccionadoModal.nombre }}</div>
-                                    </div>
-
-                                    <div class="modal-item">
-                                        <label class="modal-label">Código:</label>
-                                        <div class="modal-value">{{ moduloSeleccionadoModal.codigo }}</div>
-                                    </div>
-
-                                    <div class="modal-item">
-                                        <label class="modal-label">Costo Total:</label>
-                                        <div class="modal-value precio-highlight">${{ formatCurrency(moduloSeleccionadoModal.costo_total) }}</div>
                                     </div>
 
                                     <div class="modal-item">
@@ -317,12 +305,32 @@ const totalCotizacion = computed(() => {
 
 const formatCurrency = (value) => {
     if (value === null || value === undefined || value === '') return '0.00';
-    const num = Number(value);
+    const cleaned = typeof value === 'string'
+        ? value.replace(/[^\d.-]/g, '')
+        : value;
+    const num = Number(cleaned);
     if (isNaN(num)) return '0.00';
     return num.toLocaleString('es-MX', { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
     });
+};
+
+const normalizarCostoTotal = (modulo) => {
+    if (!modulo) return 0;
+    const raw =
+        modulo.costo_total ??
+        modulo.costoTotal ??
+        modulo.precio_total ??
+        modulo.precio ??
+        null;
+    if (raw === null || raw === undefined || raw === '') return 0;
+    const cleaned = typeof raw === 'string'
+        ? raw.replace(/[^\d.-]/g, '')
+        : raw;
+    const num = Number(cleaned);
+    if (isNaN(num)) return 0;
+    return num;
 };
 
 const calcularSubtotal = (componente) => {
@@ -343,7 +351,13 @@ const calcularPrecioUnitarioModulo = (modulo) => {
 };
 
 const calcularSubtotalModulo = (modulo) => {
-    // Precio unitario del módulo × cantidad
+    // Usar costo_total del API si existe, sino calcular desde componentes
+    if (modulo.costo_total) {
+        const cantidad = Number(modulo.cantidad) || 1;
+        return Number(modulo.costo_total) * cantidad;
+    }
+    
+    // Fallback: calcular desde componentes
     const precioUnitario = calcularPrecioUnitarioModulo(modulo);
     const cantidad = Number(modulo.cantidad) || 1;
     return precioUnitario * cantidad;
@@ -351,6 +365,37 @@ const calcularSubtotalModulo = (modulo) => {
 
 const actualizarTotales = () => {
     // Fuerza actualización del computed totalCotizacion
+};
+
+const enriquecerModulosConCostoTotal = async (modulosList) => {
+    // Obtener costo_total del API para cada módulo
+    if (!modulosList || !Array.isArray(modulosList)) return modulosList;
+    
+    const modulosEnriquecidos = await Promise.all(
+        modulosList.map(async (moduloCotizacion) => {
+            if (moduloCotizacion.costo_total) {
+                return moduloCotizacion; // Ya tiene costo_total
+            }
+            
+            try {
+                const response = await getModuloById(moduloCotizacion.id);
+                const moduloCompleto = response?.data || response;
+                
+                if (moduloCompleto && moduloCompleto.costo_total) {
+                    return {
+                        ...moduloCotizacion,
+                        costo_total: moduloCompleto.costo_total
+                    };
+                }
+            } catch (err) {
+                console.warn(`No se pudo obtener costo_total para módulo ${moduloCotizacion.id}:`, err);
+            }
+            
+            return moduloCotizacion;
+        })
+    );
+    
+    return modulosEnriquecidos;
 };
 
 const abrirSelectorModulos = () => {
@@ -378,21 +423,21 @@ const seleccionarModulo = async (modulo) => {
         const moduloCompleto = await getModuloById(modulo.id);
         const datos = moduloCompleto?.data || moduloCompleto;
         
-        console.log('Módulo obtenido del API:', datos);
-        console.log('Costo Total del API:', datos.costo_total);
-        
         // Asignar el módulo con su costo_total del API
-        moduloSeleccionadoModal.value = { ...datos };
+        // Hacer copia profunda para asegurar reactividad de Vue
+        const moduloAsignado = {
+            ...JSON.parse(JSON.stringify(datos)),
+            costo_total: normalizarCostoTotal(datos)
+        };
+        moduloSeleccionadoModal.value = moduloAsignado;
+        
         cantidadNuevaModulo.value = 1;
         mostrarSelectorModulos.value = false;
-        
-        console.log('Módulo asignado al modal:', moduloSeleccionadoModal.value);
     } catch (err) {
         console.error('Error al obtener módulo:', err);
         // Fallback: usar el módulo local si falla la API
         const moduloLocal = modulos.value.find(m => m.id === modulo.id) || modulo;
         
-        console.log('Usando módulo local como fallback:', moduloLocal);
         moduloSeleccionadoModal.value = { ...moduloLocal };
         cantidadNuevaModulo.value = 1;
         mostrarSelectorModulos.value = false;
@@ -427,7 +472,8 @@ const confirmarAgregarModulo = async () => {
             codigo: modulo.codigo,
             descripcion: modulo.descripcion,
             cantidad: cantidadNuevaModulo.value,
-            componentes: modulo.componentes || []
+            componentes: modulo.componentes || [],
+            costo_total: normalizarCostoTotal(modulo)
         });
 
         console.log('Módulo agregado localmente:', modulo.nombre);
@@ -447,7 +493,14 @@ const confirmarAgregarModulo = async () => {
             const response = await getCotizacionById(cotizacion.value.id);
             const dataReloaded = response?.data || response;
             console.log('Cotización recargada, modulos:', dataReloaded.modulos);
-            cotizacion.value.modulos = dataReloaded.modulos;
+            
+            // Enriquecer con costo_total del API
+            const modulosEnriquecidosAdd = await enriquecerModulosConCostoTotal(dataReloaded.modulos);
+            
+            // Hacer copia profunda para asegurar reactividad de Vue
+            const copiaAdd = JSON.parse(JSON.stringify(cotizacion.value));
+            copiaAdd.modulos = modulosEnriquecidosAdd;
+            cotizacion.value = copiaAdd;
             
             success.value = 'Módulo agregado correctamente';
             setTimeout(() => { success.value = null; }, 3000);
@@ -496,7 +549,14 @@ const eliminarModuloAsignado = async (index) => {
             const response = await getCotizacionById(cotizacion.value.id);
             const dataReloaded = response?.data || response;
             console.log('Cotización recargada, modulos:', dataReloaded.modulos);
-            cotizacion.value.modulos = dataReloaded.modulos;
+            
+            // Enriquecer con costo_total del API
+            const modulosEnriquecidosDelete = await enriquecerModulosConCostoTotal(dataReloaded.modulos);
+            
+            // Hacer copia profunda para asegurar reactividad de Vue
+            const copiaDelete = JSON.parse(JSON.stringify(cotizacion.value));
+            copiaDelete.modulos = modulosEnriquecidosDelete;
+            cotizacion.value = copiaDelete;
             
             success.value = 'Módulo eliminado correctamente';
             setTimeout(() => { success.value = null; }, 3000);
@@ -548,6 +608,16 @@ const cargarCotizacion = async () => {
         const modulosResponse = await fetchModulos();
         const modulosData = modulosResponse?.data || modulosResponse;
         modulos.value = Array.isArray(modulosData) ? modulosData : [];
+
+        // Enriquecer módulos de la cotización con costo_total desde el API
+        if (cotizacion.value.modulos && Array.isArray(cotizacion.value.modulos)) {
+            const modulosEnriquecidos = await enriquecerModulosConCostoTotal(cotizacion.value.modulos);
+            
+            // Hacer copia profunda para asegurar reactividad de Vue
+            const copia = JSON.parse(JSON.stringify(cotizacion.value));
+            copia.modulos = modulosEnriquecidos;
+            cotizacion.value = copia;
+        }
 
         console.log('Cotización cargada:', cotizacion.value);
         console.log('Detalles:', cotizacion.value.detalles);
