@@ -38,6 +38,11 @@
 
                 <p class="item-descripcion">{{ item.descripcion || 'Sin descripción' }}</p>
 
+                <div class="item-costo">
+                    <span class="label">Costo por hora:</span>
+                    <span class="valor">${{ parseFloat(item.costo_por_hora || item.costo_hora || item.tarifa || 0).toFixed(2) }}</span>
+                </div>
+
                 <div class="card-actions">
                     <button class="btn-edit" @click="editar(item.id)">✏️ Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(item.id)">🗑️ Eliminar</button>
@@ -247,6 +252,28 @@ onMounted(() => {
     font-size: 0.95rem;
     margin: 0.5rem 0 1rem;
     flex: 1;
+}
+
+.item-costo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f5f3f0;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.item-costo .label {
+    color: #999;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.item-costo .valor {
+    color: #d4a574;
+    font-size: 1.1rem;
+    font-weight: 700;
 }
 
 .card-actions {

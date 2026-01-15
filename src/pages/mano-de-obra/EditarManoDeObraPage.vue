@@ -40,6 +40,18 @@
                     ></textarea>
                 </div>
 
+                <div class="form-group">
+                    <label for="costo_por_hora">Costo por Hora *</label>
+                    <input
+                        id="costo_por_hora"
+                        v-model="formData.costo_por_hora"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ej: 150.00"
+                        required
+                    />
+                </div>
+
                 <div class="form-actions">
                     <RouterLink to="/mano-de-obra" class="btn-secondary">Cancelar</RouterLink>
                     <button type="submit" class="btn-primary" :disabled="cargando">
@@ -62,6 +74,7 @@ const route = useRoute();
 const formData = ref({
     nombre: '',
     descripcion: '',
+    costo_por_hora: '',
 });
 
 const cargandoDatos = ref(true);
@@ -75,6 +88,7 @@ const cargarDatos = async () => {
         formData.value = {
             nombre: data.nombre || '',
             descripcion: data.descripcion || '',
+            costo_por_hora: data.costo_por_hora || data.costo_hora || data.tarifa || '',
         };
     } catch (err) {
         console.error('Error:', err);
