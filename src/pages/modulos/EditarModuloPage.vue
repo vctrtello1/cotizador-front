@@ -863,27 +863,87 @@ const cerrarModal = () => {
 };
 
 // Seleccionar acabado
-const seleccionarAcabado = (acabado) => {
-    componenteActual.value.acabado_id = acabado.id;
+const seleccionarAcabado = async (acabado) => {
+    try {
+        cargando.value = true;
+        
+        // Actualizar el componente actual
+        componenteActual.value.acabado_id = acabado.id;
+        
+        // Actualizar en formData
+        if (indiceComponenteActual.value !== -1) {
+            formData.value.componentes[indiceComponenteActual.value].acabado_id = acabado.id;
+        }
+        
+        // Guardar en la API inmediatamente
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: formData.value.componentes.map(comp => ({
+                id: Number(comp.id),
+                cantidad: comp.cantidad,
+                acabado_id: Number(comp.acabado_id),
+                mano_de_obra_id: Number(comp.mano_de_obra_id)
+            }))
+        };
+        
+        await actualizarModulo(route.params.id, datosModulo);
+        mostrarMensaje('✅ Acabado actualizado', 'success', 1000);
+        mostrarModalSeleccionarAcabado.value = false;
+    } catch (err) {
+        console.error('❌ Error al guardar acabado:', err);
+        mostrarMensaje('Error al guardar acabado', 'error', 2000);
+    } finally {
+        cargando.value = false;
+    }
 };
 
 // Seleccionar mano de obra
 const seleccionarManoDeObra = async (mano) => {
-    // Seleccionar la nueva mano de obra e inicializar en 1 hora
-    mano.horas = 1;
-    componenteActual.value.mano_de_obra_id = mano.id;
-    componenteActual.value.mano_de_obra_horas = 1;
-    
-    // Guardar la nueva mano de obra con 1 hora
     try {
+        cargando.value = true;
+        
+        // Seleccionar la nueva mano de obra e inicializar en 1 hora
+        mano.horas = 1;
+        componenteActual.value.mano_de_obra_id = mano.id;
+        componenteActual.value.mano_de_obra_horas = 1;
+        
+        // Actualizar en formData
+        if (indiceComponenteActual.value !== -1) {
+            formData.value.componentes[indiceComponenteActual.value].mano_de_obra_id = mano.id;
+        }
+        
+        // Guardar en la API inmediatamente
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: formData.value.componentes.map(comp => ({
+                id: Number(comp.id),
+                cantidad: comp.cantidad,
+                acabado_id: Number(comp.acabado_id),
+                mano_de_obra_id: Number(comp.mano_de_obra_id)
+            }))
+        };
+        
+        await actualizarModulo(route.params.id, datosModulo);
+        
+        // Guardar la nueva mano de obra con 1 hora
         const storeHoras = useHorasPorManoDeObraComponente();
         await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
             componenteActual.value.id,
             mano.id,
             { horas: 1 }
         );
+        
+        mostrarMensaje('✅ Mano de obra actualizada', 'success', 1000);
+        mostrarModalSeleccionarManoDeObra.value = false;
     } catch (err) {
-        console.warn('No se pudo guardar horas=1 para nueva mano de obra:', err);
+        console.error('❌ Error al guardar mano de obra:', err);
+        mostrarMensaje('Error al guardar mano de obra', 'error', 2000);
+    } finally {
+        cargando.value = false;
     }
 };
 

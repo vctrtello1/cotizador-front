@@ -751,26 +751,51 @@ const cerrarModal = () => {
 
 // Seleccionar acabado
 const seleccionarAcabado = (acabado) => {
+    // Actualizar el componente actual
     componenteActual.value.acabado_id = acabado.id;
+    
+    // Actualizar en formData
+    if (indiceComponenteActual.value !== -1) {
+        formData.value.componentes[indiceComponenteActual.value].acabado_id = acabado.id;
+    }
+    
+    mostrarMensaje('✅ Acabado actualizado', 'success', 1000);
+    mostrarModalSeleccionarAcabado.value = false;
 };
 
 // Seleccionar mano de obra
 const seleccionarManoDeObra = async (mano) => {
-    // Seleccionar la nueva mano de obra e inicializar en 1 hora
-    mano.horas = 1;
-    componenteActual.value.mano_de_obra_id = mano.id;
-    componenteActual.value.mano_de_obra_horas = 1;
-    
-    // Guardar la nueva mano de obra con 1 hora
     try {
+        cargando.value = true;
+        
+        // Seleccionar la nueva mano de obra e inicializar en 1 hora
+        mano.horas = 1;
+        componenteActual.value.mano_de_obra_id = mano.id;
+        componenteActual.value.mano_de_obra_horas = 1;
+        
+        // Actualizar en formData
+        if (indiceComponenteActual.value !== -1) {
+            formData.value.componentes[indiceComponenteActual.value].mano_de_obra_id = mano.id;
+        }
+        
+        // Guardar la nueva mano de obra con 1 hora (solo si el módulo ya existe)
+        // En nuevo módulo, esto se guardará cuando se cree el módulo
         const storeHoras = useHorasPorManoDeObraComponente();
-        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-            componenteActual.value.id,
-            mano.id,
-            { horas: 1 }
-        );
+        if (componenteActual.value.id) {
+            await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
+                componenteActual.value.id,
+                mano.id,
+                { horas: 1 }
+            );
+        }
+        
+        mostrarMensaje('✅ Mano de obra actualizada', 'success', 1000);
+        mostrarModalSeleccionarManoDeObra.value = false;
     } catch (err) {
-        console.warn('No se pudo guardar horas=1 para nueva mano de obra:', err);
+        console.error('❌ Error al guardar mano de obra:', err);
+        mostrarMensaje('Error al guardar mano de obra', 'error', 2000);
+    } finally {
+        cargando.value = false;
     }
 };
 
