@@ -19,7 +19,7 @@
         </div>
 
         <!-- Loading -->
-        <div v-if="cargando" class="loading-state">
+        <div v-if="cargandoDatos" class="loading-state">
             <p>Cargando mano de obra...</p>
         </div>
 
@@ -62,12 +62,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { fetchClientes, eliminarManoDeObraAPI } from '@/http/mano_de_obra-api .js';
 
 const router = useRouter();
 
 // Estado
 const items = ref([]);
-const cargando = ref(true);
+const cargandoDatos = ref(true);
+const cargando = ref(false);
 const error = ref(null);
 const exito = ref(null);
 const modalEliminar = ref(false);
@@ -75,16 +77,16 @@ const itemAEliminar = ref(null);
 
 // Métodos
 const cargar = async () => {
-    cargando.value = true;
+    cargandoDatos.value = true;
     error.value = null;
     try {
-        // TODO: Implementar API call
-        items.value = [];
+        const response = await fetchClientes();
+        items.value = Array.isArray(response) ? response : (response.data || []);
     } catch (err) {
         console.error('Error cargando:', err);
-        error.value = 'Error al cargar los registros';
+        error.value = 'Error al cargar los registros de mano de obra';
     } finally {
-        cargando.value = false;
+        cargandoDatos.value = false;
     }
 };
 
@@ -108,7 +110,7 @@ const cancelarEliminacion = () => {
 
 const eliminar = async () => {
     try {
-        // TODO: Implementar eliminación
+        await eliminarManoDeObraAPI(itemAEliminar.value);
         exito.value = '✓ Registro eliminado exitosamente';
         cargar();
         cancelarEliminacion();

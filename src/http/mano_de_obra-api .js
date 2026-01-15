@@ -19,3 +19,8 @@ export const actualizarManoDeObra = async (id, datos) => {
   const response = await api.put(`/mano-de-obras/${id}`, datos);
   return response.data;
 };
+
+export const eliminarManoDeObraAPI = async (id) => {
+  const response = await api.delete(`/mano-de-obras/${id}`);
+  return response.data;
+};

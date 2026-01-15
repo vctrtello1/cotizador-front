@@ -1,8 +1,8 @@
 <template>
-    <div class="editar-tipo-container">
+    <div class="editar-mano-obra-container">
         <div class="page-header">
-            <RouterLink to="/tipo-de-material" class="btn-back">← Volver</RouterLink>
-            <h1 class="page-title">Editar Tipo de Material</h1>
+            <RouterLink to="/mano-de-obra" class="btn-back">← Volver</RouterLink>
+            <h1 class="page-title">Editar Mano de Obra</h1>
         </div>
 
         <!-- Formulario -->
@@ -25,18 +25,8 @@
                         id="nombre"
                         v-model="formData.nombre"
                         type="text"
-                        placeholder="Ej: Madera Natural"
+                        placeholder="Ej: Carpintería Básica"
                         required
-                    />
-                </div>
-
-                <div class="form-group">
-                    <label for="codigo">Código</label>
-                    <input
-                        id="codigo"
-                        v-model="formData.codigo"
-                        type="text"
-                        placeholder="Ej: MADERA-NAT"
                     />
                 </div>
 
@@ -45,13 +35,13 @@
                     <textarea
                         id="descripcion"
                         v-model="formData.descripcion"
-                        placeholder="Describe este tipo de material..."
+                        placeholder="Describe esta mano de obra..."
                         rows="4"
                     ></textarea>
                 </div>
 
                 <div class="form-actions">
-                    <RouterLink to="/tipo-de-material" class="btn-secondary">Cancelar</RouterLink>
+                    <RouterLink to="/mano-de-obra" class="btn-secondary">Cancelar</RouterLink>
                     <button type="submit" class="btn-primary" :disabled="cargando">
                         {{ cargando ? 'Guardando...' : '💾 Guardar Cambios' }}
                     </button>
@@ -64,14 +54,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getTipoDeMaterialById, actualizarTipoDeMaterial } from '@/http/tipo_de_material-api';
+import { getClienteById, actualizarManoDeObra } from '@/http/mano_de_obra-api .js';
 
 const router = useRouter();
 const route = useRoute();
 
 const formData = ref({
     nombre: '',
-    codigo: '',
     descripcion: '',
 });
 
@@ -81,11 +70,10 @@ const error = ref(null);
 
 const cargarDatos = async () => {
     try {
-        const response = await getTipoDeMaterialById(route.params.id);
+        const response = await getClienteById(route.params.id);
         const data = Array.isArray(response) ? response[0] : (response.data || response);
         formData.value = {
             nombre: data.nombre || '',
-            codigo: data.codigo || '',
             descripcion: data.descripcion || '',
         };
     } catch (err) {
@@ -101,10 +89,10 @@ const guardar = async () => {
     cargando.value = true;
 
     try {
-        await actualizarTipoDeMaterial(route.params.id, formData.value);
+        await actualizarManoDeObra(route.params.id, formData.value);
         // Pequeño delay para que se complete la petición
         await new Promise(resolve => setTimeout(resolve, 1000));
-        router.push('/tipo-de-material');
+        router.push('/mano-de-obra');
     } catch (err) {
         console.error('Error:', err);
         error.value = err.response?.data?.message || 'Error al guardar los cambios';
@@ -119,7 +107,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.editar-tipo-container {
+.editar-mano-obra-container {
     max-width: 800px;
     margin: 0 auto;
     padding: 2rem 1rem;
@@ -275,7 +263,7 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-    .editar-tipo-container {
+    .editar-mano-obra-container {
         padding: 1rem;
     }
 
