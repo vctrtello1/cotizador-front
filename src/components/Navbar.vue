@@ -32,7 +32,7 @@ const isActive = (path) => {
           class="nav-link"
           :class="{ active: isActive('/modulos') && !isActive('/nuevo-') }"
         >
-          <span class="nav-icon">⬜</span>
+          <span class="nav-icon">🧩</span>
           Módulos
         </router-link>
         <router-link 
