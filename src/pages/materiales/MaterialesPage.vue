@@ -46,8 +46,8 @@
                 <div class="material-stats">
                     <div class="stat-item">
                         <span class="stat-label">Precio</span>
-                        <span class="stat-value precio-value">${{ formatCurrency(material.precio_unitario ||
-                            material.costo_unitario) }}</span>
+                        <span class="stat-value precio-value">${{ formatCurrency(material.costo_unitario ||
+                            material.precio_unitario) }}</span>
                     </div>
                     <div class="stat-divider"></div>
                     <div class="stat-item">
@@ -117,8 +117,8 @@
                         <div class="detalle-grid">
                             <div class="detalle-item">
                                 <label>Precio Unitario</label>
-                                <span class="precio-destacado">${{ formatCurrency(materialSeleccionado?.precio_unitario
-                                    || materialSeleccionado?.costo_unitario) }}</span>
+                                <span class="precio-destacado">${{ formatCurrency(materialSeleccionado?.costo_unitario
+                                    || materialSeleccionado?.precio_unitario) }}</span>
                             </div>
                         </div>
                     </div>

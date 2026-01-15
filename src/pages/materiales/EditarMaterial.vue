@@ -414,7 +414,7 @@ const cargarMaterial = async () => {
             descripcion: String(material.descripcion || '').trim(),
             unidad_medida: String(material.unidad_medida || '').trim(),
             cantidad_disponible: Number(material.cantidad_disponible) || 0,
-            precio_unitario: Number(material.precio_unitario || material.costo_unitario) || 0,
+            precio_unitario: Number(material.costo_unitario || material.precio_unitario) || 0,
             alto: Number(material.alto) || 0,
             ancho: Number(material.ancho) || 0,
             largo: Number(material.largo) || 0

@@ -575,7 +575,7 @@
                             </div>
                             <div class="card-body">
                                 <p class="card-label">Precio Unitario</p>
-                                <p class="card-price">${{ formatCurrency(material.costo_unitario) }}</p>
+                                <p class="card-price">${{ formatCurrency(material.costo_unitario || material.precio_unitario) }}</p>
                             </div>
                             <div class="card-footer">
                                 <button class="btn-select">+ Seleccionar</button>
