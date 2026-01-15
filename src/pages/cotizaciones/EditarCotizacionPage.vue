@@ -231,12 +231,10 @@
                                 </div>
 
                                 <div class="modal-footer-cantidad">
-                                    <button @click="cerrarModalCantidad" class="btn-modal-cancel">
-                                        <span>✕</span> Cancelar
+                                    <button @click="cambiarModuloSeleccionado" class="btn-modal-secondary">
+                                        <span>🔄</span> Cambiar Módulo
                                     </button>
-                                    <button @click="confirmarAgregarModulo" class="btn-modal-confirm">
-                                        <span>✓</span> Agregar a Cotización
-                                    </button>
+     
                                 </div>
                             </div>
                         </div>
@@ -438,6 +436,13 @@ const cerrarSelectorModulos = () => {
 const cerrarModalCantidad = () => {
     moduloSeleccionadoModal.value = null;
     cantidadNuevaModulo.value = 1;
+};
+
+const cambiarModuloSeleccionado = () => {
+    // Cerrar modal de cantidad y volver a abrir selector
+    moduloSeleccionadoModal.value = null;
+    cantidadNuevaModulo.value = 1;
+    mostrarSelectorModulos.value = true;
 };
 
 const seleccionarModulo = async (modulo) => {
@@ -1480,13 +1485,22 @@ onMounted(() => {
     padding: 1.5rem 2rem;
     background: #f9f7f4;
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 1rem;
     border-top: 1px solid #e8ddd7;
 }
 
-.btn-modal-cancel,
-.btn-modal-confirm {
+.modal-actions-group {
+    display: flex;
+    gap: 1rem;
     flex: 1;
+    justify-content: flex-end;
+}
+
+.btn-modal-cancel,
+.btn-modal-confirm,
+.btn-modal-secondary {
     padding: 0.9rem 1.5rem;
     border: none;
     border-radius: 10px;
@@ -1500,10 +1514,25 @@ onMounted(() => {
     gap: 0.5rem;
 }
 
+.btn-modal-secondary {
+    background: white;
+    color: #d4a574;
+    border: 2px solid #d4a574;
+    padding: 0.9rem 1.2rem;
+}
+
+.btn-modal-secondary:hover {
+    background: #d4a574;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.2);
+}
+
 .btn-modal-cancel {
     background: white;
     color: #666;
     border: 2px solid #e0e0e0;
+    flex: 1;
 }
 
 .btn-modal-cancel:hover {
@@ -1514,6 +1543,7 @@ onMounted(() => {
 .btn-modal-confirm {
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
+    flex: 1;
 }
 
 .btn-modal-confirm:hover {
