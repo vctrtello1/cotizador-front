@@ -156,18 +156,28 @@
                                     <p>No hay módulos disponibles para agregar</p>
                                 </div>
 
-                                <div v-else class="modulos-lista">
+                                <div v-else class="modulos-grid-selector">
                                     <div 
                                         v-for="modulo in modulosDisponibles" 
                                         :key="modulo.id"
-                                        class="modulo-item-selector"
+                                        class="modulo-card-selector"
                                         @click="seleccionarModulo(modulo)"
                                     >
-                                        <div class="modulo-info">
+                                        <div class="modulo-card-header">
                                             <h4>{{ modulo.nombre }}</h4>
-                                            <div class="modulo-price">Precio: <strong>${{ formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo)) }}</strong></div>
                                         </div>
-                                        <div class="modulo-selector-icon">➜</div>
+                                        <div class="modulo-card-body">
+                                            <p v-if="modulo.descripcion" class="modulo-descripcion">{{ modulo.descripcion }}</p>
+                                            <div class="modulo-card-footer">
+                                                <div class="modulo-price">
+                                                    <span class="label">Precio:</span>
+                                                    <span class="value">${{ formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo)) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modulo-card-action">
+                                            <span>Seleccionar ➜</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -201,7 +211,7 @@
                                                 class="input-cantidad-modal"
                                                 @keyup.enter="confirmarAgregarModulo"
                                             >
-                                            <span class="cantidad-unit">módulos</span>
+                                            
                                             <button type="button" class="btn-cantidad-plus" @click="incrementarCantidad">+</button>
                                         </div>
                                     </div>
@@ -1036,6 +1046,98 @@ onMounted(() => {
     gap: 0;
 }
 
+/* Grid de módulos en modal selector */
+.modulos-grid-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.2rem;
+    padding: 1rem 0;
+}
+
+.modulo-card-selector {
+    background: white;
+    border: 2px solid #e8ddd7;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.modulo-card-selector:hover {
+    border-color: #d4a574;
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.2);
+    transform: translateY(-2px);
+}
+
+.modulo-card-header {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    padding: 1rem;
+    color: white;
+}
+
+.modulo-card-header h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.modulo-card-body {
+    padding: 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.modulo-card-body .modulo-descripcion {
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.modulo-card-footer {
+    margin-top: auto;
+    padding-top: 0.8rem;
+    border-top: 1px solid #f0f0f0;
+}
+
+.modulo-card-footer .modulo-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.modulo-card-footer .modulo-price .label {
+    color: #666;
+    font-weight: 500;
+}
+
+.modulo-card-footer .modulo-price .value {
+    color: #d4a574;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.modulo-card-action {
+    background: #f9f7f4;
+    padding: 0.8rem;
+    text-align: center;
+    color: #d4a574;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-top: 1px solid #e8ddd7;
+}
+
+.modulo-card-selector:hover .modulo-card-action {
+    background: #d4a574;
+    color: white;
+}
+
+/* Estilos legacy para compatibilidad */
 .modulo-item-selector {
     padding: 1.2rem 2rem;
     border-bottom: 1px solid #e8ddd7;
