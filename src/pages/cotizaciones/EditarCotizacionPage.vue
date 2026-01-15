@@ -7,14 +7,26 @@
 
         <div v-else-if="cotizacion" class="cotizacion-form">
             <div class="form-header">
-                <button class="btn-back" @click="$router.back()">← Volver</button>
-                <h1 class="form-title">Editar Cotización #{{ cotizacion.id }}</h1>
+                <div class="header-content">
+                    <button class="btn-back" @click="$router.back()">
+                        <span class="back-icon">←</span>
+                        <span>Volver</span>
+                    </button>
+                    <div class="header-title-section">
+                        <h1 class="form-title">📝 Editar Cotización</h1>
+                        <span class="cotizacion-badge">#{{ cotizacion.id }}</span>
+                        <span class="estado-badge" :class="`estado-${cotizacion.estado}`">{{ cotizacion.estado }}</span>
+                    </div>
+                </div>
             </div>
 
             <div class="form-content">
                 <!-- Información básica -->
-                <div class="form-section">
-                    <h2 class="section-title">📋 Información de la Cotización</h2>
+                <div class="form-section info-section">
+                    <div class="section-header-inline">
+                        <h2 class="section-title">📋 Información de la Cotización</h2>
+                        <span class="section-subtitle">Datos principales</span>
+                    </div>
                     
                     <div class="form-grid">
                         <div class="form-group">
@@ -49,33 +61,54 @@
                 </div>
 
                 <!-- Información del Cliente -->
-                <div class="form-section">
-                    <h2 class="section-title">👤 Datos del Cliente</h2>
+                <div class="form-section cliente-section">
+                    <div class="section-header-inline">
+                        <h2 class="section-title">👤 Datos del Cliente</h2>
+                        <span class="section-subtitle">Información de contacto</span>
+                    </div>
                     <div class="info-grid">
                         <div class="info-item">
-                            <span class="info-label">Cliente:</span>
-                            <span class="info-value">{{ cotizacion.cliente?.nombre || 'Sin Cliente' }}</span>
+                            <span class="info-icon">👨‍💼</span>
+                            <div class="info-content">
+                                <span class="info-label">Cliente</span>
+                                <span class="info-value">{{ cotizacion.cliente?.nombre || 'Sin Cliente' }}</span>
+                            </div>
                         </div>
                         <div v-if="cotizacion.cliente?.empresa" class="info-item">
-                            <span class="info-label">Empresa:</span>
-                            <span class="info-value">{{ cotizacion.cliente?.empresa }}</span>
+                            <span class="info-icon">🏢</span>
+                            <div class="info-content">
+                                <span class="info-label">Empresa</span>
+                                <span class="info-value">{{ cotizacion.cliente?.empresa }}</span>
+                            </div>
                         </div>
                         <div v-if="cotizacion.cliente?.email" class="info-item">
-                            <span class="info-label">Email:</span>
-                            <span class="info-value">{{ cotizacion.cliente?.email }}</span>
+                            <span class="info-icon">📧</span>
+                            <div class="info-content">
+                                <span class="info-label">Email</span>
+                                <span class="info-value">{{ cotizacion.cliente?.email }}</span>
+                            </div>
                         </div>
                         <div v-if="cotizacion.cliente?.telefono" class="info-item">
-                            <span class="info-label">Teléfono:</span>
-                            <span class="info-value">{{ cotizacion.cliente?.telefono }}</span>
+                            <span class="info-icon">📱</span>
+                            <div class="info-content">
+                                <span class="info-label">Teléfono</span>
+                                <span class="info-value">{{ cotizacion.cliente?.telefono }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Módulos editable -->
-                <div class="form-section">
+                <div class="form-section modulos-section">
                     <div class="section-header">
-                        <h2 class="section-title">🧩 Módulos Asignados</h2>
-                        <button @click="abrirSelectorModulos" class="btn-add-module">+ Agregar Módulo</button>
+                        <div class="section-header-inline">
+                            <h2 class="section-title">🧩 Módulos Asignados</h2>
+                            <span class="section-subtitle">{{ modulosAsignados.length }} módulo(s)</span>
+                        </div>
+                        <button @click="abrirSelectorModulos" class="btn-add-module">
+                            <span class="btn-icon">➕</span>
+                            <span>Agregar Módulo</span>
+                        </button>
                     </div>
 
                     <!-- Debug info -->
@@ -242,25 +275,37 @@
                 </div>
 
                 <!-- Resumen de totales -->
-                <div class="form-section">
+                <div class="form-section resumen-section">
                     <h2 class="section-title">💰 Resumen Financiero</h2>
                     <div class="resumen-card">
-                        <div class="resumen-item">
-                            <span class="resumen-label">Subtotal:</span>
-                            <span class="resumen-value">${{ formatCurrency(totalCotizacion) }}</span>
-                        </div>
-                        <div class="resumen-item total">
-                            <span class="resumen-label">Total:</span>
-                            <span class="resumen-value">${{ formatCurrency(totalCotizacion) }}</span>
+                        <div class="resumen-grid">
+                            <div class="resumen-item">
+                                <span class="resumen-icon">📊</span>
+                                <div class="resumen-content">
+                                    <span class="resumen-label">Subtotal</span>
+                                    <span class="resumen-value">${{ formatCurrency(totalCotizacion) }}</span>
+                                </div>
+                            </div>
+                            <div class="resumen-item total">
+                                <span class="resumen-icon">💵</span>
+                                <div class="resumen-content">
+                                    <span class="resumen-label">Total a Pagar</span>
+                                    <span class="resumen-value">${{ formatCurrency(totalCotizacion) }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Botones de acción -->
                 <div class="form-actions">
-                    <button @click="$router.back()" class="btn-cancel">Cancelar</button>
+                    <button @click="$router.back()" class="btn-cancel">
+                        <span class="btn-icon">✕</span>
+                        <span>Cancelar</span>
+                    </button>
                     <button @click="guardarCambios" class="btn-primary" :disabled="guardando">
-                        {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+                        <span class="btn-icon">{{ guardando ? '⏳' : '💾' }}</span>
+                        <span>{{ guardando ? 'Guardando...' : 'Guardar Cambios' }}</span>
                     </button>
                 </div>
 
@@ -716,37 +761,97 @@ onMounted(() => {
 }
 
 .form-header {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    padding: 2rem;
+    margin: -2rem -2rem 2rem -2rem;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.header-title-section {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 2px solid #d4a574;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .btn-back {
-    padding: 8px 16px;
-    background: #e8ddd7;
-    color: #5a4037;
-    border: none;
-    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     white-space: nowrap;
+    font-size: 0.95rem;
 }
 
 .btn-back:hover {
-    background: #d4a574;
-    color: white;
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.back-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-back:hover .back-icon {
+    transform: translateX(-3px);
 }
 
 .form-title {
+    margin: 0;
+    color: white;
     font-size: 2rem;
     font-weight: 700;
-    color: #5a4037;
-    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cotizacion-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.estado-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.estado-activa {
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+}
+
+.estado-completada {
+    background: rgba(33, 150, 243, 0.9);
+    color: white;
+}
+
+.estado-cancelada {
+    background: rgba(244, 67, 54, 0.9);
+    color: white;
 }
 
 .form-content {
@@ -770,22 +875,45 @@ onMounted(() => {
     margin-bottom: 1.5rem;
 }
 
+.section-header-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.section-subtitle {
+    color: #999;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0;
+}
+
 .btn-add-module {
-    padding: 10px 16px;
-    background: #d4a574;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    font-size: 1rem;
     white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 .btn-add-module:hover {
-    background: #c89564;
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
 .modulos-cards-grid {
@@ -1685,22 +1813,46 @@ onMounted(() => {
 
 .info-item {
     display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.2rem;
+    background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
+    border-radius: 12px;
+    border: 2px solid #e8ddd7;
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.15);
+    border-color: #d4a574;
+}
+
+.info-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.info-content {
+    display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0.3rem;
+    flex: 1;
 }
 
 .info-label {
-    font-size: 0.9rem;
-    color: #6B4423;
+    font-size: 0.8rem;
+    color: #999;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .info-value {
-    font-size: 1.1rem;
-    color: #2C1810;
-    font-weight: 500;
+    font-size: 1rem;
+    color: #2c2c2c;
+    font-weight: 600;
 }
 
 .modulo-card {
@@ -1762,39 +1914,79 @@ onMounted(() => {
 }
 
 .resumen-card {
-    background: #f9f7f4;
-    border: 1px solid #e8ddd7;
-    border-radius: 8px;
-    padding: 1.5rem;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
 }
 
 .resumen-item {
     display: flex;
-    justify-content: space-between;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #e8ddd7;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #faf8f5;
+    border-radius: 12px;
+    border: 2px solid #e8ddd7;
+    transition: all 0.3s ease;
+}
+
+.resumen-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .resumen-item.total {
-    border-bottom: none;
-    padding-top: 1rem;
-    margin-top: 1rem;
-    border-top: 2px solid #d4a574;
-    font-weight: 700;
-    font-size: 1.1rem;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    border-color: #c89564;
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.3);
+}
+
+.resumen-item.total:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.4);
+}
+
+.resumen-item.total .resumen-label,
+.resumen-item.total .resumen-value {
+    color: white;
+}
+
+.resumen-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.resumen-item.total .resumen-icon {
+    filter: brightness(0) invert(1);
+}
+
+.resumen-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
 }
 
 .resumen-label {
-    color: #5a4037;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .resumen-value {
-    color: #d4a574;
-    font-weight: 600;
-}
-
-.resumen-item.total .resumen-value {
-    font-size: 1.2rem;
+    font-size: 2rem;
+    color: #2c2c2c;
+    font-weight: 700;
 }
 
 .form-actions {
@@ -1807,19 +1999,86 @@ onMounted(() => {
 
 .btn-primary,
 .btn-cancel {
-    padding: 12px 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 14px 32px;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-cancel {
+    background: white;
+    color: #666;
+    border: 2px solid #e0e0e0;
+}
+
+.btn-cancel:hover {
+    background: #f5f5f5;
+    border-color: #d0d0d0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .btn-primary {
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+    background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.section-header-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.section-subtitle {
+    color: #999;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.cliente-section,
+.modulos-section,
+.resumen-section {
+    border: 2px solid #e8ddd7;
+    transition: all 0.3s ease;
+}
+
+.info-section {
+    border-left: 4px solid #d4a574;
+}
+
+.cliente-section {
+    border-left: 4px solid #4caf50;
+}
+
+.modulos-section {
+    border-left: 4px solid #2196f3;
+}
+
+.resumen-section {
+    background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
+    border: 3px solid #d4a574 !important;
+    border-left: 3px solid #d4a574 !important;
 }
 
 .btn-primary:hover:not(:disabled) {
