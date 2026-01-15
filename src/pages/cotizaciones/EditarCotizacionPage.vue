@@ -131,8 +131,8 @@
                             <div class="card-footer">
                                 <div class="price-section">
                                     <div class="price-item">
-                                        <span class="label">Precio Unit.:</span>
-                                        <span class="value">${{ formatCurrency(calcularPrecioUnitarioModulo(modulo)) }}</span>
+                                        <span class="label">Costo Total:</span>
+                                        <span class="value">${{ formatCurrency(modulo.costo_total) }}</span>
                                     </div>
                                     <div class="price-item subtotal">
                                         <span class="label">Subtotal:</span>
@@ -177,50 +177,57 @@
                     </div>
 
                     <!-- Modal para definir cantidad del módulo -->
-                    <div v-if="moduloSeleccionadoModal" class="modal-overlay" @click="cerrarModalCantidad">
-                        <div class="modal-content modal-cantidad" @click.stop>
-                            <div class="modal-header">
-                                <h3>Definir Cantidad</h3>
-                                <button class="btn-close" @click="cerrarModalCantidad">✕</button>
-                            </div>
-
-                            <div class="modal-body">
-                                <div class="modal-item">
-                                    <label class="modal-label">Módulo:</label>
-                                    <div class="modal-value">{{ moduloSeleccionadoModal?.nombre }}</div>
+                    <template v-if="moduloSeleccionadoModal && !cargandoModuloModal">
+                        <div class="modal-overlay" @click="cerrarModalCantidad">
+                            <div class="modal-content modal-cantidad" @click.stop>
+                                <div class="modal-header">
+                                    <h3>Definir Cantidad</h3>
+                                    <button class="btn-close" @click="cerrarModalCantidad">✕</button>
                                 </div>
 
-                                <div class="modal-item">
-                                    <label class="modal-label">Código:</label>
-                                    <div class="modal-value">{{ moduloSeleccionadoModal?.codigo }}</div>
-                                </div>
+                                <div class="modal-body">
+                                    <div class="modal-item">
+                                        <label class="modal-label">Módulo:</label>
+                                        <div class="modal-value">{{ moduloSeleccionadoModal.nombre }}</div>
+                                    </div>
 
-                                <div class="modal-item">
-                                    <label class="modal-label">Cantidad *</label>
-                                    <div class="cantidad-editor">
-                                        <button type="button" class="btn-cantidad-minus" @click="decrementarCantidad">−</button>
-                                        <input 
-                                            v-model.number="cantidadNuevaModulo" 
-                                            type="number" 
-                                            min="1"
-                                            step="1"
-                                            class="input-cantidad-modal"
-                                            @keyup.enter="confirmarAgregarModulo"
-                                        >
-                                        <span class="cantidad-unit">módulos</span>
-                                        <button type="button" class="btn-cantidad-plus" @click="incrementarCantidad">+</button>
+                                    <div class="modal-item">
+                                        <label class="modal-label">Código:</label>
+                                        <div class="modal-value">{{ moduloSeleccionadoModal.codigo }}</div>
+                                    </div>
+
+                                    <div class="modal-item">
+                                        <label class="modal-label">Costo Total:</label>
+                                        <div class="modal-value precio-highlight">${{ formatCurrency(moduloSeleccionadoModal.costo_total) }}</div>
+                                    </div>
+
+                                    <div class="modal-item">
+                                        <label class="modal-label">Cantidad *</label>
+                                        <div class="cantidad-editor">
+                                            <button type="button" class="btn-cantidad-minus" @click="decrementarCantidad">−</button>
+                                            <input 
+                                                v-model.number="cantidadNuevaModulo" 
+                                                type="number" 
+                                                min="1"
+                                                step="1"
+                                                class="input-cantidad-modal"
+                                                @keyup.enter="confirmarAgregarModulo"
+                                            >
+                                            <span class="cantidad-unit">módulos</span>
+                                            <button type="button" class="btn-cantidad-plus" @click="incrementarCantidad">+</button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="modal-footer">
-                                <button @click="cerrarModalCantidad" class="btn-cancel">Cancelar</button>
-                                <button @click="confirmarAgregarModulo" class="btn-primary">
-                                    ✓ Agregar Módulo
-                                </button>
+                                <div class="modal-footer">
+                                    <button @click="cerrarModalCantidad" class="btn-cancel">Cancelar</button>
+                                    <button @click="confirmarAgregarModulo" class="btn-primary">
+                                        ✓ Agregar Módulo
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
 
                 <!-- Resumen de totales -->
@@ -270,7 +277,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
-import { fetchModulos } from '../../http/modulos-api';
+import { fetchModulos, getModuloById } from '../../http/modulos-api';
 
 const route = useRoute();
 const router = useRouter();
@@ -285,6 +292,7 @@ const success = ref(null);
 const mostrarSelectorModulos = ref(false);
 const moduloSeleccionadoModal = ref(null);
 const cantidadNuevaModulo = ref(1);
+const cargandoModuloModal = ref(false);
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -326,12 +334,11 @@ const calcularSubtotal = (componente) => {
 };
 
 const calcularPrecioUnitarioModulo = (modulo) => {
-    // Sumar el precio de todos los componentes del módulo
+    // Sumar el precio unitario de todos los componentes del módulo
     if (!modulo.componentes || !Array.isArray(modulo.componentes)) return 0;
     return modulo.componentes.reduce((sum, comp) => {
         const precio = Number(comp.precio_unitario) || 0;
-        const cantidad = Number(comp.cantidad) || 1;
-        return sum + (precio * cantidad);
+        return sum + precio;
     }, 0);
 };
 
@@ -363,10 +370,35 @@ const cerrarModalCantidad = () => {
     cantidadNuevaModulo.value = 1;
 };
 
-const seleccionarModulo = (modulo) => {
-    moduloSeleccionadoModal.value = modulo;
-    cantidadNuevaModulo.value = 1;
-    mostrarSelectorModulos.value = false;
+const seleccionarModulo = async (modulo) => {
+    cargandoModuloModal.value = true;
+    
+    try {
+        // Obtener el módulo completo del API con todos sus datos
+        const moduloCompleto = await getModuloById(modulo.id);
+        const datos = moduloCompleto?.data || moduloCompleto;
+        
+        console.log('Módulo obtenido del API:', datos);
+        console.log('Costo Total del API:', datos.costo_total);
+        
+        // Asignar el módulo con su costo_total del API
+        moduloSeleccionadoModal.value = { ...datos };
+        cantidadNuevaModulo.value = 1;
+        mostrarSelectorModulos.value = false;
+        
+        console.log('Módulo asignado al modal:', moduloSeleccionadoModal.value);
+    } catch (err) {
+        console.error('Error al obtener módulo:', err);
+        // Fallback: usar el módulo local si falla la API
+        const moduloLocal = modulos.value.find(m => m.id === modulo.id) || modulo;
+        
+        console.log('Usando módulo local como fallback:', moduloLocal);
+        moduloSeleccionadoModal.value = { ...moduloLocal };
+        cantidadNuevaModulo.value = 1;
+        mostrarSelectorModulos.value = false;
+    } finally {
+        cargandoModuloModal.value = false;
+    }
 };
 
 const decrementarCantidad = () => {
@@ -1010,6 +1042,14 @@ onMounted(() => {
     border: 1px solid #e8ddd7;
     color: #2c2c2c;
     font-weight: 500;
+}
+
+.precio-highlight {
+    background: #fef5e7;
+    border-color: #d4a574;
+    color: #d4a574;
+    font-weight: 600;
+    font-size: 1.1rem;
 }
 
 .cantidad-editor {
