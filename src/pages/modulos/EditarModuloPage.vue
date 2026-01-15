@@ -450,8 +450,36 @@ const agregarComponente = () => {
     });
 };
 
-const eliminarComponente = (idx) => {
-    formData.value.componentes.splice(idx, 1);
+const eliminarComponente = async (idx) => {
+    try {
+        cargando.value = true;
+        
+        // Eliminar del array local
+        formData.value.componentes.splice(idx, 1);
+        
+        // Guardar en la API
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: formData.value.componentes.map(comp => ({
+                id: Number(comp.id),
+                cantidad: comp.cantidad,
+                acabado_id: Number(comp.acabado_id),
+                mano_de_obra_id: Number(comp.mano_de_obra_id)
+            }))
+        };
+        
+        await actualizarModulo(route.params.id, datosModulo);
+        mostrarMensaje('✅ Componente eliminado', 'success', 1500);
+    } catch (err) {
+        console.error('❌ Error al eliminar componente:', err);
+        mostrarMensaje('Error al eliminar componente', 'error', 2000);
+        // Revertir si falla
+        formData.value.componentes.splice(idx, 0, formData.value.componentes[idx]);
+    } finally {
+        cargando.value = false;
+    }
 };
 
 // Abrir modal para editar componente existente
