@@ -1,14 +1,24 @@
 <template>
     <div v-if="cotizacion" class="cotizacion-detallada-container">
-        <!-- Header de la cotización -->
+        <!-- Header con acciones -->
         <div class="page-header">
-            <button class="btn-back" @click="$router.push('/cotizaciones')">← Volver</button>
-            <h1 class="page-title">Cotización #{{ cotizacion.id }}</h1>
+            <div class="header-content">
+                <button class="btn-back" @click="$router.push('/cotizaciones')">← Volver</button>
+                <div class="header-title">
+                    <h1 class="page-title">Cotización #{{ cotizacion.id }}</h1>
+                    <span class="estado-badge">Activa</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-action" title="Descargar PDF">📥</button>
+                <button class="btn-action" title="Imprimir">🖨️</button>
+                <button class="btn-action" title="Editar">✏️</button>
+            </div>
         </div>
 
         <!-- Información del cliente -->
         <div class="info-card cliente-card">
-            <h2 class="section-title">Información del Cliente</h2>
+            <h2 class="section-title">📋 Información del Cliente</h2>
             <div class="info-grid">
                 <div class="info-item">
                     <span class="info-label">Cliente:</span>
@@ -31,13 +41,29 @@
             </div>
         </div>
 
+        <!-- Estadísticas rápidas -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <span class="stat-icon">📦</span>
+                <span class="stat-label">Módulos</span>
+                <span class="stat-value">{{ totalModulosOrdenados }}</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🔧</span>
+                <span class="stat-label">Componentes</span>
+                <span class="stat-value">{{ totalComponentes }}</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">💰</span>
+                <span class="stat-label">Total</span>
+                <span class="stat-value">${{ formatCurrency(totalCotizacion) }}</span>
+            </div>
+        </div>
+
         <!-- Módulos y detalles -->
         <div v-if="detalles.length" class="modulos-section">
             <div class="modulos-header">
-                <h2 class="section-title">Detalles de la Cotización</h2>
-                <div class="modulos-stats">
-                    <span class="stat-badge">{{ totalModulosOrdenados }} módulo{{ totalModulosOrdenados !== 1 ? 's' : '' }}</span>
-                </div>
+                <h2 class="section-title">🧩 Detalles de la Cotización</h2>
             </div>
 
             <div v-for="(modulo, index) in detalles" :key="index" class="modulo-card">
@@ -46,13 +72,13 @@
                         <h3 class="modulo-nombre">{{ modulo.nombre }}</h3>
                         <span class="modulo-cantidad-badge">{{ modulo.cantidad }} unidad{{ modulo.cantidad !== 1 ? 'es' : '' }}</span>
                     </div>
-                    <p class="modulo-codigo">Código: {{ modulo.codigo }}</p>
+                    <p class="modulo-codigo">{{ modulo.codigo }}</p>
                     <p class="modulo-descripcion">{{ modulo.descripcion }}</p>
                 </div>
 
                 <div class="articulos-table">
                     <div class="table-header">
-                        <div class="col-nombre">Nombre</div>
+                        <div class="col-nombre">Componente</div>
                         <div class="col-cantidad">Cantidad</div>
                         <div class="col-precio">Precio Unit.</div>
                         <div class="col-subtotal">Subtotal</div>
@@ -61,8 +87,7 @@
                         <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
                         <div class="col-cantidad">{{ componente.cantidad }}</div>
                         <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
-                        <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong>
-                        </div>
+                        <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
                     </div>
                 </div>
             </div>
@@ -171,31 +196,44 @@ onMounted(async () => {
 
 .page-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 24px;
-    margin-bottom: 32px;
-    padding: 24px;
-    background: var(--cream, #F5F1E8);
-    border-radius: 12px;
-    border: 2px solid var(--color-border, #E5DFD0);
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #d4a574;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .btn-back {
-    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
-    color: #F5F1E8;
+    padding: 8px 16px;
+    background: #e8ddd7;
+    color: #5a4037;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.1);
-    flex-shrink: 0;
+    transition: all 0.2s;
 }
 
 .btn-back:hover {
+    background: #d4a574;
+    color: white;
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(44, 24, 16, 0.2);
 }
 
 .page-title {
@@ -204,25 +242,98 @@ onMounted(async () => {
     margin: 0;
     font-weight: 700;
     line-height: 1.2;
-    text-shadow: none;
+}
+
+.estado-badge {
+    background: #d4f1d4;
+    color: #2d7a2d;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-action {
+    padding: 10px 12px;
+    background: white;
+    border: 2px solid #d4a574;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-action:hover {
+    background: #d4a574;
+    transform: translateY(-2px);
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border: 2px solid #d4a574;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(212, 165, 116, 0.2);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #999;
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    color: #d4a574;
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: block;
 }
 
 .info-card {
-    background: var(--cream, #F5F1E8);
-    border: 2px solid var(--color-border, #E5DFD0);
-    border-radius: 12px;
-    padding: 32px;
-    margin-bottom: 32px;
-    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.08);
+    background: white;
+    border: 2px solid #e8ddd7;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.08);
 }
 
 .section-title {
-    font-size: 1.75rem;
-    color: #4A3020;
-    margin: 0 0 24px 0;
+    font-size: 1.3rem;
     font-weight: 700;
-    padding-bottom: 16px;
-    border-bottom: 2px solid #C9A961;
+    color: #5a4037;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #d4a574;
     line-height: 1.2;
 }
 
