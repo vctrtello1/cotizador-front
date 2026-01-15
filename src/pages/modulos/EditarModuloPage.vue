@@ -81,9 +81,14 @@
                                 <p><strong>Mano de Obra:</strong> {{ obtenerNombreManodeObra(comp.mano_de_obra_id) }}</p>
                             </div>
                         </div>
-                        <button type="button" class="btn-small btn-danger" @click="eliminarComponente(idx)">
-                            🗑️
-                        </button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" class="btn-small btn-primary" @click="abrirModalEdicionComponente(comp, idx)" title="Editar componente">
+                                ✏️
+                            </button>
+                            <button type="button" class="btn-small btn-danger" @click="eliminarComponente(idx)" title="Eliminar componente">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -447,6 +452,13 @@ const agregarComponente = () => {
 
 const eliminarComponente = (idx) => {
     formData.value.componentes.splice(idx, 1);
+};
+
+// Abrir modal para editar componente existente
+const abrirModalEdicionComponente = (componente, idx) => {
+    componenteActual.value = {...componente};
+    indiceComponenteActual.value = idx;
+    mostrarModal.value = true;
 };
 
 // Métodos de cálculo
