@@ -26,7 +26,7 @@ html, body {
   padding: 0;
   height: 100%;
   width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
 }
 
 #app {
@@ -41,25 +41,28 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #faf7f2;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f3f0 100%);
+  color: #2c2c2c;
 }
 
 .app-main {
   flex: 1;
   padding: 0;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f3f0 100%);
 }
 
 .app-footer {
-  background: #5a4037;
-  color: #d4a574;
+  background: linear-gradient(135deg, #2c2c2c 0%, #3a3a3a 100%);
+  color: #c0bbb4;
   text-align: center;
   padding: 20px;
-  margin-top: 40px;
-  border-top: 1px solid #d4a574;
+  font-size: 13px;
+  border-top: 1px solid #4a4a4a;
+  margin-top: auto;
 }
 
 .app-footer p {
   margin: 0;
-  font-size: 13px;
+  font-weight: 500;
 }
 </style>

@@ -13,7 +13,10 @@ const isActive = (path) => {
   <header class="app-header">
     <div class="header-content">
       <div class="logo-section">
-        <h1 class="logo-text">🍍 Cotizador</h1>
+        <router-link to="/" class="logo-link">
+          <span class="logo-icon">📐</span>
+          <h1 class="logo-text">Cotizador</h1>
+        </router-link>
       </div>
       <nav class="nav-menu">
         <router-link 
@@ -21,6 +24,7 @@ const isActive = (path) => {
           class="nav-link"
           :class="{ active: isActive('/cotizaciones') && !isActive('/nueva-') }"
         >
+          <span class="nav-icon">📋</span>
           Cotizaciones
         </router-link>
         <router-link 
@@ -28,6 +32,7 @@ const isActive = (path) => {
           class="nav-link"
           :class="{ active: isActive('/modulos') && !isActive('/nuevo-') }"
         >
+          <span class="nav-icon">⬜</span>
           Módulos
         </router-link>
         <router-link 
@@ -35,6 +40,7 @@ const isActive = (path) => {
           class="nav-link"
           :class="{ active: isActive('/componentes') && !isActive('/nuevo-') }"
         >
+          <span class="nav-icon">🔧</span>
           Componentes
         </router-link>
         <router-link 
@@ -42,6 +48,7 @@ const isActive = (path) => {
           class="nav-link"
           :class="{ active: isActive('/materiales') && !isActive('/nuevo-') }"
         >
+          <span class="nav-icon">📦</span>
           Materiales
         </router-link>
         <router-link 
@@ -49,6 +56,7 @@ const isActive = (path) => {
           class="nav-link"
           :class="{ active: isActive('/acabados') && !isActive('/nuevo-') }"
         >
+          <span class="nav-icon">✨</span>
           Acabados
         </router-link>
       </nav>
@@ -58,89 +66,128 @@ const isActive = (path) => {
 
 <style scoped>
 .app-header {
-  background: linear-gradient(135deg, #5a4037 0%, #6d4c41 100%);
-  padding: 20px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #2c2c2c 0%, #3a3a3a 100%);
+  padding: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
 .header-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 40px;
+  height: 70px;
 }
 
 .logo-section {
   flex-shrink: 0;
 }
 
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+
+.logo-link:hover {
+  opacity: 0.8;
+}
+
+.logo-icon {
+  font-size: 28px;
+}
+
 .logo-text {
   margin: 0;
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   color: #d4a574;
-  text-decoration: none;
-  letter-spacing: 1px;
+  letter-spacing: -0.5px;
 }
 
 .nav-menu {
   display: flex;
-  gap: 30px;
+  gap: 8px;
   flex: 1;
 }
 
 .nav-link {
-  padding: 8px 16px;
-  color: #d4a574;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  color: #c0bbb4;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.3s;
-  border-bottom: 2px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+}
+
+.nav-icon {
+  font-size: 18px;
 }
 
 .nav-link:hover {
-  color: #e8bb87;
-  border-bottom-color: #d4a574;
+  color: #d4a574;
+  background: rgba(212, 165, 116, 0.1);
 }
 
 .nav-link.active {
-  color: #e8bb87;
-  border-bottom-color: #d4a574;
+  color: #d4a574;
+  background: rgba(212, 165, 116, 0.15);
+  font-weight: 600;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 3px;
+  background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+  border-radius: 2px 2px 0 0;
 }
 
 @media (max-width: 768px) {
   .header-content {
+    gap: 20px;
+    height: auto;
+    padding: 12px 16px;
     flex-direction: column;
-    gap: 15px;
     align-items: flex-start;
   }
 
   .nav-menu {
-    flex-direction: column;
-    gap: 0;
     width: 100%;
+    gap: 4px;
+    flex-wrap: wrap;
   }
 
   .nav-link {
-    padding: 10px 0;
-    border-bottom: none;
-    border-left: 3px solid transparent;
-    padding-left: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    flex: 0 1 auto;
   }
 
-  .nav-link:hover,
-  .nav-link.active {
-    border-left-color: #d4a574;
-    border-bottom: none;
+  .nav-link.active::after {
+    display: none;
+  }
+
+  .logo-text {
+    font-size: 18px;
   }
 }
 </style>
