@@ -203,7 +203,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title">📋 Editar Materiales</h3>
-                    <button class="modal-close" @click="mostrarModalMateriales = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <!-- Sección para agregar nuevo material -->
@@ -272,7 +271,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title">🔩 Editar Herrajes</h3>
-                    <button class="modal-close" @click="mostrarModalHerrajes = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <!-- Sección para agregar nuevo herraje -->
@@ -341,7 +339,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title">👷 Editar Mano de Obra</h3>
-                    <button class="modal-close" @click="mostrarModalManoDeObra = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <div v-if="formData.mano_de_obra" class="selected-items">
@@ -469,7 +466,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title">🎨 Editar Acabado</h3>
-                    <button class="modal-close" @click="mostrarModalAcabado = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <!-- Sección para agregar acabado -->
@@ -551,7 +547,6 @@
             <div class="modal-content modal-content-large">
                 <div class="modal-header">
                     <h3 class="modal-title">📋 Seleccionar Materiales</h3>
-                    <button class="modal-close" @click="mostrarSelectorMateriales = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <div class="search-section">
@@ -597,7 +592,6 @@
             <div class="modal-content modal-content-large">
                 <div class="modal-header">
                     <h3 class="modal-title">🔩 Seleccionar Herrajes</h3>
-                    <button class="modal-close" @click="mostrarSelectorHerrajes = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <div class="search-section">
@@ -643,7 +637,6 @@
             <div class="modal-content modal-content-large">
                 <div class="modal-header">
                     <h3 class="modal-title">👷 Seleccionar Mano de Obra</h3>
-                    <button class="modal-close" @click="mostrarSelectorManoDeObra = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <div class="search-section">
@@ -691,7 +684,6 @@
             <div class="modal-content modal-content-large">
                 <div class="modal-header">
                     <h3 class="modal-title">🎨 Seleccionar Acabados</h3>
-                    <button class="modal-close" @click="mostrarSelectorAcabados = false">✕</button>
                 </div>
                 <div class="modal-body">
                     <div class="search-section">
