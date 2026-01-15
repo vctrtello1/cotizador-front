@@ -90,32 +90,55 @@
                         <p>No hay módulos asignados a esta cotización</p>
                     </div>
 
-                    <div v-else class="modulos-editable">
-                        <div class="table-header">
-                            <div class="col-nombre">Módulo</div>
-                            <div class="col-codigo">Código</div>
-                            <div class="col-cantidad">Cantidad</div>
-                            <div class="col-precio">Precio Unit.</div>
-                            <div class="col-subtotal">Subtotal</div>
-                            <div class="col-acciones">Acciones</div>
-                        </div>
-
-                        <div v-for="(modulo, index) in modulosAsignados" :key="index" class="table-row modulo-row">
-                            <div class="col-nombre">{{ modulo.nombre }}</div>
-                            <div class="col-codigo">{{ modulo.codigo }}</div>
-                            <div class="col-cantidad">
-                                <input 
-                                    v-model.number="modulo.cantidad" 
-                                    type="number" 
-                                    min="1" 
-                                    class="input-cantidad"
-                                    @change="actualizarTotales"
-                                />
+                    <div v-else class="modulos-cards-grid">
+                        <div v-for="(modulo, index) in modulosAsignados" :key="index" class="modulo-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <h3>{{ modulo.nombre }}</h3>
+                                    <span class="card-codigo">{{ modulo.codigo }}</span>
+                                </div>
+                                <button @click="eliminarModuloAsignado(index)" class="btn-delete" title="Eliminar módulo">🗑️</button>
                             </div>
-                            <div class="col-precio">${{ formatCurrency(calcularPrecioUnitarioModulo(modulo)) }}</div>
-                            <div class="col-subtotal">${{ formatCurrency(calcularSubtotalModulo(modulo)) }}</div>
-                            <div class="col-acciones">
-                                <button @click="eliminarModuloAsignado(index)" class="btn-delete-small">🗑️</button>
+
+                            <div class="card-body">
+                                <div class="card-description">{{ modulo.descripcion }}</div>
+
+                                <!-- Componentes del módulo -->
+                                <div class="components-section">
+                                    <h4>Componentes</h4>
+                                    <div class="components-list">
+                                        <div v-for="comp in modulo.componentes" :key="comp.id" class="component-item">
+                                            <div class="comp-name">{{ comp.nombre }}</div>
+                                            <div class="comp-qty">x{{ comp.cantidad }}</div>
+                                            <div class="comp-price">${{ formatCurrency(comp.precio_unitario) }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Cantidad del módulo -->
+                                <div class="card-quantity">
+                                    <label>Cantidad de Módulos:</label>
+                                    <input 
+                                        v-model.number="modulo.cantidad" 
+                                        type="number" 
+                                        min="1" 
+                                        class="input-cantidad"
+                                        @change="actualizarTotales"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="card-footer">
+                                <div class="price-section">
+                                    <div class="price-item">
+                                        <span class="label">Precio Unit.:</span>
+                                        <span class="value">${{ formatCurrency(calcularPrecioUnitarioModulo(modulo)) }}</span>
+                                    </div>
+                                    <div class="price-item subtotal">
+                                        <span class="label">Subtotal:</span>
+                                        <span class="value">${{ formatCurrency(calcularSubtotalModulo(modulo)) }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -183,6 +206,11 @@
                     </button>
                 </div>
 
+                <!-- Mensaje de éxito -->
+                <div v-if="success" class="alert alert-success">
+                    {{ success }}
+                </div>
+
                 <!-- Mensaje de error -->
                 <div v-if="error" class="alert alert-error">
                     {{ error }}
@@ -200,7 +228,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getCotizacionById } from '../../http/cotizaciones-api';
+import { getCotizacionById, actualizarCotizacion, sincronizarModulos } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
 import { fetchModulos } from '../../http/modulos-api';
 
@@ -213,6 +241,7 @@ const modulos = ref([]);
 const cargandoDatos = ref(true);
 const guardando = ref(false);
 const error = ref(null);
+const success = ref(null);
 const mostrarSelectorModulos = ref(false);
 const moduloSeleccionado = ref('');
 const cantidadNuevaModulo = ref(1);
@@ -289,30 +318,112 @@ const cerrarSelectorModulos = () => {
     cantidadNuevaModulo.value = 1;
 };
 
-const agregarModuloAsignado = () => {
-    if (!moduloSeleccionado.value) return;
-    
-    const moduloEncontrado = modulos.value.find(m => m.id == moduloSeleccionado.value);
-    if (!moduloEncontrado) return;
+const agregarModuloAsignado = async () => {
+    try {
+        if (!moduloSeleccionado.value) return;
+        
+        const moduloEncontrado = modulos.value.find(m => m.id == moduloSeleccionado.value);
+        if (!moduloEncontrado) return;
 
-    if (!cotizacion.value.modulos) {
-        cotizacion.value.modulos = [];
+        if (!cotizacion.value.modulos) {
+            cotizacion.value.modulos = [];
+        }
+
+        cotizacion.value.modulos.push({
+            id: moduloEncontrado.id,
+            nombre: moduloEncontrado.nombre,
+            codigo: moduloEncontrado.codigo,
+            descripcion: moduloEncontrado.descripcion,
+            cantidad: cantidadNuevaModulo.value,
+            componentes: moduloEncontrado.componentes || []
+        });
+
+        console.log('Módulo agregado localmente:', moduloEncontrado.nombre);
+
+        // Sincronizar módulos en la API
+        try {
+            const modulosParaSincronizar = cotizacion.value.modulos.map(m => ({
+                id: m.id,
+                cantidad: m.cantidad
+            }));
+            
+            console.log('Sincronizando módulos con nuevo:', modulosParaSincronizar);
+            await sincronizarModulos(cotizacion.value.id, modulosParaSincronizar);
+            console.log('Módulo agregado correctamente en la API');
+            
+            // Recargar cotización para verificar que el cambio persistió
+            const response = await getCotizacionById(cotizacion.value.id);
+            const dataReloaded = response?.data || response;
+            console.log('Cotización recargada, modulos:', dataReloaded.modulos);
+            cotizacion.value.modulos = dataReloaded.modulos;
+            
+            success.value = 'Módulo agregado correctamente';
+            setTimeout(() => { success.value = null; }, 3000);
+        } catch (apiErr) {
+            console.warn('No se pudo sincronizar en la API:', apiErr.message);
+            console.warn('Error completo:', apiErr);
+            
+            // Deshacer cambio local si la API falla
+            cotizacion.value.modulos.pop();
+            console.log('Cambio revertido localmente');
+            
+            error.value = 'No se pudo agregar el módulo. Por favor intenta nuevamente.';
+            setTimeout(() => { error.value = null; }, 5000);
+        }
+
+        cerrarSelectorModulos();
+        moduloSeleccionado.value = '';
+        cantidadNuevaModulo.value = 1;
+    } catch (err) {
+        console.error('Error al agregar módulo:', err);
+        error.value = 'Error al agregar el módulo';
     }
-
-    cotizacion.value.modulos.push({
-        id: moduloEncontrado.id,
-        nombre: moduloEncontrado.nombre,
-        codigo: moduloEncontrado.codigo,
-        descripcion: moduloEncontrado.descripcion,
-        cantidad: cantidadNuevaModulo.value,
-        componentes: moduloEncontrado.componentes || []
-    });
-
-    cerrarSelectorModulos();
 };
 
-const eliminarModuloAsignado = (index) => {
-    cotizacion.value.modulos.splice(index, 1);
+const eliminarModuloAsignado = async (index) => {
+    try {
+        const modulo = cotizacion.value.modulos[index];
+        const moduloId = modulo.id;
+        console.log('Eliminando módulo:', modulo.nombre, 'ID:', moduloId);
+        
+        // Eliminar del array local primero
+        cotizacion.value.modulos.splice(index, 1);
+        console.log('Módulo eliminado localmente');
+        
+        // Sincronizar módulos en la API
+        try {
+            const modulosParaSincronizar = cotizacion.value.modulos.map(m => ({
+                id: m.id,
+                cantidad: m.cantidad
+            }));
+            
+            console.log('Sincronizando módulos:', modulosParaSincronizar);
+            await sincronizarModulos(cotizacion.value.id, modulosParaSincronizar);
+            console.log('Módulos sincronizados en la API');
+            
+            // Recargar cotización para verificar que el cambio persistió
+            const response = await getCotizacionById(cotizacion.value.id);
+            const dataReloaded = response?.data || response;
+            console.log('Cotización recargada, modulos:', dataReloaded.modulos);
+            cotizacion.value.modulos = dataReloaded.modulos;
+            
+            success.value = 'Módulo eliminado correctamente';
+            setTimeout(() => { success.value = null; }, 3000);
+        } catch (apiErr) {
+            console.warn('No se pudo sincronizar en la API:', apiErr.message);
+            console.warn('Error completo:', apiErr);
+            
+            // Deshacer cambio local si la API falla
+            cotizacion.value.modulos.splice(index, 0, modulo);
+            console.log('Cambio revertido localmente');
+            
+            error.value = 'No se pudo eliminar el módulo. Por favor intenta nuevamente.';
+            setTimeout(() => { error.value = null; }, 5000);
+        }
+    } catch (err) {
+        console.error('Error al eliminar módulo:', err);
+        error.value = 'Error al eliminar el módulo';
+    }
 };
 
 const cargarCotizacion = async () => {
@@ -365,15 +476,36 @@ const guardarCambios = async () => {
         guardando.value = true;
         error.value = null;
 
-        // Aquí iría la llamada a la API para actualizar la cotización
-        // await actualizarCotizacion(cotizacion.value.id, cotizacion.value);
+        // Preparar datos para enviar a la API
+        const datosActualizados = {
+            cliente_id: cotizacion.value.cliente_id,
+            fecha: cotizacion.value.fecha,
+            estado: cotizacion.value.estado,
+            modulos: cotizacion.value.modulos.map(m => ({
+                id: m.id,
+                cantidad: m.cantidad
+            }))
+        };
+
+        console.log('Intentando guardar:', datosActualizados);
+
+        // Intentar guardar en la API
+        try {
+            await actualizarCotizacion(cotizacion.value.id, datosActualizados);
+            console.log('Cotización actualizada en la API');
+        } catch (apiErr) {
+            console.warn('No se pudo actualizar en la API:', apiErr.message);
+            // Mostrar advertencia pero continuar
+            error.value = 'Nota: Los cambios locales se han hecho, pero puede que no se hayan guardado en la API';
+        }
         
+        // Redirigir después de 1.5 segundos
         setTimeout(() => {
             router.push(`/cotizacion-detallada/${cotizacion.value.id}`);
-        }, 1000);
+        }, 1500);
     } catch (err) {
         console.error('Error al guardar:', err);
-        error.value = 'Error al guardar los cambios';
+        error.value = 'Error: ' + (err.response?.data?.message || err.message);
     } finally {
         guardando.value = false;
     }
@@ -465,27 +597,157 @@ onMounted(() => {
     transform: translateY(-2px);
 }
 
-.modulos-editable {
-    border: 1px solid #e8ddd7;
-    border-radius: 8px;
-    overflow: hidden;
+.modulos-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 1rem;
 }
 
-.modulo-row {
+.modulo-card {
     background: white;
+    border: 2px solid #e8ddd7;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
-.modulo-row:hover {
-    background: #f9f7f4;
+.modulo-card:hover {
+    border-color: #d4a574;
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    padding: 16px;
+    background: linear-gradient(135deg, #f5f3f0 0%, #ede8e2 100%);
+    border-bottom: 2px solid #e8ddd7;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.card-title {
+    flex: 1;
+}
+
+.card-title h3 {
+    margin: 0 0 6px 0;
+    color: #2c2c2c;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-codigo {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #d4a574;
+    color: white;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.btn-delete {
+    padding: 8px 12px;
+    background: #ffebee;
+    color: #c62828;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: #ef5350;
+    color: white;
+}
+
+.card-body {
+    padding: 16px;
+    flex: 1;
+}
+
+.card-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.components-section {
+    margin-bottom: 12px;
+}
+
+.components-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
+    color: #2c2c2c;
+    font-weight: 600;
+}
+
+.components-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.component-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #faf8f5;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.comp-name {
+    flex: 1;
+    color: #2c2c2c;
+    font-weight: 500;
+}
+
+.comp-qty {
+    color: #999;
+    font-size: 0.8rem;
+    margin: 0 8px;
+}
+
+.comp-price {
+    color: #d4a574;
+    font-weight: 600;
+    min-width: 70px;
+    text-align: right;
+}
+
+.card-quantity {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #e8ddd7;
+}
+
+.card-quantity label {
+    font-size: 0.9rem;
+    color: #2c2c2c;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .input-cantidad {
-    width: 60px;
+    width: 70px;
     padding: 8px 12px;
     border: 1px solid #d4a574;
     border-radius: 6px;
     text-align: center;
     font-weight: 600;
+    font-size: 1rem;
 }
 
 .input-cantidad:focus {
@@ -494,24 +756,39 @@ onMounted(() => {
     box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.1);
 }
 
-.col-acciones {
-    text-align: center;
+.card-footer {
+    padding: 16px;
+    background: #faf8f5;
+    border-top: 1px solid #e8ddd7;
 }
 
-.btn-delete-small {
-    padding: 6px 10px;
-    background: #ffebee;
-    color: #c62828;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+.price-section {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.price-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.price-item .label {
+    font-size: 0.8rem;
+    color: #999;
+    font-weight: 600;
+}
+
+.price-item .value {
     font-size: 1rem;
-    transition: all 0.2s;
+    color: #2c2c2c;
+    font-weight: 600;
 }
 
-.btn-delete-small:hover {
-    background: #ef5350;
-    color: white;
+.price-item.subtotal .value {
+    font-size: 1.2rem;
+    color: #d4a574;
 }
 
 /* Modal styles */
@@ -711,55 +988,6 @@ onMounted(() => {
     overflow-x: auto;
 }
 
-.table-header {
-    display: grid;
-    grid-template-columns: 1.5fr 0.8fr 0.7fr 1fr 1fr 0.6fr;
-    gap: 16px;
-    padding: 20px 24px;
-    background: linear-gradient(135deg, #8B6F47 0%, #A88860 100%);
-    color: #F5F1E8;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    word-wrap: break-word;
-}
-
-.table-row {
-    display: grid;
-    grid-template-columns: 1.5fr 0.8fr 0.7fr 1fr 1fr 0.6fr;
-    gap: 16px;
-    padding: 18px 24px;
-    border-bottom: 1px solid #e8ddd7;
-    transition: all 0.2s ease;
-    align-items: center;
-    background: white;
-    word-wrap: break-word;
-}
-
-.table-row:hover {
-    background: #F5F1E8;
-}
-
-.col-nombre {
-    color: #2C1810;
-    font-size: 0.9rem;
-    line-height: 1.4;
-}
-
-.col-cantidad,
-.col-precio,
-.col-subtotal {
-    color: #4A3020;
-    text-align: right;
-}
-
-.col-subtotal {
-    font-weight: 700;
-    color: #C9A961;
-    font-size: 1.05rem;
-}
-
 .resumen-card {
     background: #f9f7f4;
     border: 1px solid #e8ddd7;
@@ -852,6 +1080,12 @@ onMounted(() => {
     background: #ffebee;
     color: #c62828;
     border: 2px solid #ef5350;
+}
+
+.alert-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 2px solid #66bb6a;
 }
 
 .loading-state,
