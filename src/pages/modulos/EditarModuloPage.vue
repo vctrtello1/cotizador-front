@@ -766,15 +766,36 @@ const abrirModalConfiguracion = async (componente) => {
             return;
         }
         
-        // Asignar al componenteActual y mostrar modal para editar
+        // Agregar a formData inmediatamente
+        formData.value.componentes.push({...nuevoComponente});
+        
+        // Guardar en la API
+        const datosModulo = {
+            nombre: formData.value.nombre,
+            codigo: formData.value.codigo,
+            descripcion: formData.value.descripcion,
+            componentes: formData.value.componentes.map(comp => ({
+                id: Number(comp.id),
+                cantidad: comp.cantidad,
+                acabado_id: Number(comp.acabado_id),
+                mano_de_obra_id: Number(comp.mano_de_obra_id)
+            }))
+        };
+        
+        await actualizarModulo(route.params.id, datosModulo);
+        
+        // Asignar al componenteActual para poder editar en el modal
         componenteActual.value = nuevoComponente;
-        indiceComponenteActual.value = -1;  // Marcar como nuevo (no existe en formData aún)
+        indiceComponenteActual.value = formData.value.componentes.length - 1;  // Guardar el índice correcto
         
         mostrarModal.value = true;
         mostrarModalComponentes.value = false;
+        mostrarMensaje('✅ Componente agregado', 'success', 1500);
     } catch (err) {
         console.error('❌ Error al abrir configuración:', err);
-        mostrarMensaje('Error al abrir configuración', 'error', 2000);
+        mostrarMensaje('Error al agregar componente', 'error', 2000);
+        // Revertir si falla
+        formData.value.componentes.pop();
     } finally {
         cargando.value = false;
     }
