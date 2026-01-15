@@ -59,6 +59,10 @@ input, textarea, select {
   transition: all 0.3s ease;
 }
 
+input::placeholder, textarea::placeholder, select::placeholder {
+  color: #666 !important;
+}
+
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--color-accent);
