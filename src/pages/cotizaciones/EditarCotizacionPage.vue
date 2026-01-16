@@ -1350,7 +1350,7 @@ onMounted(() => {
 }
 
 .modal-header-clientes {
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     padding: 30px;
     text-align: center;
     position: relative;
@@ -1423,19 +1423,19 @@ onMounted(() => {
 }
 
 .cliente-card-selector:hover {
-    border-color: #4caf50;
-    box-shadow: 0 12px 30px rgba(76, 175, 80, 0.3);
+    border-color: #d4a574;
+    box-shadow: 0 12px 30px rgba(212, 165, 116, 0.3);
     transform: translateY(-8px) scale(1.02);
 }
 
 .cliente-card-selector.selected {
-    border-color: #4caf50;
+    border-color: #d4a574;
     border-width: 3px;
-    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 8px 20px rgba(212, 165, 116, 0.4);
 }
 
 .cliente-card-header {
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     padding: 1.2rem;
     color: white;
     display: flex;
@@ -1495,7 +1495,7 @@ onMounted(() => {
 
 .cliente-card-action {
     padding: 16px;
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     text-align: center;
     color: #ffffff;
     font-weight: 600;
@@ -1511,7 +1511,7 @@ onMounted(() => {
 }
 
 .cliente-card-selector:hover .cliente-card-action {
-    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+    background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
     padding: 18px 16px;
 }
 
