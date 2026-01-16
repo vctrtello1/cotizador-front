@@ -534,10 +534,34 @@ const cerrarSelectorClientes = () => {
     mostrarSelectorClientes.value = false;
 };
 
-const seleccionarCliente = (cliente) => {
-    cotizacion.value.cliente_id = cliente.id;
-    cotizacion.value.cliente = cliente;
-    cerrarSelectorClientes();
+const seleccionarCliente = async (cliente) => {
+    try {
+        // Actualizar localmente primero
+        cotizacion.value.cliente_id = cliente.id;
+        cotizacion.value.cliente = cliente;
+        cerrarSelectorClientes();
+
+        // Guardar en la API
+        const datosActualizados = {
+            cliente_id: cliente.id,
+            fecha: cotizacion.value.fecha,
+            estado: cotizacion.value.estado
+        };
+
+        await actualizarCotizacion(cotizacion.value.id, datosActualizados);
+        
+        // Mostrar mensaje de éxito
+        success.value = 'Cliente actualizado correctamente';
+        setTimeout(() => {
+            success.value = null;
+        }, 3000);
+    } catch (err) {
+        console.error('Error al actualizar cliente:', err);
+        error.value = 'Error al actualizar el cliente: ' + (err.response?.data?.message || err.message);
+        setTimeout(() => {
+            error.value = null;
+        }, 5000);
+    }
 };
 
 const cerrarSelectorModulos = () => {
