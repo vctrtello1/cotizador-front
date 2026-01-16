@@ -31,12 +31,16 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="cliente">Cliente</label>
-                            <select v-model="cotizacion.cliente_id" id="cliente" class="form-input">
-                                <option value="">Seleccionar Cliente</option>
-                                <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
-                                    {{ cliente.nombre }}
-                                </option>
-                            </select>
+                            <button @click="abrirSelectorClientes" class="btn-selector-cliente" type="button">
+                                <span class="cliente-icon">👤</span>
+                                <span class="cliente-nombre" v-if="cotizacion.cliente">
+                                    {{ cotizacion.cliente.nombre }}
+                                </span>
+                                <span class="cliente-placeholder" v-else>
+                                    Seleccionar Cliente
+                                </span>
+                                <span class="selector-arrow">▼</span>
+                            </button>
                         </div>
 
                         <div class="form-group">
@@ -272,6 +276,55 @@
                             </div>
                         </div>
                     </template>
+
+                    <!-- Modal selector de clientes -->
+                    <div v-if="mostrarSelectorClientes" class="modal-overlay" @click="cerrarSelectorClientes">
+                        <div class="modal-content modal-clientes-mejorado" @click.stop>
+                            <div class="modal-header-clientes">
+                                <div class="modal-icon">👥</div>
+                                <h3>Selecciona un Cliente</h3>
+                                <button class="btn-close-clientes" @click="cerrarSelectorClientes">✕</button>
+                            </div>
+
+                            <div class="modal-body-clientes">
+                                <div v-if="clientes.length === 0" class="empty-state-mejorado">
+                                    <div class="empty-icon">📋</div>
+                                    <p>No hay clientes disponibles</p>
+                                </div>
+
+                                <div v-else class="clientes-grid-selector">
+                                    <div 
+                                        v-for="cliente in clientes" 
+                                        :key="cliente.id"
+                                        class="cliente-card-selector"
+                                        :class="{ 'selected': cotizacion.cliente_id === cliente.id }"
+                                        @click="seleccionarCliente(cliente)"
+                                    >
+                                        <div class="cliente-card-header">
+                                            <div class="cliente-icon-large">👤</div>
+                                            <div class="cliente-info">
+                                                <h4>{{ cliente.nombre }}</h4>
+                                                <p v-if="cliente.empresa" class="cliente-empresa">{{ cliente.empresa }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="cliente-card-body">
+                                            <div v-if="cliente.email" class="cliente-detail">
+                                                <span class="detail-icon">📧</span>
+                                                <span class="detail-text">{{ cliente.email }}</span>
+                                            </div>
+                                            <div v-if="cliente.telefono" class="cliente-detail">
+                                                <span class="detail-icon">📱</span>
+                                                <span class="detail-text">{{ cliente.telefono }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="cliente-card-action">
+                                            <span>✓ Seleccionar</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Resumen de totales -->
@@ -349,6 +402,7 @@ const mostrarSelectorModulos = ref(false);
 const moduloSeleccionadoModal = ref(null);
 const cantidadNuevaModulo = ref(1);
 const cargandoModuloModal = ref(false);
+const mostrarSelectorClientes = ref(false);
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -470,6 +524,20 @@ const abrirSelectorModulos = () => {
     moduloSeleccionadoModal.value = null;
     cantidadNuevaModulo.value = 1;
     mostrarSelectorModulos.value = true;
+};
+
+const abrirSelectorClientes = () => {
+    mostrarSelectorClientes.value = true;
+};
+
+const cerrarSelectorClientes = () => {
+    mostrarSelectorClientes.value = false;
+};
+
+const seleccionarCliente = (cliente) => {
+    cotizacion.value.cliente_id = cliente.id;
+    cotizacion.value.cliente = cliente;
+    cerrarSelectorClientes();
 };
 
 const cerrarSelectorModulos = () => {
@@ -1268,6 +1336,185 @@ onMounted(() => {
     margin: 0;
 }
 
+/* ===== MODAL: Selector de Clientes ===== */
+.modal-clientes-mejorado {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header-clientes {
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    padding: 30px;
+    text-align: center;
+    position: relative;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.modal-header-clientes .modal-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    display: block;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header-clientes h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-close-clientes {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
+.btn-close-clientes:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modal-body-clientes {
+    padding: 30px;
+    overflow-y: auto;
+    max-height: calc(85vh - 140px);
+}
+
+.clientes-grid-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.cliente-card-selector {
+    background: white;
+    border: 2px solid #e8ddd7;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cliente-card-selector:hover {
+    border-color: #4caf50;
+    box-shadow: 0 12px 30px rgba(76, 175, 80, 0.3);
+    transform: translateY(-8px) scale(1.02);
+}
+
+.cliente-card-selector.selected {
+    border-color: #4caf50;
+    border-width: 3px;
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+}
+
+.cliente-card-header {
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    padding: 1.2rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cliente-icon-large {
+    font-size: 2.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: brightness(0) invert(1);
+}
+
+.cliente-info {
+    flex: 1;
+}
+
+.cliente-info h4 {
+    margin: 0 0 0.3rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.cliente-empresa {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.cliente-card-body {
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    background: #fafafa;
+}
+
+.cliente-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.9rem;
+}
+
+.detail-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.detail-text {
+    color: #666;
+    flex: 1;
+}
+
+.cliente-card-action {
+    padding: 16px;
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    text-align: center;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.cliente-card-action span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cliente-card-selector:hover .cliente-card-action {
+    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+    padding: 18px 16px;
+}
+
 .modal-modulos-body {
     max-height: 450px;
     overflow-y: auto;
@@ -1803,6 +2050,56 @@ onMounted(() => {
     outline: none;
     border-color: #d4a574;
     box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+/* Botón selector de cliente */
+.btn-selector-cliente {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 12px 16px;
+    background: white;
+    border: 2px solid #e8ddd7;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.btn-selector-cliente:hover {
+    border-color: #d4a574;
+    background: #faf8f5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.15);
+}
+
+.cliente-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.cliente-nombre {
+    flex: 1;
+    color: #2c2c2c;
+    font-weight: 600;
+}
+
+.cliente-placeholder {
+    flex: 1;
+    color: #999;
+    font-weight: 500;
+}
+
+.selector-arrow {
+    color: #d4a574;
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-selector-cliente:hover .selector-arrow {
+    transform: translateY(3px);
 }
 
 .info-grid {
