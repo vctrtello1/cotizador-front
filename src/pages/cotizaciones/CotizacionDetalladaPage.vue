@@ -10,7 +10,9 @@
                 </div>
             </div>
             <div class="header-actions">
-                <button class="btn-action" title="Descargar PDF">📥</button>
+                <button class="btn-action" @click="generarPDF" :disabled="generandoPDF" title="Descargar PDF">
+                    {{ generandoPDF ? '⏳' : '📥' }}
+                </button>
                 <button class="btn-action" title="Imprimir">🖨️</button>
                 <button class="btn-action" @click="$router.push(`/editar-cotizacion/${cotizacion.id}`)" title="Editar">✏️</button>
             </div>
@@ -120,6 +122,7 @@ const store = useCotizacionesStore();
 const { fecthCotizacionById } = store;
 
 const cotizacion = ref(null);
+const generandoPDF = ref(false);
 
 const detalles = computed(() => {
     return cotizacion.value?.modulos || [];
@@ -177,6 +180,137 @@ const calcularSubtotal = (componente) => {
 
 const goToCotizacionDetallada = (id) => {
     router.push({ name: 'CotizacionDetallada', params: { id } });
+};
+
+const generarPDF = async () => {
+    try {
+        generandoPDF.value = true;
+        console.log('Iniciando generación de PDF...');
+        
+        // Importar jsPDF dinámicamente
+        console.log('Importando jsPDF...');
+        const jsPDFModule = await import('jspdf');
+        const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+        console.log('jsPDF importado correctamente');
+        
+        const doc = new jsPDF();
+        console.log('Documento PDF creado');
+        
+        // Configuración
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 20;
+        let y = 20;
+        
+        // Título
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('COTIZACIÓN', pageWidth / 2, y, { align: 'center' });
+        y += 15;
+        
+        // Número de cotización
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Número: #${cotizacion.value.id}`, margin, y);
+        y += 8;
+        doc.text(`Fecha: ${new Date(cotizacion.value.fecha).toLocaleDateString('es-ES')}`, margin, y);
+        y += 15;
+        
+        // Información del cliente
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CLIENTE', margin, y);
+        y += 8;
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        if (cotizacion.value.cliente) {
+            doc.text(`Nombre: ${cotizacion.value.cliente.nombre}`, margin, y);
+            y += 6;
+            if (cotizacion.value.cliente.empresa && cotizacion.value.cliente.nombre !== 'Publico En Geneal') {
+                doc.text(`Empresa: ${cotizacion.value.cliente.empresa}`, margin, y);
+                y += 6;
+            }
+            if (cotizacion.value.cliente.email && cotizacion.value.cliente.nombre !== 'Publico En Geneal') {
+                doc.text(`Email: ${cotizacion.value.cliente.email}`, margin, y);
+                y += 6;
+            }
+            if (cotizacion.value.cliente.telefono) {
+                doc.text(`Teléfono: ${cotizacion.value.cliente.telefono}`, margin, y);
+                y += 6;
+            }
+        }
+        y += 10;
+        
+        // Módulos
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('MÓDULOS', margin, y);
+        y += 10;
+        
+        console.log('Agregando módulos al PDF:', detalles.value.length);
+        detalles.value.forEach((modulo, index) => {
+            // Verificar si necesitamos una nueva página
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${index + 1}. ${modulo.nombre}`, margin, y);
+            y += 6;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            if (modulo.descripcion) {
+                doc.text(`   ${modulo.descripcion}`, margin, y);
+                y += 6;
+            }
+            
+            doc.text(`   Código: ${modulo.codigo}`, margin, y);
+            y += 6;
+            doc.text(`   Cantidad: ${modulo.cantidad}`, margin, y);
+            y += 8;
+            
+            // Componentes
+            if (Array.isArray(modulo.componentes) && modulo.componentes.length > 0) {
+                doc.setFontSize(9);
+                doc.text('   Componentes:', margin, y);
+                y += 5;
+                
+                modulo.componentes.forEach(comp => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.text(`      - ${comp.nombre}`, margin, y);
+                    y += 4;
+                    doc.text(`        Cantidad: ${comp.cantidad} | Precio: $${formatCurrency(comp.precio_unitario)}`, margin, y);
+                    y += 4;
+                    doc.text(`        Subtotal: $${formatCurrency(calcularSubtotal(comp))}`, margin, y);
+                    y += 5;
+                });
+            }
+            y += 5;
+        });
+        
+        // Total
+        y += 5;
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOTAL: $${formatCurrency(totalCotizacion.value)}`, pageWidth - margin, y, { align: 'right' });
+        
+        console.log('Guardando PDF...');
+        // Guardar el PDF
+        doc.save(`Cotizacion_${cotizacion.value.id}.pdf`);
+        console.log('PDF guardado correctamente');
+    } catch (err) {
+        console.error('Error al generar PDF:', err);
+        console.error('Stack trace:', err.stack);
+        alert('Error al generar el PDF: ' + err.message);
+    } finally {
+        generandoPDF.value = false;
+    }
 };
 
 onMounted(async () => {

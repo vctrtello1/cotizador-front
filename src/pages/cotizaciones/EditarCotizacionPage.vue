@@ -356,6 +356,10 @@
                         <span class="btn-icon">✕</span>
                         <span>Cancelar</span>
                     </button>
+                    <button @click="generarPDF" class="btn-secondary" :disabled="generandoPDF">
+                        <span class="btn-icon">{{ generandoPDF ? '⏳' : '📝' }}</span>
+                        <span>{{ generandoPDF ? 'Generando PDF...' : 'Generar PDF' }}</span>
+                    </button>
                     <button @click="guardarCambios" class="btn-primary" :disabled="guardando">
                         <span class="btn-icon">{{ guardando ? '⏳' : '💾' }}</span>
                         <span>{{ guardando ? 'Guardando...' : 'Guardar Cambios' }}</span>
@@ -396,6 +400,7 @@ const clientes = ref([]);
 const modulos = ref([]);
 const cargandoDatos = ref(true);
 const guardando = ref(false);
+const generandoPDF = ref(false);
 const error = ref(null);
 const success = ref(null);
 const mostrarSelectorModulos = ref(false);
@@ -836,6 +841,130 @@ const guardarCambios = async () => {
         error.value = 'Error: ' + (err.response?.data?.message || err.message);
     } finally {
         guardando.value = false;
+    }
+};
+
+const generarPDF = async () => {
+    try {
+        generandoPDF.value = true;
+        console.log('Iniciando generación de PDF...');
+        
+        // Importar jsPDF dinámicamente
+        console.log('Importando jsPDF...');
+        const jsPDFModule = await import('jspdf');
+        const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+        console.log('jsPDF importado correctamente');
+        
+        const doc = new jsPDF();
+        console.log('Documento PDF creado');
+        
+        // Configuración
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 20;
+        let y = 20;
+        
+        // Título
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('COTIZACIÓN', pageWidth / 2, y, { align: 'center' });
+        y += 15;
+        
+        // Número de cotización
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Número: #${cotizacion.value.id}`, margin, y);
+        y += 8;
+        doc.text(`Fecha: ${new Date(cotizacion.value.fecha).toLocaleDateString('es-ES')}`, margin, y);
+        y += 8;
+        doc.text(`Estado: ${cotizacion.value.estado}`, margin, y);
+        y += 15;
+        
+        // Información del cliente
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CLIENTE', margin, y);
+        y += 8;
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        if (cotizacion.value.cliente) {
+            doc.text(`Nombre: ${cotizacion.value.cliente.nombre}`, margin, y);
+            y += 6;
+            if (cotizacion.value.cliente.empresa) {
+                doc.text(`Empresa: ${cotizacion.value.cliente.empresa}`, margin, y);
+                y += 6;
+            }
+            if (cotizacion.value.cliente.email) {
+                doc.text(`Email: ${cotizacion.value.cliente.email}`, margin, y);
+                y += 6;
+            }
+            if (cotizacion.value.cliente.telefono) {
+                doc.text(`Teléfono: ${cotizacion.value.cliente.telefono}`, margin, y);
+                y += 6;
+            }
+        }
+        y += 10;
+        
+        // Módulos
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('MÓDULOS', margin, y);
+        y += 10;
+        
+        console.log('Agregando módulos al PDF:', modulosAsignados.value.length);
+        modulosAsignados.value.forEach((modulo, index) => {
+            // Verificar si necesitamos una nueva página
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${index + 1}. ${modulo.nombre}`, margin, y);
+            y += 6;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            if (modulo.descripcion) {
+                doc.text(`   ${modulo.descripcion}`, margin, y);
+                y += 6;
+            }
+            
+            doc.text(`   Código: ${modulo.codigo}`, margin, y);
+            y += 6;
+            doc.text(`   Cantidad: ${modulo.cantidad}`, margin, y);
+            y += 6;
+            doc.text(`   Precio Unitario: $${formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo))}`, margin, y);
+            y += 6;
+            doc.text(`   Subtotal: $${formatCurrency(calcularSubtotalModulo(modulo))}`, margin, y);
+            y += 10;
+        });
+        
+        // Total
+        y += 5;
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOTAL: $${formatCurrency(totalCotizacion.value)}`, pageWidth - margin, y, { align: 'right' });
+        
+        console.log('Guardando PDF...');
+        // Guardar el PDF
+        doc.save(`Cotizacion_${cotizacion.value.id}.pdf`);
+        console.log('PDF guardado correctamente');
+        
+        success.value = 'PDF generado correctamente';
+        setTimeout(() => {
+            success.value = null;
+        }, 3000);
+    } catch (err) {
+        console.error('Error al generar PDF:', err);
+        console.error('Stack trace:', err.stack);
+        error.value = 'Error al generar el PDF: ' + err.message;
+        setTimeout(() => {
+            error.value = null;
+        }, 5000);
+    } finally {
+        generandoPDF.value = false;
     }
 };
 
@@ -2359,6 +2488,34 @@ onMounted(() => {
 }
 
 .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+}
+
+.btn-secondary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
