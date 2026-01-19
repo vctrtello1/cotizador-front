@@ -320,6 +320,8 @@ import { useRouter } from 'vue-router';
 import { useCotizacionesStore } from '../../stores/cotizaciones';
 import { useClientesStore } from '../../stores/clientes';
 import { useModulosStore } from '../../stores/modulos';
+import { useComponentesPorCotizacionStore } from '../../stores/componentes-por-cotizacion';
+import { useModulosPorCotizacionStore } from '../../stores/modulos-por-cotizacion';
 import { crearCotizacion } from '../../http/cotizaciones-api';
 import { crearCliente } from '../../http/clientes-api';
 import { obtenerTokenCsrf } from '../../http/apl';
@@ -328,6 +330,8 @@ const router = useRouter();
 const storeC = useCotizacionesStore();
 const storeClientes = useClientesStore();
 const storeModulos = useModulosStore();
+const storeComponentesPorCotizacion = useComponentesPorCotizacionStore();
+const storeModulosPorCotizacion = useModulosPorCotizacionStore();
 
 const formData = reactive({
     cliente_id: '',
@@ -523,55 +527,77 @@ const guardarCotizacion = async () => {
     error.value = null;
 
     try {
-        // Transformar la estructura de modulos con componentes a detalles planos
-        const detalles = [];
-        const modulosCantidad = [];
-        
-        formData.modulos.forEach((modulo, index) => {
-            const cantidadModulo = Number(modulo.cantidad) || 1;
-            
-            // Guardar la cantidad de cada módulo con su índice para evitar sobrescritura
-            if (modulo.modulo_id) {
-                modulosCantidad.push({
-                    modulo_id: modulo.modulo_id,
-                    cantidad: cantidadModulo,
-                    index: index
-                });
-            }
-            
-            modulo.componentes.forEach(comp => {
-                detalles.push({
-                    modulo_id: modulo.modulo_id || null,
-                    descripcion: `${modulo.nombre} - ${comp.nombre}`,
-                    cantidad: Number(comp.cantidad) * cantidadModulo,
-                    precio_unitario: Number(comp.precio_unitario),
-                    subtotal: (Number(comp.cantidad) * cantidadModulo) * Number(comp.precio_unitario)
-                });
-            });
-        });
-
+        // Paso 1: Crear la cotización primero
         const datosParaEnviar = {
             cliente_id: Number(formData.cliente_id),
             fecha: formData.fecha,
-            total: totalCotizacion.value,
-            detalles: detalles,
-            modulos_cantidad: modulosCantidad
+            total: totalCotizacion.value
         };
 
         console.log('Enviando cotización:', datosParaEnviar);
-        const response = await crearCotizacion(datosParaEnviar);
-        console.log('Cotización guardada:', response);
+        const responseCotizacion = await crearCotizacion(datosParaEnviar);
+        console.log('Cotización guardada:', responseCotizacion);
+        
+        const cotizacionId = responseCotizacion.id || responseCotizacion.data?.id;
+        
+        if (!cotizacionId) {
+            throw new Error('No se recibió el ID de la cotización creada');
+        }
+
+        // Paso 2: Guardar los módulos por cotización
+        console.log('Guardando módulos por cotización...');
+        
+        for (let moduloIdx = 0; moduloIdx < formData.modulos.length; moduloIdx++) {
+            const modulo = formData.modulos[moduloIdx];
+            const cantidadModulo = Number(modulo.cantidad) || 1;
+            
+            // Guardar módulo en modulos_por_cotizacion
+            const moduloPorCotizacion = {
+                cotizacion_id: cotizacionId,
+                modulo_id: modulo.modulo_id || null,
+                nombre: modulo.nombre,
+                codigo: modulo.codigo || '',
+                descripcion: modulo.descripcion || '',
+                cantidad: cantidadModulo
+            };
+            
+            console.log(`Guardando módulo ${moduloIdx + 1}:`, moduloPorCotizacion);
+            await storeModulosPorCotizacion.crearModuloPorCotizacion(moduloPorCotizacion);
+        }
+        
+        // Paso 3: Guardar los componentes por cotización
+        console.log('Guardando componentes por cotización...');
+        
+        for (let moduloIdx = 0; moduloIdx < formData.modulos.length; moduloIdx++) {
+            const modulo = formData.modulos[moduloIdx];
+            const cantidadModulo = Number(modulo.cantidad) || 1;
+            
+            for (let compIdx = 0; compIdx < modulo.componentes.length; compIdx++) {
+                const comp = modulo.componentes[compIdx];
+                
+                const componentePorCotizacion = {
+                    cotizacion_id: cotizacionId,
+                    componente_id: comp.componente_id || null,
+                    modulo_id: modulo.modulo_id || null,
+                    nombre: comp.nombre,
+                    descripcion: comp.descripcion || `${modulo.nombre} - ${comp.nombre}`,
+                    cantidad: Number(comp.cantidad) * cantidadModulo,
+                    precio_unitario: Number(comp.precio_unitario),
+                    subtotal: (Number(comp.cantidad) * cantidadModulo) * Number(comp.precio_unitario)
+                };
+                
+                console.log(`Guardando componente ${compIdx + 1} del módulo ${moduloIdx + 1}:`, componentePorCotizacion);
+                await storeComponentesPorCotizacion.crearComponentePorCotizacion(componentePorCotizacion);
+            }
+        }
+        
+        console.log('Todos los módulos y componentes guardados correctamente');
         
         // Recargar cotizaciones en el store
         await storeC.fetchCotizaciones();
         
-        // Redirigir a la cotización creada o a la lista
-        const cotizacionId = response.id || response.data?.id;
-        if (cotizacionId) {
-            router.push(`/cotizacion-detallada/${cotizacionId}`);
-        } else {
-            router.push('/cotizaciones');
-        }
+        // Redirigir a la cotización creada
+        router.push(`/cotizacion-detallada/${cotizacionId}`);
     } catch (err) {
         console.error('Error guardando cotización:', err);
         
