@@ -10,8 +10,8 @@
                 </div>
             </div>
             <div class="header-actions">
-                <button class="btn-action" @click="generarPDF" :disabled="generandoPDF" title="Descargar PDF">
-                    {{ generandoPDF ? '⏳' : '📥' }}
+                <button class="btn-action" @click="generarPDF" :disabled="generandoPDF" title="Generar PDF">
+                    {{ generandoPDF ? '⏳' : '📝' }}
                 </button>
                 <button class="btn-action" title="Imprimir">🖨️</button>
                 <button class="btn-action" @click="$router.push(`/editar-cotizacion/${cotizacion.id}`)" title="Editar">✏️</button>
@@ -20,7 +20,12 @@
 
         <!-- Información del cliente -->
         <div class="info-card cliente-card">
-            <h2 class="section-title">📋 Información del Cliente</h2>
+            <div class="cliente-header">
+                <h2 class="section-title">📋 Información del Cliente</h2>
+                <button @click="abrirSelectorClientes" class="btn-cambiar-cliente" title="Cambiar cliente">
+                    ✏️ Cambiar Cliente
+                </button>
+            </div>
             <div class="info-grid">
                 <div class="info-item">
                     <span class="info-label">Cliente:</span>
@@ -39,6 +44,44 @@
                 <div v-if="cotizacion.cliente?.nombre !== 'Publico En Geneal' && cotizacion.cliente?.email" class="info-item">
                     <span class="info-label">Email:</span>
                     <span class="info-value">{{ cotizacion.cliente?.email }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Selección de Clientes -->
+        <div v-if="mostrarSelectorClientes" class="modal-overlay" @click.self="cerrarSelectorClientes">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3 class="modal-title">Seleccionar Cliente</h3>
+                    <button @click="cerrarSelectorClientes" class="btn-close-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="search-bar">
+                        <input 
+                            v-model="busquedaCliente" 
+                            type="text" 
+                            placeholder="Buscar cliente..." 
+                            class="search-input"
+                        />
+                    </div>
+                    <div class="clientes-list">
+                        <div 
+                            v-for="cliente in clientesFiltrados" 
+                            :key="cliente.id"
+                            @click="seleccionarCliente(cliente)"
+                            class="cliente-item"
+                            :class="{ 'selected': cotizacion.cliente?.id === cliente.id }"
+                        >
+                            <div class="cliente-info">
+                                <span class="cliente-nombre-modal">{{ cliente.nombre }}</span>
+                                <span v-if="cliente.empresa" class="cliente-empresa">{{ cliente.empresa }}</span>
+                            </div>
+                            <div class="cliente-contact">
+                                <span v-if="cliente.email" class="cliente-email">{{ cliente.email }}</span>
+                                <span v-if="cliente.telefono" class="cliente-telefono">{{ cliente.telefono }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,14 +158,30 @@
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCotizacionesStore } from '@/stores/cotizaciones';
+import { useClientesStore } from '@/stores/clientes';
 
 const route = useRoute();
 const router = useRouter();
 const store = useCotizacionesStore();
-const { fecthCotizacionById } = store;
+const clientesStore = useClientesStore();
+const { fecthCotizacionById, updateCotizacion } = store;
+const { fetchClientes } = clientesStore;
 
 const cotizacion = ref(null);
 const generandoPDF = ref(false);
+const mostrarSelectorClientes = ref(false);
+const busquedaCliente = ref('');
+const clientes = ref([]);
+
+const clientesFiltrados = computed(() => {
+    if (!busquedaCliente.value) return clientes.value;
+    const busqueda = busquedaCliente.value.toLowerCase();
+    return clientes.value.filter(cliente =>
+        cliente.nombre?.toLowerCase().includes(busqueda) ||
+        cliente.empresa?.toLowerCase().includes(busqueda) ||
+        cliente.email?.toLowerCase().includes(busqueda)
+    );
+});
 
 const detalles = computed(() => {
     return cotizacion.value?.modulos || [];
@@ -176,6 +235,40 @@ const calcularSubtotal = (componente) => {
     }
     // Si no, calcular: cantidad × precio_unitario
     return (Number(componente.cantidad) || 0) * (Number(componente.precio_unitario) || 0);
+};
+
+const abrirSelectorClientes = async () => {
+    mostrarSelectorClientes.value = true;
+    busquedaCliente.value = '';
+    if (clientes.value.length === 0) {
+        clientes.value = await fetchClientes();
+    }
+};
+
+const cerrarSelectorClientes = () => {
+    mostrarSelectorClientes.value = false;
+    busquedaCliente.value = '';
+};
+
+const seleccionarCliente = async (cliente) => {
+    try {
+        // Actualizar la cotización con el nuevo cliente
+        const cotizacionActualizada = {
+            ...cotizacion.value,
+            cliente_id: cliente.id,
+            cliente: cliente
+        };
+        
+        await updateCotizacion(cotizacion.value.id, cotizacionActualizada);
+        cotizacion.value = cotizacionActualizada;
+        cerrarSelectorClientes();
+        
+        // Mostrar mensaje de éxito
+        alert('Cliente actualizado correctamente');
+    } catch (error) {
+        console.error('Error al actualizar cliente:', error);
+        alert('Error al actualizar el cliente');
+    }
 };
 
 const goToCotizacionDetallada = (id) => {
@@ -459,6 +552,38 @@ onMounted(async () => {
     padding: 2rem;
     margin-bottom: 2rem;
     box-shadow: 0 2px 8px rgba(212, 165, 116, 0.08);
+}
+
+.cliente-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #d4a574;
+}
+
+.cliente-header .section-title {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.btn-cambiar-cliente {
+    padding: 8px 16px;
+    background: #d4a574;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn-cambiar-cliente:hover {
+    background: #c9995c;
+    transform: translateY(-2px);
 }
 
 .section-title {
@@ -796,5 +921,188 @@ onMounted(async () => {
     color: var(--wood-medium, #6B4423);
     font-size: 1.1rem;
     font-weight: 600;
+}
+
+/* Estilos del Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid #e8ddd7;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    color: #2C1810;
+    font-weight: 700;
+    margin: 0;
+}
+
+.btn-close-modal {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.modal-body {
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.search-bar {
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.clientes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cliente-item {
+    padding: 1rem 1.25rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.cliente-item:hover {
+    border-color: #d4a574;
+    background: #faf8f3;
+    transform: translateX(4px);
+}
+
+.cliente-item.selected {
+    border-color: #d4a574;
+    background: #f5f1e8;
+}
+
+.cliente-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.cliente-nombre-modal {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2C1810;
+}
+
+.cliente-empresa {
+    font-size: 0.9rem;
+    color: #6B4423;
+}
+
+.cliente-contact {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #999;
+}
+
+.cliente-email,
+.cliente-telefono {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .modal-container {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .modal-header,
+    .modal-body {
+        padding: 1rem 1.5rem;
+    }
+
+    .cliente-contact {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
 }
 </style>

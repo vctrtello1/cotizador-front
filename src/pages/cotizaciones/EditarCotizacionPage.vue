@@ -15,7 +15,16 @@
                     <div class="header-title-section">
                         <h1 class="form-title">📝 Editar Cotización</h1>
                         <span class="cotizacion-badge">#{{ cotizacion.id }}</span>
-                        <span class="estado-badge" :class="`estado-${cotizacion.estado}`">{{ cotizacion.estado }}</span>
+                        <select 
+                            v-model="cotizacion.estado" 
+                            @change="cambiarEstado"
+                            class="estado-selector"
+                            :class="`estado-${cotizacion.estado}`"
+                        >
+                            <option value="activa">Activa</option>
+                            <option value="completada">Completada</option>
+                            <option value="cancelada">Cancelada</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -388,7 +397,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getCotizacionById, actualizarCotizacion, sincronizarModulos } from '../../http/cotizaciones-api';
+import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
 
@@ -563,6 +572,23 @@ const seleccionarCliente = async (cliente) => {
     } catch (err) {
         console.error('Error al actualizar cliente:', err);
         error.value = 'Error al actualizar el cliente: ' + (err.response?.data?.message || err.message);
+        setTimeout(() => {
+            error.value = null;
+        }, 5000);
+    }
+};
+
+const cambiarEstado = async () => {
+    try {
+        await actualizarEstadoCotizacion(cotizacion.value.id, cotizacion.value.estado);
+        
+        success.value = `Estado actualizado a: ${cotizacion.value.estado}`;
+        setTimeout(() => {
+            success.value = null;
+        }, 3000);
+    } catch (err) {
+        console.error('Error al actualizar estado:', err);
+        error.value = 'Error al actualizar el estado: ' + (err.response?.data?.message || err.message);
         setTimeout(() => {
             error.value = null;
         }, 5000);
@@ -1058,6 +1084,23 @@ onMounted(() => {
     font-weight: 600;
     text-transform: capitalize;
     border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.estado-selector {
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.estado-selector:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
 }
 
 .estado-activa {

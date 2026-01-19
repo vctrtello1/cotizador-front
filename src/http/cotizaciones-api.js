@@ -29,3 +29,13 @@ export const sincronizarModulos = async (cotizacionId, modulosData) => {
   const response = await api.post(`/cotizaciones/${cotizacionId}/sync-modulos`, { modulos: modulosData });
   return response.data;
 };
+
+export const obtenerEstadoCotizacion = async (id) => {
+  const response = await api.get(`/cotizaciones/${id}/estado`);
+  return response.data;
+};
+
+export const actualizarEstadoCotizacion = async (id, estado) => {
+  const response = await api.put(`/cotizaciones/${id}/estado`, { estado });
+  return response.data;
+};
