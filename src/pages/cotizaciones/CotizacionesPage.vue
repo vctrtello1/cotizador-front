@@ -2,7 +2,9 @@
     <div class="cotizaciones-container">
         <header class="page-header">
             <h1>Cotizaciones Activas</h1>
-            <button class="btn-primary" @click="router.push('/nueva-cotizacion')">Nueva Cotización</button>
+            <button class="btn-primary" @click="crearNuevaCotizacion" :disabled="creandoCotizacion">
+                {{ creandoCotizacion ? '⏳ Creando...' : '➕ Nueva Cotización' }}
+            </button>
         </header>
         
 
@@ -37,18 +39,68 @@
 </template>
 
 <script setup>  
-    import { onMounted } from 'vue';
+    import { onMounted, ref } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useRouter } from 'vue-router';
     import { useCotizacionesStore } from '@/stores/cotizaciones';
+    import { useClientesStore } from '@/stores/clientes';
+    import { crearCotizacion } from '@/http/cotizaciones-api';
 
     const router = useRouter();
     const store = useCotizacionesStore();
+    const storeClientes = useClientesStore();
     const { cotizaciones } = storeToRefs(store);
     const { fetchCotizaciones } = store;
+    const creandoCotizacion = ref(false);
 
     const goToCotizacionDetallada = (id) => {
         router.push({ name: 'CotizacionDetallada', params: { id } });
+    };
+
+    const crearNuevaCotizacion = async () => {
+        creandoCotizacion.value = true;
+        try {
+            // Buscar el cliente "Público General"
+            await storeClientes.fetchClientes();
+            const clientePublicoGeneral = storeClientes.clientes.find(c => 
+                c.nombre?.toLowerCase().includes('público') || 
+                c.nombre?.toLowerCase().includes('publico') ||
+                c.nombre?.toLowerCase().includes('general')
+            );
+
+            if (!clientePublicoGeneral) {
+                alert('No se encontró el cliente "Público General". Por favor créalo primero.');
+                router.push('/nueva-cotizacion');
+                return;
+            }
+
+            // Crear cotización en blanco con Público General
+            const nuevaCotizacion = {
+                cliente_id: clientePublicoGeneral.id,
+                fecha: new Date().toISOString().split('T')[0],
+                total: 0
+            };
+
+            console.log('Creando nueva cotización:', nuevaCotizacion);
+            const response = await crearCotizacion(nuevaCotizacion);
+            console.log('Cotización creada:', response);
+
+            const cotizacionId = response.id || response.data?.id;
+
+            if (cotizacionId) {
+                // Recargar cotizaciones
+                await fetchCotizaciones();
+                // Redirigir a editar la cotización recién creada
+                router.push(`/editar-cotizacion/${cotizacionId}`);
+            } else {
+                throw new Error('No se recibió el ID de la cotización');
+            }
+        } catch (error) {
+            console.error('Error creando cotización:', error);
+            alert('Error al crear la cotización: ' + (error.message || 'Error desconocido'));
+        } finally {
+            creandoCotizacion.value = false;
+        }
     };
 
     onMounted(() => {

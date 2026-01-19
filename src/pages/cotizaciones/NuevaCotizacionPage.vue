@@ -468,9 +468,21 @@ const eliminarComponente = (moduloIdx, compIdx) => {
 
 const guardarCotizacion = async () => {
     // Validaciones
+    // Si no hay cliente seleccionado, buscar y asignar "Público General" automáticamente
     if (!formData.cliente_id) {
-        error.value = 'Por favor selecciona un cliente';
-        return;
+        const clientePublicoGeneral = storeClientes.clientes.find(c => 
+            c.nombre?.toLowerCase().includes('público') || 
+            c.nombre?.toLowerCase().includes('publico') ||
+            c.nombre?.toLowerCase().includes('general')
+        );
+        
+        if (clientePublicoGeneral) {
+            formData.cliente_id = clientePublicoGeneral.id;
+            console.log('Cliente "Público General" asignado automáticamente para guardar');
+        } else {
+            error.value = 'Por favor selecciona un cliente o crea el cliente "Público General"';
+            return;
+        }
     }
 
     if (!formData.fecha) {
