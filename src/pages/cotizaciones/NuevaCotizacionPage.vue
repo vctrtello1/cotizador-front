@@ -19,13 +19,17 @@
                 <div class="form-group">
                     <label class="form-label">Cliente</label>
                     <div class="cliente-selector">
-                        <select v-model="formData.cliente_id" class="form-input">
-                            <option value="">Seleccionar cliente...</option>
-                            <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
-                                {{ cliente.nombre }}
-                            </option>
-                        </select>
-                        <button v-if="!formData.cliente_id" class="btn-new-cliente" @click="mostrarModalCliente = true">+ Nuevo</button>
+                        <button @click="abrirSelectorClientes" class="btn-selector-cliente" type="button">
+                            <span class="cliente-icon">👤</span>
+                            <span class="cliente-nombre" v-if="clienteSeleccionado">
+                                {{ clienteSeleccionado.nombre }}
+                            </span>
+                            <span class="cliente-placeholder" v-else>
+                                Seleccionar Cliente
+                            </span>
+                            <span class="selector-arrow">▼</span>
+                        </button>
+                        <button class="btn-new-cliente" @click="mostrarModalCliente = true">+ Nuevo</button>
                     </div>
                 </div>
                 <div v-if="clienteSeleccionado?.nombre !== 'Publico En Geneal' && clienteSeleccionado?.empresa" class="form-group">
@@ -119,6 +123,44 @@
             <button class="btn-save" @click="guardarCotizacion" :disabled="loading">
                 {{ loading ? 'Guardando...' : 'Guardar Cotización' }}
             </button>
+        </div>
+
+        <!-- Modal de Selección de Clientes -->
+        <div v-if="mostrarSelectorClientes" class="modal-overlay" @click.self="cerrarSelectorClientes">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3 class="modal-title">Seleccionar Cliente</h3>
+                    <button @click="cerrarSelectorClientes" class="btn-close-modal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="search-bar">
+                        <input 
+                            v-model="busquedaCliente" 
+                            type="text" 
+                            placeholder="Buscar cliente..." 
+                            class="search-input"
+                        />
+                    </div>
+                    <div class="clientes-list">
+                        <div 
+                            v-for="cliente in clientesFiltrados" 
+                            :key="cliente.id"
+                            @click="seleccionarCliente(cliente)"
+                            class="cliente-item"
+                            :class="{ 'selected': formData.cliente_id === cliente.id }"
+                        >
+                            <div class="cliente-info">
+                                <span class="cliente-nombre-modal">{{ cliente.nombre }}</span>
+                                <span v-if="cliente.empresa" class="cliente-empresa">{{ cliente.empresa }}</span>
+                            </div>
+                            <div class="cliente-contact">
+                                <span v-if="cliente.email" class="cliente-email">{{ cliente.email }}</span>
+                                <span v-if="cliente.telefono" class="cliente-telefono">{{ cliente.telefono }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Modal Nuevo Cliente -->
@@ -223,10 +265,22 @@ const clienteSeleccionado = computed(() => {
     return clientes.value.find(c => c.id === Number(formData.cliente_id));
 });
 
+const clientesFiltrados = computed(() => {
+    if (!busquedaCliente.value) return clientes.value;
+    const busqueda = busquedaCliente.value.toLowerCase();
+    return clientes.value.filter(cliente =>
+        cliente.nombre?.toLowerCase().includes(busqueda) ||
+        cliente.empresa?.toLowerCase().includes(busqueda) ||
+        cliente.email?.toLowerCase().includes(busqueda)
+    );
+});
+
 const loading = ref(false);
 const error = ref(null);
 const mostrarModalCliente = ref(false);
 const mostrarModalModulo = ref(false);
+const mostrarSelectorClientes = ref(false);
+const busquedaCliente = ref('');
 const creandoCliente = ref(false);
 
 const nuevoCliente = reactive({
@@ -256,6 +310,21 @@ const formatCurrency = (value) => {
 
 const calcularSubtotal = (componente) => {
     return (Number(componente.cantidad) || 0) * (Number(componente.precio_unitario) || 0);
+};
+
+const abrirSelectorClientes = () => {
+    mostrarSelectorClientes.value = true;
+    busquedaCliente.value = '';
+};
+
+const cerrarSelectorClientes = () => {
+    mostrarSelectorClientes.value = false;
+    busquedaCliente.value = '';
+};
+
+const seleccionarCliente = (cliente) => {
+    formData.cliente_id = cliente.id;
+    cerrarSelectorClientes();
 };
 
 const agregarModulo = () => {
@@ -1052,6 +1121,46 @@ const cargarModulos = async () => {
     }
 }
 
+.btn-selector-cliente {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border, #E5DFD0);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    font-family: inherit;
+}
+
+.btn-selector-cliente:hover {
+    border-color: #C9A961;
+    background: #fafafa;
+}
+
+.cliente-icon {
+    font-size: 1.2rem;
+}
+
+.cliente-nombre {
+    flex: 1;
+    color: #2C1810;
+    font-weight: 600;
+}
+
+.cliente-placeholder {
+    flex: 1;
+    color: #999;
+}
+
+.selector-arrow {
+    color: #999;
+    font-size: 0.8rem;
+}
+
 .btn-new-cliente {
     background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
     color: white;
@@ -1076,13 +1185,169 @@ const cargarModulos = async () => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: fadeIn 0.2s ease;
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Estilos para el modal de selección de clientes */
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-container .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid #e8ddd7;
+    background: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    color: #2C1810;
+    font-weight: 700;
+    margin: 0;
+}
+
+.btn-close-modal {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.modal-body {
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.search-bar {
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.clientes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cliente-item {
+    padding: 1rem 1.25rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.cliente-item:hover {
+    border-color: #d4a574;
+    background: #faf8f3;
+    transform: translateX(4px);
+}
+
+.cliente-item.selected {
+    border-color: #d4a574;
+    background: #f5f1e8;
+}
+
+.cliente-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.cliente-nombre-modal {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2C1810;
+}
+
+.cliente-empresa {
+    font-size: 0.9rem;
+    color: #6B4423;
+}
+
+.cliente-contact {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #999;
+}
+
+.cliente-email,
+.cliente-telefono {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Estilos para el modal de nuevo cliente */
 .modal-content {
     background: var(--cream, #F5F1E8);
     border-radius: 12px;
@@ -1093,7 +1358,7 @@ const cargarModulos = async () => {
     overflow-y: auto;
 }
 
-.modal-header {
+.modal-content .modal-header {
     background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
     color: #F5F1E8;
     padding: 24px 32px;
@@ -1103,7 +1368,7 @@ const cargarModulos = async () => {
     align-items: center;
 }
 
-.modal-header h3 {
+.modal-content .modal-header h3 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
@@ -1128,7 +1393,7 @@ const cargarModulos = async () => {
     color: #FFC9C9;
 }
 
-.modal-body {
+.modal-content .modal-body {
     padding: 32px;
     display: flex;
     flex-direction: column;
@@ -1231,5 +1496,26 @@ const cargarModulos = async () => {
     font-size: 0.8rem;
     font-weight: 600;
     white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .modal-container {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .modal-container .modal-header,
+    .modal-container .modal-body {
+        padding: 1rem 1.5rem;
+    }
+
+    .cliente-contact {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .btn-selector-cliente {
+        font-size: 0.9rem;
+    }
 }
 </style>
