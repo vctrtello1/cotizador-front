@@ -2,8 +2,28 @@
     <div class="nueva-cotizacion-container">
         <!-- Header -->
         <div class="page-header">
-            <button class="btn-back" @click="$router.push('/cotizaciones')">← Volver</button>
-            <h1 class="page-title">Nueva Cotización</h1>
+            <div class="header-left">
+                <button class="btn-back" @click="$router.push('/cotizaciones')">
+                    <span class="back-icon">←</span>
+                    <span>Volver</span>
+                </button>
+                <div class="header-title-group">
+                    <h1 class="page-title">✨ Nueva Cotización</h1>
+                    <p class="page-subtitle">Crea una nueva cotización para tus clientes</p>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <span class="stat-icon">📦</span>
+                    <span class="stat-value">{{ formData.modulos.length }}</span>
+                    <span class="stat-label">Módulos</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💰</span>
+                    <span class="stat-value">${{ formatCurrency(totalCotizacion) }}</span>
+                    <span class="stat-label">Total</span>
+                </div>
+            </div>
         </div>
 
         <!-- Mensaje de error -->
@@ -14,59 +34,109 @@
 
         <!-- Información del cliente -->
         <div class="info-card cliente-card">
-            <h2 class="section-title">Información del Cliente</h2>
-            <div class="info-grid">
-                <div class="form-group">
-                    <label class="form-label">Cliente</label>
-                    <div class="cliente-selector">
-                        <button @click="abrirSelectorClientes" class="btn-selector-cliente" type="button">
-                            <span class="cliente-icon">👤</span>
-                            <span class="cliente-nombre" v-if="clienteSeleccionado">
-                                {{ clienteSeleccionado.nombre }}
-                            </span>
-                            <span class="cliente-placeholder" v-else>
-                                Seleccionar Cliente
-                            </span>
-                            <span class="selector-arrow">▼</span>
-                        </button>
-                        <button class="btn-new-cliente" @click="mostrarModalCliente = true">+ Nuevo</button>
+            <div class="section-header-inline">
+                <h2 class="section-title">👤 Información del Cliente</h2>
+                <span v-if="clienteSeleccionado" class="cliente-badge">Cliente Seleccionado</span>
+            </div>
+            
+            <div class="cliente-selector-container">
+                <button @click="abrirSelectorClientes" class="btn-selector-cliente-main" type="button">
+                    <span class="cliente-icon">👤</span>
+                    <div class="cliente-info-display">
+                        <span class="cliente-nombre" v-if="clienteSeleccionado">
+                            {{ clienteSeleccionado.nombre }}
+                        </span>
+                        <span class="cliente-placeholder" v-else>
+                            Seleccionar Cliente
+                        </span>
+                        <span v-if="clienteSeleccionado?.email" class="cliente-email-small">{{ clienteSeleccionado.email }}</span>
+                    </div>
+                    <span class="selector-arrow">▼</span>
+                </button>
+                <button class="btn-new-cliente-alt" @click="mostrarModalCliente = true">
+                    <span>➕</span>
+                    <span>Nuevo Cliente</span>
+                </button>
+            </div>
+
+            <!-- Detalles del cliente seleccionado -->
+            <transition name="fade-slide">
+                <div v-if="clienteSeleccionado" class="cliente-details-card">
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <span class="detail-icon">👨‍💼</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Nombre</span>
+                                <span class="detail-value">{{ clienteSeleccionado.nombre }}</span>
+                            </div>
+                        </div>
+                        <div v-if="clienteSeleccionado.empresa && clienteSeleccionado.nombre !== 'Publico En Geneal'" class="detail-item">
+                            <span class="detail-icon">🏢</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Empresa</span>
+                                <span class="detail-value">{{ clienteSeleccionado.empresa }}</span>
+                            </div>
+                        </div>
+                        <div v-if="clienteSeleccionado.email && clienteSeleccionado.nombre !== 'Publico En Geneal'" class="detail-item">
+                            <span class="detail-icon">📧</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value">{{ clienteSeleccionado.email }}</span>
+                            </div>
+                        </div>
+                        <div v-if="clienteSeleccionado.telefono" class="detail-item">
+                            <span class="detail-icon">📱</span>
+                            <div class="detail-content">
+                                <span class="detail-label">Teléfono</span>
+                                <span class="detail-value">{{ clienteSeleccionado.telefono }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div v-if="clienteSeleccionado?.nombre !== 'Publico En Geneal' && clienteSeleccionado?.empresa" class="form-group">
-                    <label class="form-label">Empresa</label>
-                    <input type="text" :value="clienteSeleccionado?.empresa" disabled class="form-input" placeholder="Se llena automáticamente">
-                </div>
-                <div v-if="clienteSeleccionado?.nombre !== 'Publico En Geneal' && clienteSeleccionado?.email" class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" :value="clienteSeleccionado?.email" disabled class="form-input" placeholder="Se llena automáticamente">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Fecha</label>
-                    <input type="date" v-model="formData.fecha" class="form-input">
-                </div>
+            </transition>
+
+            <div class="form-group-inline">
+                <label class="form-label">📅 Fecha de Cotización</label>
+                <input type="date" v-model="formData.fecha" class="form-input-date">
             </div>
         </div>
 
         <!-- Módulos -->
         <div class="modulos-section">
             <div class="modulos-header">
-                <h2 class="section-title">Módulos</h2>
-                <button class="btn-primary" @click="agregarModulo">+ Agregar Módulo</button>
+                <div class="section-header-content">
+                    <h2 class="section-title">🧩 Módulos de la Cotización</h2>
+                    <span class="section-subtitle">{{ formData.modulos.length }} módulo{{ formData.modulos.length !== 1 ? 's' : '' }} agregado{{ formData.modulos.length !== 1 ? 's' : '' }}</span>
+                </div>
+                <button class="btn-primary" @click="agregarModulo">
+                    <span class="btn-icon">➕</span>
+                    <span>Agregar Módulo</span>
+                </button>
             </div>
 
             <div v-if="formData.modulos.length === 0" class="empty-state">
-                <p>No hay módulos agregados. Haz clic en "Agregar Módulo" para comenzar.</p>
+                <div class="empty-icon">📦</div>
+                <p class="empty-title">No hay módulos agregados</p>
+                <p class="empty-description">Haz clic en "Agregar Módulo" para comenzar a construir tu cotización</p>
+                <button class="btn-empty-action" @click="agregarModulo">➕ Agregar Primer Módulo</button>
             </div>
 
             <div v-for="(modulo, moduloIdx) in formData.modulos" :key="moduloIdx" class="modulo-card">
                 <div class="modulo-header">
+                    <div class="modulo-title-row">
+                        <div class="modulo-number">Módulo {{ moduloIdx + 1 }}</div>
+                        <button class="btn-delete-icon" @click="eliminarModulo(moduloIdx)" title="Eliminar módulo">
+                            <span>🗑️</span>
+                        </button>
+                    </div>
                     <div class="modulo-info">
                         <input v-model="modulo.nombre" class="modulo-input" placeholder="Nombre del módulo">
-                        <span class="modulo-cantidad-badge">{{ modulo.cantidad }} unidad{{ modulo.cantidad !== 1 ? 'es' : '' }}</span>
+                        <span class="modulo-cantidad-badge">✕ {{ modulo.cantidad }}</span>
                     </div>
-                    <input v-model="modulo.codigo" class="modulo-codigo-input" placeholder="Código">
-                    <input v-model="modulo.descripcion" class="modulo-descripcion-input" placeholder="Descripción">
-                    <button class="btn-delete" @click="eliminarModulo(moduloIdx)">Eliminar</button>
+                    <div class="modulo-details-row">
+                        <input v-model="modulo.codigo" class="modulo-codigo-input" placeholder="📋 Código">
+                        <input v-model="modulo.descripcion" class="modulo-descripcion-input" placeholder="📝 Descripción">
+                    </div>
                 </div>
 
                 <!-- Cantidad del módulo -->
@@ -78,12 +148,20 @@
                 <!-- Componentes -->
                 <div class="componentes-section">
                     <div class="componentes-header">
-                        <h4>Componentes ({{ modulo.componentes.length }})</h4>
-                        <button class="btn-secondary" @click="agregarComponente(moduloIdx)">+ Agregar Componente</button>
+                        <div class="componentes-title">
+                            <span class="componentes-icon">🔧</span>
+                            <h4>Componentes</h4>
+                            <span class="componentes-count">{{ modulo.componentes.length }}</span>
+                        </div>
+                        <button class="btn-secondary" @click="agregarComponente(moduloIdx)">
+                            <span>➕</span>
+                            <span>Agregar Componente</span>
+                        </button>
                     </div>
 
                     <div v-if="modulo.componentes.length === 0" class="empty-state-small">
-                        <p>Sin componentes - Haz clic en "Agregar Componente" para empezar</p>
+                        <span class="empty-small-icon">🔧</span>
+                        <p>Sin componentes - Agrega componentes para este módulo</p>
                     </div>
 
                     <div v-else class="articulos-table">
@@ -604,30 +682,86 @@ const cargarModulos = async () => {
 .page-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 24px;
     margin-bottom: 32px;
-    padding: 24px;
-    background: var(--cream, #F5F1E8);
-    border-radius: 12px;
+    padding: 32px;
+    background: linear-gradient(135deg, #F5F1E8 0%, #FAF8F3 100%);
+    border-radius: 16px;
     border: 2px solid var(--color-border, #E5DFD0);
+    box-shadow: 0 4px 20px rgba(44, 24, 16, 0.08);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex: 1;
+}
+
+.header-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.header-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.stat-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 20px;
+    background: white;
+    border: 2px solid #d4a574;
+    border-radius: 12px;
+    min-width: 100px;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #d4a574;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .btn-back {
     background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
     color: #F5F1E8;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.1);
-    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .btn-back:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(44, 24, 16, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(44, 24, 16, 0.25);
+}
+
+.back-icon {
+    font-size: 1.2rem;
 }
 
 .page-title {
@@ -636,6 +770,13 @@ const cargarModulos = async () => {
     margin: 0;
     font-weight: 700;
     line-height: 1.2;
+}
+
+.page-subtitle {
+    font-size: 0.95rem;
+    color: #6B4423;
+    margin: 0;
+    font-weight: 400;
 }
 
 .error-message {
@@ -672,12 +813,180 @@ const cargarModulos = async () => {
 }
 
 .info-card {
-    background: var(--cream, #F5F1E8);
+    background: white;
     border: 2px solid var(--color-border, #E5DFD0);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 32px;
     margin-bottom: 32px;
-    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.08);
+    box-shadow: 0 4px 16px rgba(44, 24, 16, 0.08);
+}
+
+.section-header-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #d4a574;
+}
+
+.cliente-badge {
+    background: linear-gradient(135deg, #d4a574 0%, #c9995c 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+}
+
+.cliente-selector-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.btn-selector-cliente-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border: 2px solid var(--color-border, #E5DFD0);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #FAF8F3 0%, white 100%);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(44, 24, 16, 0.05);
+}
+
+.btn-selector-cliente-main:hover {
+    border-color: #C9A961;
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.2);
+}
+
+.cliente-info-display {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cliente-email-small {
+    font-size: 0.85rem;
+    color: #999;
+}
+
+.btn-new-cliente-alt {
+    background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+}
+
+.btn-new-cliente-alt:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(201, 169, 97, 0.4);
+}
+
+.cliente-details-card {
+    background: linear-gradient(135deg, #F5F1E8 0%, #FAF8F3 100%);
+    border: 1px solid #E5DFD0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #E5DFD0;
+}
+
+.detail-icon {
+    font-size: 1.5rem;
+}
+
+.detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    color: #2C1810;
+    font-weight: 600;
+}
+
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.form-input-date {
+    flex: 1;
+    max-width: 300px;
+    padding: 12px 16px;
+    border: 2px solid var(--color-border, #E5DFD0);
+    border-radius: 8px;
+    font-size: 1rem;
+    color: var(--wood-darkest, #2C1810);
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-input-date:focus {
+    outline: none;
+    border-color: #C9A961;
+    box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+    transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
 }
 
 .section-title {
@@ -756,33 +1065,55 @@ const cargarModulos = async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    padding: 24px 32px;
-    background: linear-gradient(135deg, #F5F1E8 0%, #FAF8F3 100%);
-    border-radius: 12px;
-    border-left: 4px solid #C9A961;
-    box-shadow: 0 2px 8px rgba(44, 24, 16, 0.08);
+    padding: 28px 32px;
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(44, 24, 16, 0.2);
+}
+
+.section-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .modulos-header .section-title {
     margin: 0;
-    flex: 1;
+    color: #F5F1E8;
+    border: none;
+    padding: 0;
+    font-size: 1.75rem;
+}
+
+.section-subtitle {
+    font-size: 0.9rem;
+    color: rgba(245, 241, 232, 0.8);
+    font-weight: 400;
 }
 
 .btn-primary {
     background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 14px 28px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.4);
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(201, 169, 97, 0.5);
+}
+
+.btn-icon {
+    font-size: 1rem;
 }
 
 .btn-secondary {
@@ -802,12 +1133,18 @@ const cargarModulos = async () => {
 }
 
 .modulo-card {
-    background: var(--warm-white, #FAF8F3);
+    background: white;
     border: 2px solid var(--color-border, #E5DFD0);
-    border-radius: 12px;
+    border-radius: 16px;
     margin-bottom: 24px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.08);
+    box-shadow: 0 4px 16px rgba(44, 24, 16, 0.08);
+    transition: all 0.3s ease;
+}
+
+.modulo-card:hover {
+    box-shadow: 0 8px 24px rgba(44, 24, 16, 0.12);
+    transform: translateY(-2px);
 }
 
 .modulo-header {
@@ -817,6 +1154,50 @@ const cargarModulos = async () => {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.modulo-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modulo-number {
+    background: rgba(245, 241, 232, 0.2);
+    color: #F5F1E8;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(245, 241, 232, 0.3);
+}
+
+.btn-delete-icon {
+    background: rgba(255, 107, 107, 0.2);
+    color: #FF6B6B;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-icon:hover {
+    background: rgba(255, 107, 107, 0.3);
+    border-color: rgba(255, 107, 107, 0.6);
+    transform: scale(1.1);
+}
+
+.modulo-details-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 12px;
 }
 
 .modulo-info {
@@ -920,25 +1301,93 @@ const cargarModulos = async () => {
     margin-bottom: 16px;
 }
 
-.componentes-header h4 {
+.componentes-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.componentes-icon {
+    font-size: 1.3rem;
+}
+
+.componentes-title h4 {
     margin: 0;
     color: #2C1810;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
 }
 
-.empty-state,
+.componentes-count {
+    background: linear-gradient(135deg, #d4a574 0%, #c9995c 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 64px 32px;
+    background: linear-gradient(135deg, #FAF8F3 0%, white 100%);
+    border: 2px dashed #d4a574;
+    border-radius: 16px;
+    margin-bottom: 24px;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 1.3rem;
+    color: #2C1810;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.empty-description {
+    color: #999;
+    font-size: 1rem;
+    margin: 0 0 24px 0;
+}
+
+.btn-empty-action {
+    background: linear-gradient(135deg, #C9A961 0%, #B8995C 100%);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+}
+
+.btn-empty-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(201, 169, 97, 0.4);
+}
+
 .empty-state-small {
     text-align: center;
-    padding: 24px;
+    padding: 32px 24px;
     color: #999;
-    font-style: italic;
+    background: var(--cream, #F5F1E8);
+    border-radius: 12px;
+    border: 2px dashed var(--color-border, #E5DFD0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 }
 
-.empty-state-small {
-    padding: 16px;
-    background: var(--cream, #F5F1E8);
-    border-radius: 8px;
-    border: 1px dashed var(--color-border, #E5DFD0);
+.empty-small-icon {
+    font-size: 2rem;
+    opacity: 0.5;
 }
 
 .articulos-table {
@@ -1097,6 +1546,56 @@ const cargarModulos = async () => {
 }
 
 @media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px;
+    }
+
+    .header-left {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .header-stats {
+        justify-content: space-around;
+    }
+
+    .stat-badge {
+        min-width: auto;
+        flex: 1;
+    }
+
+    .page-title {
+        font-size: 1.8rem;
+    }
+
+    .cliente-selector-container {
+        flex-direction: column;
+    }
+
+    .btn-new-cliente-alt {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modulos-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+
     .modulo-header {
         padding: 16px;
     }
@@ -1110,6 +1609,10 @@ const cargarModulos = async () => {
         align-self: flex-start;
     }
 
+    .modulo-details-row {
+        grid-template-columns: 1fr;
+    }
+
     .table-header,
     .table-row {
         grid-template-columns: 1fr;
@@ -1118,6 +1621,10 @@ const cargarModulos = async () => {
 
     .acciones-footer {
         flex-direction: column;
+    }
+
+    .componentes-title {
+        flex-wrap: wrap;
     }
 }
 
