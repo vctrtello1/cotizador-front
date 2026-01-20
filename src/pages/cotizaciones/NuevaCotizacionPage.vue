@@ -321,7 +321,6 @@ import { useCotizacionesStore } from '../../stores/cotizaciones';
 import { useClientesStore } from '../../stores/clientes';
 import { useModulosStore } from '../../stores/modulos';
 import { useComponentesPorCotizacionStore } from '../../stores/componentes-por-cotizacion';
-import { useModulosPorCotizacionStore } from '../../stores/modulos-por-cotizacion';
 import { crearCotizacion } from '../../http/cotizaciones-api';
 import { crearCliente } from '../../http/clientes-api';
 import { obtenerTokenCsrf } from '../../http/apl';
@@ -331,7 +330,6 @@ const storeC = useCotizacionesStore();
 const storeClientes = useClientesStore();
 const storeModulos = useModulosStore();
 const storeComponentesPorCotizacion = useComponentesPorCotizacionStore();
-const storeModulosPorCotizacion = useModulosPorCotizacionStore();
 
 const formData = reactive({
     cliente_id: '',
@@ -557,27 +555,7 @@ const guardarCotizacion = async () => {
         }
 
         // Paso 2: Guardar los módulos por cotización
-        console.log('Guardando módulos por cotización...');
-        
-        for (let moduloIdx = 0; moduloIdx < formData.modulos.length; moduloIdx++) {
-            const modulo = formData.modulos[moduloIdx];
-            const cantidadModulo = Number(modulo.cantidad) || 1;
-            
-            // Guardar módulo en modulos_por_cotizacion
-            const moduloPorCotizacion = {
-                cotizacion_id: cotizacionId,
-                modulo_id: modulo.modulo_id || null,
-                nombre: modulo.nombre,
-                codigo: modulo.codigo || '',
-                descripcion: modulo.descripcion || '',
-                cantidad: cantidadModulo
-            };
-            
-            console.log(`Guardando módulo ${moduloIdx + 1}:`, moduloPorCotizacion);
-            await storeModulosPorCotizacion.crearModuloPorCotizacion(moduloPorCotizacion);
-        }
-        
-        // Paso 3: Guardar los componentes por cotización
+        // Paso 2: Guardar los componentes por cotización
         console.log('Guardando componentes por cotización...');
         
         for (let moduloIdx = 0; moduloIdx < formData.modulos.length; moduloIdx++) {

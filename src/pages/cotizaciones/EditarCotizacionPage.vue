@@ -153,10 +153,45 @@
                                 <div class="components-section">
                                     <h4>Componentes</h4>
                                     <div class="components-list">
-                                        <div v-for="comp in modulo.componentes" :key="comp.id" class="component-item">
-                                            <div class="comp-name">{{ comp.nombre }}</div>
-                                            <div class="comp-qty">x{{ comp.cantidad }}</div>
-                                            <div class="comp-price">${{ formatCurrency(comp.precio_unitario) }}</div>
+                                        <div v-for="(comp, compIndex) in modulo.componentes" :key="comp.id" class="component-item-mejorado">
+                                            <div class="comp-info">
+                                                <div class="comp-name">{{ comp.nombre }}</div>
+                                                <div class="comp-price">${{ formatCurrency(comp.precio_unitario) }}</div>
+                                            </div>
+                                            <div class="comp-controls">
+                                                <div class="cantidad-control-mini">
+                                                    <button 
+                                                        type="button" 
+                                                        class="btn-control-mini minus" 
+                                                        @click="decrementarCantidadComponente(comp, modulo)"
+                                                        :disabled="comp.cantidad <= 1"
+                                                    >
+                                                        <span>−</span>
+                                                    </button>
+                                                    <input 
+                                                        v-model.number="comp.cantidad" 
+                                                        type="number" 
+                                                        min="1" 
+                                                        class="input-cantidad-componente"
+                                                        @change="actualizarCantidadComponente(comp, modulo)"
+                                                    />
+                                                    <button 
+                                                        type="button" 
+                                                        class="btn-control-mini plus" 
+                                                        @click="incrementarCantidadComponente(comp, modulo)"
+                                                    >
+                                                        <span>+</span>
+                                                    </button>
+                                                </div>
+                                                <button 
+                                                    type="button" 
+                                                    class="btn-eliminar-componente" 
+                                                    @click="eliminarComponente(comp, modulo, compIndex)"
+                                                    title="Eliminar componente"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -280,7 +315,9 @@
                                     <button @click="cambiarModuloSeleccionado" class="btn-modal-secondary">
                                         <span>🔄</span> Cambiar Módulo
                                     </button>
-     
+                                    <button @click="confirmarAgregarModulo" class="btn-modal-primary">
+                                        <span>✓</span> Agregar Módulo
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -369,10 +406,6 @@
                         <span class="btn-icon">{{ generandoPDF ? '⏳' : '📝' }}</span>
                         <span>{{ generandoPDF ? 'Generando PDF...' : 'Generar PDF' }}</span>
                     </button>
-                    <button @click="guardarCambios" class="btn-primary" :disabled="guardando">
-                        <span class="btn-icon">{{ guardando ? '⏳' : '💾' }}</span>
-                        <span>{{ guardando ? 'Guardando...' : 'Guardar Cambios' }}</span>
-                    </button>
                 </div>
 
                 <!-- Mensaje de éxito -->
@@ -400,9 +433,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
+import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
 
 const route = useRoute();
 const router = useRouter();
+const storeComponentesPorCotizacion = useComponentesPorCotizacionStore();
 
 const cotizacion = ref(null);
 const clientes = ref([]);
@@ -501,6 +536,113 @@ const calcularSubtotalModulo = (modulo) => {
 
 const actualizarTotales = () => {
     // Fuerza actualización del computed totalCotizacion
+};
+
+const actualizarCantidadComponente = async (componente, modulo) => {
+    try {
+        console.log(`🔵 Actualizando "${componente.nombre}" - Nueva cantidad: ${componente.cantidad}`);
+        
+        try {
+            const todosComponentes = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+            
+            const registroExistente = todosComponentes.find(cpc => 
+                cpc.cotizacion_id == cotizacion.value.id && cpc.componente_id == componente.id
+            );
+            
+            if (registroExistente) {
+                // Actualizar el registro existente
+                await storeComponentesPorCotizacion.actualizarComponentePorCotizacion(registroExistente.id, {
+                    cotizacion_id: cotizacion.value.id,
+                    componente_id: componente.id,
+                    modulo_id: modulo.id,
+                    cantidad: componente.cantidad
+                });
+                console.log(`✅ "${componente.nombre}" actualizado a cantidad ${componente.cantidad} en la API`);
+            } else {
+                // Crear nuevo registro
+                await storeComponentesPorCotizacion.crearComponentePorCotizacion({
+                    cotizacion_id: cotizacion.value.id,
+                    componente_id: componente.id,
+                    modulo_id: modulo.id,
+                    cantidad: componente.cantidad
+                });
+                console.log(`✅ "${componente.nombre}" creado en la API con cantidad ${componente.cantidad}`);
+            }
+            
+            success.value = `"${componente.nombre}" actualizado`;
+            setTimeout(() => { success.value = null; }, 2000);
+        } catch (apiErr) {
+            console.error(`❌ Error al guardar "${componente.nombre}":`, apiErr.response?.data || apiErr.message);
+            throw apiErr;
+        }
+    } catch (err) {
+        console.error('❌ Error:', err);
+        error.value = 'Error al actualizar: ' + (err.response?.data?.message || err.message);
+        setTimeout(() => { error.value = null; }, 5000);
+    }
+};
+
+const incrementarCantidadComponente = async (componente, modulo) => {
+    componente.cantidad = (componente.cantidad || 1) + 1;
+    await actualizarCantidadComponente(componente, modulo);
+};
+
+const decrementarCantidadComponente = async (componente, modulo) => {
+    if (componente.cantidad > 1) {
+        componente.cantidad--;
+        await actualizarCantidadComponente(componente, modulo);
+    }
+};
+
+const eliminarComponente = async (componente, modulo, compIndex) => {
+    try {
+        console.log('🔴 Eliminando componente:', componente.nombre);
+        
+        // Guardar el componente para poder revertir si falla
+        const componenteEliminado = { ...componente };
+        
+        // Eliminar del array local primero
+        modulo.componentes.splice(compIndex, 1);
+        console.log('🗑️ Componente eliminado localmente');
+        
+        // Intentar eliminar de la API
+        try {
+            const todosComponentes = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+            console.log('📋 Todos los componentes obtenidos:', todosComponentes);
+            
+            // Buscar el registro que corresponde a este componente en esta cotización
+            const registroAEliminar = todosComponentes.find(cpc => 
+                cpc.cotizacion_id === cotizacion.value.id && 
+                cpc.componente_id === componenteEliminado.id
+            );
+            
+            if (registroAEliminar) {
+                console.log('🎯 Registro encontrado para eliminar:', registroAEliminar);
+                await storeComponentesPorCotizacion.eliminarComponentePorCotizacion(registroAEliminar.id);
+                console.log('✅ Componente eliminado de componentes_por_cotizacion API');
+                
+                success.value = `"${componenteEliminado.nombre}" eliminado`;
+                setTimeout(() => { success.value = null; }, 3000);
+            } else {
+                console.warn('⚠️ No se encontró el registro en componentes_por_cotizacion');
+                success.value = 'Componente eliminado localmente';
+                setTimeout(() => { success.value = null; }, 3000);
+            }
+        } catch (apiErr) {
+            console.error('❌ Error al eliminar de la API:', apiErr);
+            console.error('❌ Detalles:', apiErr.response?.data || apiErr.message);
+            
+            // Deshacer cambio local si la API falla
+            modulo.componentes.splice(compIndex, 0, componenteEliminado);
+            console.log('🔄 Cambio revertido localmente');
+            
+            error.value = 'No se pudo eliminar: ' + (apiErr.response?.data?.message || apiErr.message);
+            setTimeout(() => { error.value = null; }, 5000);
+        }
+    } catch (err) {
+        console.error('❌ Error al eliminar componente:', err);
+        error.value = 'Error al eliminar el componente';
+    }
 };
 
 const enriquecerModulosConCostoTotal = async (modulosList) => {
@@ -676,41 +818,37 @@ const confirmarAgregarModulo = async () => {
 
         console.log('Módulo agregado localmente:', modulo.nombre);
 
-        // Sincronizar módulos en la API
+        // Guardar los componentes del módulo en componentes_por_cotizacion
         try {
-            const modulosParaSincronizar = cotizacion.value.modulos.map(m => ({
-                id: m.id,
-                cantidad: m.cantidad
-            }));
-            
-            console.log('Sincronizando módulos con nuevo:', modulosParaSincronizar);
-            await sincronizarModulos(cotizacion.value.id, modulosParaSincronizar);
-            console.log('Módulo agregado correctamente en la API');
-            
-            // Recargar cotización para verificar que el cambio persistió
-            const response = await getCotizacionById(cotizacion.value.id);
-            const dataReloaded = response?.data || response;
-            console.log('Cotización recargada, modulos:', dataReloaded.modulos);
-            
-            // Enriquecer con costo_total del API
-            const modulosEnriquecidosAdd = await enriquecerModulosConCostoTotal(dataReloaded.modulos);
-            
-            // Hacer copia profunda para asegurar reactividad de Vue
-            const copiaAdd = JSON.parse(JSON.stringify(cotizacion.value));
-            copiaAdd.modulos = modulosEnriquecidosAdd;
-            cotizacion.value = copiaAdd;
+            if (modulo.componentes && modulo.componentes.length > 0) {
+                console.log('🔵 Guardando componentes del módulo en componentes_por_cotizacion...');
+                for (const componente of modulo.componentes) {
+                    try {
+                        const datosComponente = {
+                            cotizacion_id: cotizacion.value.id,
+                            componente_id: componente.id,
+                            modulo_id: modulo.id,
+                            cantidad: componente.cantidad || 1
+                        };
+                        console.log('📤 Guardando componente:', componente.nombre, datosComponente);
+                        await storeComponentesPorCotizacion.crearComponentePorCotizacion(datosComponente);
+                        console.log('✅ Componente guardado:', componente.nombre);
+                    } catch (compErr) {
+                        console.warn('⚠️ Error guardando componente:', componente.nombre, compErr);
+                        // Continuar con los demás componentes aunque uno falle
+                    }
+                }
+                console.log('✅ Todos los componentes guardados');
+            }
             
             success.value = 'Módulo agregado correctamente';
             setTimeout(() => { success.value = null; }, 3000);
         } catch (apiErr) {
-            console.warn('No se pudo sincronizar en la API:', apiErr.message);
-            console.warn('Error completo:', apiErr);
+            console.error('❌ Error al guardar componentes:', apiErr);
+            console.error('❌ Detalles del error:', apiErr.response?.data || apiErr.message);
             
-            // Deshacer cambio local si la API falla
-            cotizacion.value.modulos.pop();
-            console.log('Cambio revertido localmente');
-            
-            error.value = 'No se pudo agregar el módulo. Por favor intenta nuevamente.';
+            // Mostrar advertencia pero mantener el módulo
+            error.value = 'Módulo agregado, pero algunos componentes no se guardaron';
             setTimeout(() => { error.value = null; }, 5000);
         }
 
@@ -726,51 +864,16 @@ const eliminarModuloAsignado = async (index) => {
     try {
         const modulo = cotizacion.value.modulos[index];
         const moduloId = modulo.id;
-        console.log('Eliminando módulo:', modulo.nombre, 'ID:', moduloId);
+        console.log('🔴 Eliminando módulo:', modulo.nombre, 'ID:', moduloId);
         
-        // Eliminar del array local primero
+        // Eliminar del array local
         cotizacion.value.modulos.splice(index, 1);
-        console.log('Módulo eliminado localmente');
+        console.log('🗑️ Módulo eliminado localmente');
         
-        // Sincronizar módulos en la API
-        try {
-            const modulosParaSincronizar = cotizacion.value.modulos.map(m => ({
-                id: m.id,
-                cantidad: m.cantidad
-            }));
-            
-            console.log('Sincronizando módulos:', modulosParaSincronizar);
-            await sincronizarModulos(cotizacion.value.id, modulosParaSincronizar);
-            console.log('Módulos sincronizados en la API');
-            
-            // Recargar cotización para verificar que el cambio persistió
-            const response = await getCotizacionById(cotizacion.value.id);
-            const dataReloaded = response?.data || response;
-            console.log('Cotización recargada, modulos:', dataReloaded.modulos);
-            
-            // Enriquecer con costo_total del API
-            const modulosEnriquecidosDelete = await enriquecerModulosConCostoTotal(dataReloaded.modulos);
-            
-            // Hacer copia profunda para asegurar reactividad de Vue
-            const copiaDelete = JSON.parse(JSON.stringify(cotizacion.value));
-            copiaDelete.modulos = modulosEnriquecidosDelete;
-            cotizacion.value = copiaDelete;
-            
-            success.value = 'Módulo eliminado correctamente';
-            setTimeout(() => { success.value = null; }, 3000);
-        } catch (apiErr) {
-            console.warn('No se pudo sincronizar en la API:', apiErr.message);
-            console.warn('Error completo:', apiErr);
-            
-            // Deshacer cambio local si la API falla
-            cotizacion.value.modulos.splice(index, 0, modulo);
-            console.log('Cambio revertido localmente');
-            
-            error.value = 'No se pudo eliminar el módulo. Por favor intenta nuevamente.';
-            setTimeout(() => { error.value = null; }, 5000);
-        }
+        success.value = 'Módulo eliminado correctamente';
+        setTimeout(() => { success.value = null; }, 3000);
     } catch (err) {
-        console.error('Error al eliminar módulo:', err);
+        console.error('❌ Error al eliminar módulo:', err);
         error.value = 'Error al eliminar el módulo';
     }
 };
@@ -822,11 +925,144 @@ const cargarCotizacion = async () => {
         console.log('Módulos ordenados:', cotizacion.value.modulos_ordenados);
         console.log('Todas las propiedades:', Object.keys(cotizacion.value));
         console.log('Estructura completa:', JSON.stringify(cotizacion.value, null, 2));
+        
+        // Sincronizar componentes existentes con la API
+        await sincronizarComponentesExistentes();
     } catch (err) {
         console.error('Error al cargar cotización:', err);
         error.value = 'Error al cargar la cotización';
     } finally {
         cargandoDatos.value = false;
+    }
+};
+
+const sincronizarComponentesExistentes = async () => {
+    try {
+        console.log('🔄 Sincronizando componentes existentes con la API...');
+        
+        // Obtener todos los componentes ya guardados en la API
+        const componentesEnApi = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+        console.log('📋 Componentes en API:', componentesEnApi.length);
+        
+        // Primero, eliminar duplicados en la API
+        const componentesPorCotizacion = componentesEnApi.filter(cpc => cpc.cotizacion_id === cotizacion.value.id);
+        const duplicados = new Map();
+        
+        for (const comp of componentesPorCotizacion) {
+            const clave = `${comp.cotizacion_id}-${comp.componente_id}`;
+            if (duplicados.has(clave)) {
+                // Es un duplicado, eliminar el más antiguo
+                const existente = duplicados.get(clave);
+                const aEliminar = new Date(comp.created_at) < new Date(existente.created_at) ? comp : existente;
+                const aMantener = new Date(comp.created_at) < new Date(existente.created_at) ? existente : comp;
+                
+                console.log(`⚠️ Duplicado encontrado para componente ${comp.componente_id}, eliminando registro ${aEliminar.id}`);
+                try {
+                    await storeComponentesPorCotizacion.eliminarComponentePorCotizacion(aEliminar.id);
+                } catch (err) {
+                    console.warn('Error eliminando duplicado:', err);
+                }
+                
+                duplicados.set(clave, aMantener);
+            } else {
+                duplicados.set(clave, comp);
+            }
+        }
+        
+        // Recargar componentes después de limpiar duplicados
+        const componentesLimpios = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+        const componentesEstaCotzacion = componentesLimpios.filter(cpc => cpc.cotizacion_id === cotizacion.value.id);
+        
+        // Inicializar array de módulos si no existe
+        if (!cotizacion.value.modulos) {
+            cotizacion.value.modulos = [];
+        }
+        
+        // Si hay componentes en la API pero no hay módulos, reconstruir módulos desde los componentes
+        if (componentesEstaCotzacion.length > 0 && cotizacion.value.modulos.length === 0) {
+            console.log('🏗️ Reconstruyendo módulos desde componentes de la API...');
+            
+            // Agrupar componentes por modulo_id
+            const modulosPorId = new Map();
+            
+            for (const compApi of componentesEstaCotzacion) {
+                if (compApi.modulo_id) {
+                    if (!modulosPorId.has(compApi.modulo_id)) {
+                        // Buscar el módulo completo en el store de módulos
+                        const moduloCompleto = modulos.value.find(m => m.id === compApi.modulo_id);
+                        
+                        if (moduloCompleto) {
+                            // Crear una copia del módulo con sus componentes
+                            modulosPorId.set(compApi.modulo_id, {
+                                ...moduloCompleto,
+                                cantidad: 1,
+                                componentes: []
+                            });
+                        }
+                    }
+                    
+                    // Agregar el componente al módulo
+                    const moduloEnMapa = modulosPorId.get(compApi.modulo_id);
+                    if (moduloEnMapa) {
+                        // Buscar el componente completo en el módulo original
+                        const moduloOriginal = modulos.value.find(m => m.id === compApi.modulo_id);
+                        if (moduloOriginal && moduloOriginal.componentes) {
+                            const componenteCompleto = moduloOriginal.componentes.find(c => c.id === compApi.componente_id);
+                            if (componenteCompleto) {
+                                moduloEnMapa.componentes.push({
+                                    ...componenteCompleto,
+                                    cantidad: compApi.cantidad
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Agregar los módulos reconstruidos a la cotización
+            cotizacion.value.modulos = Array.from(modulosPorId.values());
+            console.log(`✅ ${cotizacion.value.modulos.length} módulos reconstruidos con sus componentes`);
+        }
+        
+        // Recorrer todos los módulos y sus componentes para sincronizar
+        if (cotizacion.value.modulos && cotizacion.value.modulos.length > 0) {
+            for (const modulo of cotizacion.value.modulos) {
+                if (modulo.componentes && modulo.componentes.length > 0) {
+                    for (const componente of modulo.componentes) {
+                        // Verificar si ya existe en la API
+                        const existeEnApi = componentesLimpios.find(cpc => 
+                            cpc.cotizacion_id === cotizacion.value.id && 
+                            cpc.componente_id === componente.id
+                        );
+                        
+                        if (!existeEnApi) {
+                            // No existe, crearlo
+                            try {
+                                const datosComponente = {
+                                    cotizacion_id: cotizacion.value.id,
+                                    componente_id: componente.id,
+                                    modulo_id: modulo.id,
+                                    cantidad: componente.cantidad || 1
+                                };
+                                console.log('➕ Sincronizando componente:', componente.nombre);
+                                await storeComponentesPorCotizacion.crearComponentePorCotizacion(datosComponente);
+                            } catch (err) {
+                                console.warn('⚠️ Error sincronizando componente:', componente.nombre, err);
+                            }
+                        } else {
+                            // Actualizar cantidad si es diferente
+                            if (existeEnApi.cantidad !== componente.cantidad) {
+                                componente.cantidad = existeEnApi.cantidad;
+                            }
+                        }
+                    }
+                }
+            }
+            console.log('✅ Sincronización de componentes completada');
+        }
+    } catch (err) {
+        console.error('❌ Error en sincronización de componentes:', err);
+        // No lanzar error para no bloquear la carga de la cotización
     }
 };
 
@@ -1299,6 +1535,118 @@ onMounted(() => {
     color: #999;
     font-size: 0.8rem;
     margin: 0 8px;
+}
+
+.component-item-mejorado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #faf8f5;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #e8ddd7;
+    transition: all 0.2s ease;
+}
+
+.component-item-mejorado:hover {
+    background: #f5f1e8;
+    border-color: #d4a574;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+}
+
+.comp-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.comp-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cantidad-control-mini {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: white;
+    border: 1px solid #d4a574;
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.btn-control-mini {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: #8B5A3C;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-control-mini:hover:not(:disabled) {
+    background: #d4a574;
+    color: white;
+}
+
+.btn-control-mini:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.btn-control-mini.minus span {
+    line-height: 1;
+    padding-bottom: 2px;
+}
+
+.btn-control-mini.plus span {
+    line-height: 1;
+}
+
+.input-cantidad-componente {
+    width: 45px;
+    padding: 4px 6px;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2c2c2c;
+}
+
+.input-cantidad-componente:focus {
+    outline: none;
+}
+
+.btn-eliminar-componente {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e8ddd7;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-eliminar-componente:hover {
+    background: #ff4444;
+    border-color: #ff4444;
+    transform: scale(1.05);
 }
 
 .comp-price {
