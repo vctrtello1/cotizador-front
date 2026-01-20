@@ -111,12 +111,12 @@
                     </div>
                 </div>
 
-                <!-- Módulos editable -->
+                <!-- Componentes asignados -->
                 <div class="form-section modulos-section">
                     <div class="section-header">
                         <div class="section-header-inline">
-                            <h2 class="section-title">🧩 Módulos Asignados</h2>
-                            <span class="section-subtitle">{{ modulosAsignados.length }} módulo(s)</span>
+                            <h2 class="section-title">⚙️ Componentes Asignados</h2>
+                            <span class="section-subtitle">{{ todosLosComponentes.length }} componente(s)</span>
                         </div>
                         <button @click="abrirSelectorModulos" class="btn-add-module">
                             <span class="btn-icon">➕</span>
@@ -124,251 +124,286 @@
                         </button>
                     </div>
 
-                    <!-- Debug info -->
-                    <div v-if="cotizacion" class="debug-info">
-                        <p style="font-size: 0.8rem; color: #999;">
-                            Debug: {{ modulosAsignados.length }} módulos | Detalles: {{ detalles.length }} | 
-                            Estructura: {{ cotizacion.modulos_ordenados ? 'modulos_ordenados' : cotizacion.detalles ? 'detalles' : 'ninguna' }}
-                        </p>
+                    <div v-if="todosLosComponentes.length === 0" class="empty-state">
+                        <p>No hay componentes asignados a esta cotización</p>
                     </div>
 
-                    <div v-if="modulosAsignados.length === 0" class="empty-state">
-                        <p>No hay módulos asignados a esta cotización</p>
-                    </div>
-
-                    <div v-else class="modulos-cards-grid">
-                        <div v-for="(modulo, index) in modulosAsignados" :key="index" class="modulo-card">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <h3>{{ modulo.nombre }}</h3>
-                                    <span class="card-codigo">{{ modulo.codigo }}</span>
-                                </div>
-                                <button @click="eliminarModuloAsignado(index)" class="btn-delete" title="Eliminar módulo">🗑️</button>
+                    <div v-else class="componentes-list-flat">
+                        <div v-for="comp in todosLosComponentes" :key="`${comp.modulo_id}-${comp.id}`" class="component-item-card">
+                            <div class="component-card-header">
+                                <div class="component-badge">{{ comp.modulo_nombre }}</div>
+                                <button 
+                                    type="button" 
+                                    class="btn-eliminar-componente-card" 
+                                    @click="eliminarComponenteFlat(comp)"
+                                    title="Eliminar componente"
+                                >
+                                    🗑️
+                                </button>
                             </div>
-
-                            <div class="card-body">
-                                <div class="card-description">{{ modulo.descripcion }}</div>
-
-                                <!-- Componentes del módulo -->
-                                <div class="components-section">
-                                    <h4>Componentes</h4>
-                                    <div class="components-list">
-                                        <div v-for="(comp, compIndex) in modulo.componentes" :key="comp.id" class="component-item-mejorado">
-                                            <div class="comp-info">
-                                                <div class="comp-name">{{ comp.nombre }}</div>
-                                                <div class="comp-price">${{ formatCurrency(comp.precio_unitario) }}</div>
-                                            </div>
-                                            <div class="comp-controls">
-                                                <div class="cantidad-control-mini">
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn-control-mini minus" 
-                                                        @click="decrementarCantidadComponente(comp, modulo)"
-                                                        :disabled="comp.cantidad <= 1"
-                                                    >
-                                                        <span>−</span>
-                                                    </button>
-                                                    <input 
-                                                        v-model.number="comp.cantidad" 
-                                                        type="number" 
-                                                        min="1" 
-                                                        class="input-cantidad-componente"
-                                                        @change="actualizarCantidadComponente(comp, modulo)"
-                                                    />
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn-control-mini plus" 
-                                                        @click="incrementarCantidadComponente(comp, modulo)"
-                                                    >
-                                                        <span>+</span>
-                                                    </button>
-                                                </div>
-                                                <button 
-                                                    type="button" 
-                                                    class="btn-eliminar-componente" 
-                                                    @click="eliminarComponente(comp, modulo, compIndex)"
-                                                    title="Eliminar componente"
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                            
+                            <div class="component-card-body">
+                                <div class="comp-info-card">
+                                    <div class="comp-name-large">{{ comp.nombre }}</div>
+                                    <div class="comp-price-large">${{ formatCurrency(comp.precio_unitario) }}</div>
                                 </div>
-
-                                <!-- Cantidad del módulo -->
-                                <div class="card-quantity">
-                                    <label>Cantidad de Módulos:</label>
-                                    <input 
-                                        v-model.number="modulo.cantidad" 
-                                        type="number" 
-                                        min="1" 
-                                        class="input-cantidad"
-                                        @change="actualizarTotales"
-                                    />
-                                </div>
-                            </div>
-
-                            <div class="card-footer">
-                                <div class="price-section">
-                                    <div class="price-item">
-                                        <span class="label">Precio Unitario:</span>
-                                        <span class="value">${{ formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo)) }}</span>
+                                
+                                <div class="comp-controls-card">
+                                    <div class="cantidad-control-large">
+                                        <button 
+                                            type="button" 
+                                            class="btn-control-large minus" 
+                                            @click="decrementarCantidadComponenteFlat(comp)"
+                                            :disabled="comp.cantidad <= 1"
+                                        >
+                                            <span>−</span>
+                                        </button>
+                                        <input 
+                                            v-model.number="comp.cantidad" 
+                                            type="number" 
+                                            min="1" 
+                                            class="input-cantidad-large"
+                                            @change="actualizarCantidadComponenteFlat(comp)"
+                                        />
+                                        <button 
+                                            type="button" 
+                                            class="btn-control-large plus" 
+                                            @click="incrementarCantidadComponenteFlat(comp)"
+                                        >
+                                            <span>+</span>
+                                        </button>
                                     </div>
-                                    <div class="price-item subtotal">
-                                        <span class="label">Subtotal:</span>
-                                        <span class="value">${{ formatCurrency(calcularSubtotalModulo(modulo)) }}</span>
+                                    <div class="comp-subtotal">
+                                        Subtotal: ${{ formatCurrency(comp.precio_unitario * comp.cantidad) }}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Selector de módulos modal -->
-                    <div v-if="mostrarSelectorModulos" class="modal-overlay" @click="cerrarSelectorModulos">
-                        <div class="modal-content modal-modulos-mejorado" @click.stop>
-                            <div class="modal-header-modulos">
-                                <div class="modal-icon">🧩</div>
-                                <h3>Selecciona un Módulo</h3>
-                                <button class="btn-close-modulos" @click="cerrarSelectorModulos">✕</button>
+                <!-- Selector de módulos modal -->
+                <div v-if="mostrarSelectorModulos" class="modal-overlay" @click="cerrarSelectorModulos">
+                    <div class="modal-content modal-modulos-mejorado" @click.stop>
+                        <div class="modal-header-modulos">
+                            <div class="modal-icon">🧩</div>
+                            <h3>Selecciona un Módulo</h3>
+                            <button class="btn-close-modulos" @click="cerrarSelectorModulos">✕</button>
+                        </div>
+
+                        <div class="modal-body-modulos">
+                            <div v-if="modulosDisponibles.length === 0" class="empty-state-mejorado">
+                                <div class="empty-icon">📦</div>
+                                <p>No hay módulos disponibles para agregar</p>
                             </div>
 
-                            <div class="modal-body-modulos">
-                                <div v-if="modulosDisponibles.length === 0" class="empty-state-mejorado">
-                                    <div class="empty-icon">📦</div>
-                                    <p>No hay módulos disponibles para agregar</p>
-                                </div>
-
-                                <div v-else class="modulos-grid-selector">
-                                    <div 
-                                        v-for="modulo in modulosDisponibles" 
-                                        :key="modulo.id"
-                                        class="modulo-card-selector"
-                                        @click="seleccionarModulo(modulo)"
-                                    >
-                                        <div class="modulo-card-header">
-                                            <div class="modulo-icon">🏗️</div>
-                                            <h4>{{ modulo.nombre }}</h4>
-                                        </div>
-                                        <div class="modulo-card-body">
-                                            <p v-if="modulo.descripcion" class="modulo-descripcion">{{ modulo.descripcion }}</p>
-                                            <div class="modulo-card-footer">
-                                                <div class="modulo-price">
-                                                    <span class="label">Precio:</span>
-                                                    <span class="value">${{ formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo)) }}</span>
-                                                </div>
+                            <div v-else class="modulos-grid-selector">
+                                <div 
+                                    v-for="modulo in modulosDisponibles" 
+                                    :key="modulo.id"
+                                    class="modulo-card-selector"
+                                    @click="seleccionarModulo(modulo)"
+                                >
+                                    <div class="modulo-card-header">
+                                        <div class="modulo-icon">🏗️</div>
+                                        <h4>{{ modulo.nombre }}</h4>
+                                    </div>
+                                    <div class="modulo-card-body">
+                                        <p v-if="modulo.descripcion" class="modulo-descripcion">{{ modulo.descripcion }}</p>
+                                        <div class="modulo-card-footer">
+                                            <div class="modulo-price">
+                                                <span class="label">Precio:</span>
+                                                <span class="value">${{ formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo)) }}</span>
                                             </div>
                                         </div>
-                                        <div class="modulo-card-action">
-                                            <span>✓ Seleccionar</span>
+                                    </div>
+                                    <div class="modulo-card-action">
+                                        <span>✓ Seleccionar</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para definir cantidad del módulo -->
+                <template v-if="moduloSeleccionadoModal && !cargandoModuloModal">
+                    <div class="modal-overlay" @click="cerrarModalCantidad">
+                        <div class="modal-content modal-cantidad-mejorado" @click.stop>
+                            <div class="modal-header-cantidad">
+                                <div class="modal-icon">📦</div>
+                                <h3>¿Cuántos módulos necesitas?</h3>
+                                <button class="btn-close-cantidad" @click="cerrarModalCantidad">✕</button>
+                            </div>
+
+                            <div class="modal-body-cantidad">
+                                <div class="modulo-preview">
+                                    <div class="preview-icon">🧩</div>
+                                    <div class="preview-info">
+                                        <h4>{{ moduloSeleccionadoModal.nombre }}</h4>
+                                        <p v-if="moduloSeleccionadoModal.descripcion">{{ moduloSeleccionadoModal.descripcion }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="cantidad-section">
+                                    <label class="cantidad-label">Cantidad de módulos</label>
+                                    <div class="cantidad-control">
+                                        <button type="button" class="btn-cantidad-control minus" @click="decrementarCantidad" :disabled="cantidadNuevaModulo <= 1">
+                                            <span>−</span>
+                                        </button>
+                                        <div class="cantidad-display">
+                                            <input 
+                                                v-model.number="cantidadNuevaModulo" 
+                                                type="number" 
+                                                min="1"
+                                                step="1"
+                                                class="input-cantidad-mejorado"
+                                                @keyup.enter="confirmarAgregarModulo"
+                                            >
+                                            <span class="cantidad-unidad">módulos</span>
+                                        </div>
+                                        <button type="button" class="btn-cantidad-control plus" @click="incrementarCantidad">
+                                            <span>+</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer-cantidad">
+                                <button @click="cambiarModuloSeleccionado" class="btn-modal-secondary">
+                                    <span>🔄</span> Cambiar Módulo
+                                </button>
+                                <button @click="confirmarAgregarModulo" class="btn-modal-primary">
+                                    <span>✓</span> Agregar Módulo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Modal selector de clientes -->
+                <div v-if="mostrarSelectorClientes" class="modal-overlay" @click="cerrarSelectorClientes">
+                    <div class="modal-content modal-clientes-mejorado" @click.stop>
+                        <div class="modal-header-clientes">
+                            <div class="modal-icon">👥</div>
+                            <h3>Selecciona un Cliente</h3>
+                            <button class="btn-close-clientes" @click="cerrarSelectorClientes">✕</button>
+                        </div>
+
+                        <div class="modal-body-clientes">
+                            <div v-if="clientes.length === 0" class="empty-state-mejorado">
+                                <div class="empty-icon">📋</div>
+                                <p>No hay clientes disponibles</p>
+                            </div>
+
+                            <div v-else class="clientes-grid-selector">
+                                <div 
+                                    v-for="cliente in clientes" 
+                                    :key="cliente.id"
+                                    class="cliente-card-selector"
+                                    :class="{ 'selected': cotizacion.cliente_id === cliente.id }"
+                                    @click="seleccionarCliente(cliente)"
+                                >
+                                    <div class="cliente-card-header">
+                                        <div class="cliente-icon-large">👤</div>
+                                        <div class="cliente-info">
+                                            <h4>{{ cliente.nombre }}</h4>
+                                            <p v-if="cliente.empresa" class="cliente-empresa">{{ cliente.empresa }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="cliente-card-body">
+                                        <div v-if="cliente.email" class="cliente-detail">
+                                            <span class="detail-icon">📧</span>
+                                            <span class="detail-text">{{ cliente.email }}</span>
+                                        </div>
+                                        <div v-if="cliente.telefono" class="cliente-detail">
+                                            <span class="detail-icon">📱</span>
+                                            <span class="detail-text">{{ cliente.telefono }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="cliente-card-action">
+                                        <span>✓ Seleccionar</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selector de componentes modal -->
+                <div v-if="mostrarSelectorComponentes" class="modal-overlay" @click="cerrarSelectorComponentes">
+                    <div class="modal-content modal-componentes-mejorado" @click.stop>
+                        <div class="modal-header-componentes">
+                            <div class="modal-icon">🧩</div>
+                            <h3>Agregar Componente a {{ moduloParaAgregarComponente?.nombre }}</h3>
+                            <button class="btn-close-componentes" @click="cerrarSelectorComponentes">✕</button>
+                        </div>
+
+                        <div class="modal-body-componentes">
+                            <div v-if="componentesDisponiblesParaModulo.length === 0" class="empty-state-mejorado">
+                                <div class="empty-icon">📦</div>
+                                <p>No hay componentes disponibles para agregar</p>
+                            </div>
+
+                            <div v-else class="componentes-grid-selector">
+                                <div 
+                                    v-for="componente in componentesDisponiblesParaModulo" 
+                                    :key="componente.id"
+                                    class="componente-card-selector"
+                                    @click="seleccionarComponente(componente)"
+                                >
+                                    <div class="componente-card-header">
+                                        <div class="componente-icon">⚙️</div>
+                                        <h4>{{ componente.nombre }}</h4>
+                                    </div>
+                                    <div class="componente-card-body">
+                                        <p v-if="componente.descripcion">{{ componente.descripcion }}</p>
+                                        <div class="componente-precio">
+                                            ${{ formatCurrency(componente.precio_unitario) }}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Modal para definir cantidad del módulo -->
-                    <template v-if="moduloSeleccionadoModal && !cargandoModuloModal">
-                        <div class="modal-overlay" @click="cerrarModalCantidad">
-                            <div class="modal-content modal-cantidad-mejorado" @click.stop>
-                                <div class="modal-header-cantidad">
-                                    <div class="modal-icon">📦</div>
-                                    <h3>¿Cuántos módulos necesitas?</h3>
-                                    <button class="btn-close-cantidad" @click="cerrarModalCantidad">✕</button>
+                <!-- Modal de cantidad para componente -->
+                <div v-if="componenteSeleccionado" class="modal-overlay" @click="cerrarModalCantidadComponente">
+                    <div class="modal-content modal-cantidad-componente" @click.stop>
+                        <div class="modal-header-cantidad">
+                            <h3>⚙️ {{ componenteSeleccionado.nombre }}</h3>
+                            <button class="btn-close-cantidad" @click="cerrarModalCantidadComponente">✕</button>
+                        </div>
+
+                        <div class="modal-body-cantidad">
+                            <div class="cantidad-info">
+                                <p><strong>Precio unitario:</strong> ${{ formatCurrency(componenteSeleccionado.precio_unitario) }}</p>
+                                <p v-if="componenteSeleccionado.descripcion"><strong>Descripción:</strong> {{ componenteSeleccionado.descripcion }}</p>
+                            </div>
+
+                            <div class="cantidad-control">
+                                <label>Cantidad:</label>
+                                <div class="cantidad-input-group">
+                                    <button type="button" @click="decrementarCantidadNuevoComponente" class="btn-cantidad">−</button>
+                                    <input v-model.number="cantidadNuevoComponente" type="number" min="1" class="input-cantidad-modal" />
+                                    <button type="button" @click="incrementarCantidadNuevoComponente" class="btn-cantidad">+</button>
                                 </div>
+                            </div>
 
-                                <div class="modal-body-cantidad">
-                                    <div class="modulo-preview">
-                                        <div class="preview-icon">🧩</div>
-                                        <div class="preview-info">
-                                            <h4>{{ moduloSeleccionadoModal.nombre }}</h4>
-                                            <p v-if="moduloSeleccionadoModal.descripcion">{{ moduloSeleccionadoModal.descripcion }}</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="cantidad-section">
-                                        <label class="cantidad-label">Cantidad de módulos</label>
-                                        <div class="cantidad-control">
-                                            <button type="button" class="btn-cantidad-control minus" @click="decrementarCantidad" :disabled="cantidadNuevaModulo <= 1">
-                                                <span>−</span>
-                                            </button>
-                                            <div class="cantidad-display">
-                                                <input 
-                                                    v-model.number="cantidadNuevaModulo" 
-                                                    type="number" 
-                                                    min="1"
-                                                    step="1"
-                                                    class="input-cantidad-mejorado"
-                                                    @keyup.enter="confirmarAgregarModulo"
-                                                >
-                                                <span class="cantidad-unidad">módulos</span>
-                                            </div>
-                                            <button type="button" class="btn-cantidad-control plus" @click="incrementarCantidad">
-                                                <span>+</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="modal-footer-cantidad">
-                                    <button @click="cambiarModuloSeleccionado" class="btn-modal-secondary">
-                                        <span>🔄</span> Cambiar Módulo
-                                    </button>
-                                    <button @click="confirmarAgregarModulo" class="btn-modal-primary">
-                                        <span>✓</span> Agregar Módulo
-                                    </button>
-                                </div>
+                            <div class="subtotal-display">
+                                <span class="label">Subtotal:</span>
+                                <span class="value">${{ formatCurrency(componenteSeleccionado.precio_unitario * cantidadNuevoComponente) }}</span>
                             </div>
                         </div>
-                    </template>
 
-                    <!-- Modal selector de clientes -->
-                    <div v-if="mostrarSelectorClientes" class="modal-overlay" @click="cerrarSelectorClientes">
-                        <div class="modal-content modal-clientes-mejorado" @click.stop>
-                            <div class="modal-header-clientes">
-                                <div class="modal-icon">👥</div>
-                                <h3>Selecciona un Cliente</h3>
-                                <button class="btn-close-clientes" @click="cerrarSelectorClientes">✕</button>
-                            </div>
-
-                            <div class="modal-body-clientes">
-                                <div v-if="clientes.length === 0" class="empty-state-mejorado">
-                                    <div class="empty-icon">📋</div>
-                                    <p>No hay clientes disponibles</p>
-                                </div>
-
-                                <div v-else class="clientes-grid-selector">
-                                    <div 
-                                        v-for="cliente in clientes" 
-                                        :key="cliente.id"
-                                        class="cliente-card-selector"
-                                        :class="{ 'selected': cotizacion.cliente_id === cliente.id }"
-                                        @click="seleccionarCliente(cliente)"
-                                    >
-                                        <div class="cliente-card-header">
-                                            <div class="cliente-icon-large">👤</div>
-                                            <div class="cliente-info">
-                                                <h4>{{ cliente.nombre }}</h4>
-                                                <p v-if="cliente.empresa" class="cliente-empresa">{{ cliente.empresa }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="cliente-card-body">
-                                            <div v-if="cliente.email" class="cliente-detail">
-                                                <span class="detail-icon">📧</span>
-                                                <span class="detail-text">{{ cliente.email }}</span>
-                                            </div>
-                                            <div v-if="cliente.telefono" class="cliente-detail">
-                                                <span class="detail-icon">📱</span>
-                                                <span class="detail-text">{{ cliente.telefono }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="cliente-card-action">
-                                            <span>✓ Seleccionar</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="modal-footer-cantidad">
+                            <button @click="cambiarComponenteSeleccionado" class="btn-secondary-modal">
+                                ← Cambiar Componente
+                            </button>
+                            <button @click="confirmarAgregarComponente" class="btn-primary-modal">
+                                ✓ Agregar Componente
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -433,6 +468,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
+import { fetchComponentes } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
 
 const route = useRoute();
@@ -442,6 +478,7 @@ const storeComponentesPorCotizacion = useComponentesPorCotizacionStore();
 const cotizacion = ref(null);
 const clientes = ref([]);
 const modulos = ref([]);
+const componentes = ref([]);
 const cargandoDatos = ref(true);
 const guardando = ref(false);
 const generandoPDF = ref(false);
@@ -452,6 +489,10 @@ const moduloSeleccionadoModal = ref(null);
 const cantidadNuevaModulo = ref(1);
 const cargandoModuloModal = ref(false);
 const mostrarSelectorClientes = ref(false);
+const mostrarSelectorComponentes = ref(false);
+const moduloParaAgregarComponente = ref(null);
+const componenteSeleccionado = ref(null);
+const cantidadNuevoComponente = ref(1);
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -461,6 +502,36 @@ const modulosAsignados = computed(() => {
 const modulosDisponibles = computed(() => {
     const idsAsignados = modulosAsignados.value.map(m => m.id);
     return modulos.value.filter(m => !idsAsignados.includes(m.id));
+});
+
+const componentesDisponiblesParaModulo = computed(() => {
+    if (!moduloParaAgregarComponente.value) return [];
+    
+    // Obtener los IDs de componentes ya agregados a este módulo
+    const idsYaAgregados = (moduloParaAgregarComponente.value.componentes || []).map(c => c.id);
+    
+    // Filtrar componentes que no están en este módulo
+    return componentes.value.filter(c => !idsYaAgregados.includes(c.id));
+});
+
+const todosLosComponentes = computed(() => {
+    const componentes = [];
+    
+    if (cotizacion.value?.modulos && Array.isArray(cotizacion.value.modulos)) {
+        for (const modulo of cotizacion.value.modulos) {
+            if (modulo.componentes && Array.isArray(modulo.componentes)) {
+                for (const comp of modulo.componentes) {
+                    componentes.push({
+                        ...comp,
+                        modulo_id: modulo.id,
+                        modulo_nombre: modulo.nombre
+                    });
+                }
+            }
+        }
+    }
+    
+    return componentes;
 });
 
 const detalles = computed(() => {
@@ -645,6 +716,39 @@ const eliminarComponente = async (componente, modulo, compIndex) => {
     }
 };
 
+const actualizarCantidadComponenteFlat = async (comp) => {
+    const modulo = cotizacion.value.modulos.find(m => m.id === comp.modulo_id);
+    if (modulo) {
+        const componente = modulo.componentes.find(c => c.id === comp.id);
+        if (componente) {
+            await actualizarCantidadComponente(componente, modulo);
+        }
+    }
+};
+
+const incrementarCantidadComponenteFlat = async (comp) => {
+    comp.cantidad = (comp.cantidad || 1) + 1;
+    await actualizarCantidadComponenteFlat(comp);
+};
+
+const decrementarCantidadComponenteFlat = async (comp) => {
+    if (comp.cantidad > 1) {
+        comp.cantidad--;
+        await actualizarCantidadComponenteFlat(comp);
+    }
+};
+
+const eliminarComponenteFlat = async (comp) => {
+    const modulo = cotizacion.value.modulos.find(m => m.id === comp.modulo_id);
+    if (modulo) {
+        const compIndex = modulo.componentes.findIndex(c => c.id === comp.id);
+        if (compIndex !== -1) {
+            const componente = modulo.componentes[compIndex];
+            await eliminarComponente(componente, modulo, compIndex);
+        }
+    }
+};
+
 const enriquecerModulosConCostoTotal = async (modulosList) => {
     // Obtener costo_total del API para cada módulo
     if (!modulosList || !Array.isArray(modulosList)) return modulosList;
@@ -746,6 +850,120 @@ const cerrarSelectorModulos = () => {
 const cerrarModalCantidad = () => {
     moduloSeleccionadoModal.value = null;
     cantidadNuevaModulo.value = 1;
+};
+
+const abrirSelectorComponentes = (modulo) => {
+    moduloParaAgregarComponente.value = modulo;
+    componenteSeleccionado.value = null;
+    cantidadNuevoComponente.value = 1;
+    mostrarSelectorComponentes.value = true;
+};
+
+const cerrarSelectorComponentes = () => {
+    mostrarSelectorComponentes.value = false;
+    moduloParaAgregarComponente.value = null;
+    componenteSeleccionado.value = null;
+    cantidadNuevoComponente.value = 1;
+};
+
+const seleccionarComponente = (componente) => {
+    componenteSeleccionado.value = componente;
+    cantidadNuevoComponente.value = 1;
+    mostrarSelectorComponentes.value = false;
+};
+
+const cerrarModalCantidadComponente = () => {
+    componenteSeleccionado.value = null;
+    cantidadNuevoComponente.value = 1;
+};
+
+const cambiarComponenteSeleccionado = () => {
+    componenteSeleccionado.value = null;
+    cantidadNuevoComponente.value = 1;
+    mostrarSelectorComponentes.value = true;
+};
+
+const decrementarCantidadNuevoComponente = () => {
+    if (cantidadNuevoComponente.value > 1) {
+        cantidadNuevoComponente.value--;
+    }
+};
+
+const incrementarCantidadNuevoComponente = () => {
+    cantidadNuevoComponente.value++;
+};
+
+const confirmarAgregarComponente = async () => {
+    if (!componenteSeleccionado.value || !moduloParaAgregarComponente.value) return;
+    
+    try {
+        const componente = componenteSeleccionado.value;
+        const moduloRef = moduloParaAgregarComponente.value;
+        
+        console.log('🔵 Agregando componente:', componente.nombre, 'al módulo:', moduloRef.nombre);
+        
+        // Encontrar el módulo en el array reactivo de cotizacion.value.modulos
+        const moduloIndex = cotizacion.value.modulos.findIndex(m => m.id === moduloRef.id);
+        
+        if (moduloIndex === -1) {
+            throw new Error('Módulo no encontrado en la cotización');
+        }
+        
+        const modulo = cotizacion.value.modulos[moduloIndex];
+        
+        // Agregar componente al módulo localmente
+        if (!modulo.componentes) {
+            modulo.componentes = [];
+        }
+        
+        // Verificar que el componente no esté ya agregado
+        const yaExiste = modulo.componentes.some(c => c.id === componente.id);
+        if (yaExiste) {
+            error.value = 'Este componente ya está agregado al módulo';
+            setTimeout(() => { error.value = null; }, 3000);
+            return;
+        }
+        
+        const nuevoComponente = {
+            id: componente.id,
+            nombre: componente.nombre,
+            descripcion: componente.descripcion,
+            precio_unitario: componente.precio_unitario,
+            cantidad: cantidadNuevoComponente.value
+        };
+        
+        // Forzar reactividad creando un nuevo array
+        modulo.componentes = [...modulo.componentes, nuevoComponente];
+        
+        // También actualizar el array completo de módulos para forzar reactividad
+        cotizacion.value.modulos = [...cotizacion.value.modulos];
+        
+        console.log('✅ Componente agregado localmente al módulo');
+        console.log('📊 Total componentes en módulo:', modulo.componentes.length);
+        
+        // Guardar en la API
+        console.log('🔵 Guardando componente en API...');
+        const datosComponente = {
+            cotizacion_id: cotizacion.value.id,
+            componente_id: componente.id,
+            modulo_id: modulo.id,
+            cantidad: cantidadNuevoComponente.value
+        };
+        
+        console.log('📤 Datos a enviar:', datosComponente);
+        await storeComponentesPorCotizacion.crearComponentePorCotizacion(datosComponente);
+        console.log('✅ Componente guardado en API');
+        
+        success.value = `Componente "${componente.nombre}" agregado correctamente`;
+        setTimeout(() => { success.value = null; }, 3000);
+        
+        cerrarModalCantidadComponente();
+        cerrarSelectorComponentes();
+    } catch (err) {
+        console.error('❌ Error al agregar componente:', err);
+        error.value = 'Error al agregar el componente: ' + (err.response?.data?.message || err.message);
+        setTimeout(() => { error.value = null; }, 5000);
+    }
 };
 
 const cambiarModuloSeleccionado = () => {
@@ -909,6 +1127,12 @@ const cargarCotizacion = async () => {
         const modulosResponse = await fetchModulos();
         const modulosData = modulosResponse?.data || modulosResponse;
         modulos.value = Array.isArray(modulosData) ? modulosData : [];
+
+        // Cargar componentes
+        const componentesResponse = await fetchComponentes();
+        const componentesData = componentesResponse?.data || componentesResponse;
+        componentes.value = Array.isArray(componentesData) ? componentesData : [];
+        console.log('📦 Componentes cargados:', componentes.value.length);
 
         // Enriquecer módulos de la cotización con costo_total desde el API
         if (cotizacion.value.modulos && Array.isArray(cotizacion.value.modulos)) {
@@ -3012,6 +3236,342 @@ onMounted(() => {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Estilos para selector de componentes */
+.btn-agregar-componente {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    margin-top: 0.8rem;
+    background: linear-gradient(135deg, #d4a574 0%, #8B5A3C 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-agregar-componente:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 90, 60, 0.3);
+}
+
+.modal-componentes-mejorado {
+    width: 90%;
+    max-width: 800px;
+}
+
+.modal-header-componentes {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-header-componentes h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.btn-close-componentes {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-close-componentes:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.modal-body-componentes {
+    padding: 2rem;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.componentes-grid-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.componente-card-selector {
+    background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
+    border: 2px solid #e8ddd7;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.componente-card-selector:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(139, 90, 60, 0.2);
+    border-color: #d4a574;
+}
+
+.componente-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.componente-icon {
+    font-size: 2rem;
+}
+
+.componente-card-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #6B4423;
+}
+
+.componente-card-body {
+    color: #666;
+}
+
+.componente-card-body p {
+    margin: 0 0 0.8rem 0;
+    font-size: 0.9rem;
+}
+
+.componente-precio {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #8B5A3C;
+}
+
+.modal-cantidad-componente {
+    width: 90%;
+    max-width: 500px;
+}
+
+.modal-header-cantidad {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-header-cantidad h3 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.modal-body-cantidad {
+    padding: 2rem;
+}
+
+.cantidad-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #faf8f5;
+    border-radius: 8px;
+}
+
+.cantidad-info p {
+    margin: 0.5rem 0;
+}
+
+.modal-footer-cantidad {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 2px solid #e8ddd7;
+}
+
+.btn-secondary-modal {
+    flex: 1;
+    padding: 0.8rem 1.5rem;
+    background: #e8ddd7;
+    color: #6B4423;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary-modal:hover {
+    background: #d4a574;
+    transform: translateY(-2px);
+}
+
+.btn-primary-modal {
+    flex: 1;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #d4a574 0%, #8B5A3C 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-modal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 90, 60, 0.3);
+}
+
+/* Vista plana de componentes */
+.componentes-list-flat {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.component-item-card {
+    background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
+    border: 2px solid #e8ddd7;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.component-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 90, 60, 0.15);
+    border-color: #d4a574;
+}
+
+.component-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.component-badge {
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.btn-eliminar-componente-card {
+    background: rgba(220, 38, 38, 0.1);
+    border: none;
+    color: #dc2626;
+    font-size: 1.2rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-eliminar-componente-card:hover {
+    background: #dc2626;
+    color: white;
+    transform: scale(1.1);
+}
+
+.component-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.comp-info-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.comp-name-large {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #6B4423;
+}
+
+.comp-price-large {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #8B5A3C;
+}
+
+.comp-controls-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cantidad-control-large {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.btn-control-large {
+    background: linear-gradient(135deg, #d4a574 0%, #8B5A3C 100%);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-control-large:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 90, 60, 0.3);
+}
+
+.btn-control-large:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.input-cantidad-large {
+    width: 80px;
+    padding: 0.6rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #6B4423;
+}
+
+.comp-subtotal {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #8B5A3C;
+    padding: 0.6rem 1.2rem;
+    background: rgba(212, 165, 116, 0.15);
+    border-radius: 8px;
 }
 
 @media (max-width: 768px) {
