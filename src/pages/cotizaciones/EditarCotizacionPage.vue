@@ -118,10 +118,16 @@
                             <h2 class="section-title">⚙️ Componentes Asignados</h2>
                             <span class="section-subtitle">{{ todosLosComponentes.length }} componente(s)</span>
                         </div>
-                        <button @click="abrirSelectorModulos" class="btn-add-module">
-                            <span class="btn-icon">➕</span>
-                            <span>Agregar Módulo</span>
-                        </button>
+                        <div class="header-buttons">
+                            <button @click="abrirSelectorModulosParaComponente" class="btn-add-component" :disabled="modulosAsignados.length === 0">
+                                <span class="btn-icon">⚙️</span>
+                                <span>Agregar Componente</span>
+                            </button>
+                            <button @click="abrirSelectorModulos" class="btn-add-module">
+                                <span class="btn-icon">➕</span>
+                                <span>Agregar Módulo</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div v-if="todosLosComponentes.length === 0" class="empty-state">
@@ -330,6 +336,50 @@
                     </div>
                 </div>
 
+                <!-- Modal selector de módulos para agregar componente -->
+                <div v-if="mostrarSelectorModulosParaComponentes" class="modal-overlay" @click="cerrarSelectorModulosParaComponentes">
+                    <div class="modal-content modal-modulos-mejorado" @click.stop>
+                        <div class="modal-header-modulos">
+                            <div class="modal-icon">🏗️</div>
+                            <h3>Selecciona el Módulo</h3>
+                            <button class="btn-close-modulos" @click="cerrarSelectorModulosParaComponentes">✕</button>
+                        </div>
+
+                        <div class="modal-body-modulos">
+                            <div v-if="modulosAsignados.length === 0" class="empty-state-mejorado">
+                                <div class="empty-icon">📦</div>
+                                <p>No hay módulos asignados. Agrega un módulo primero.</p>
+                            </div>
+
+                            <div v-else class="modulos-grid-selector">
+                                <div 
+                                    v-for="modulo in modulosAsignados" 
+                                    :key="modulo.id"
+                                    class="modulo-card-selector"
+                                    @click="seleccionarModuloParaComponente(modulo)"
+                                >
+                                    <div class="modulo-card-header">
+                                        <div class="modulo-icon">🏗️</div>
+                                        <h4>{{ modulo.nombre }}</h4>
+                                    </div>
+                                    <div class="modulo-card-body">
+                                        <p v-if="modulo.descripcion" class="modulo-descripcion">{{ modulo.descripcion }}</p>
+                                        <div class="modulo-stats">
+                                            <span class="stat-item">
+                                                <span class="stat-icon">⚙️</span>
+                                                <span>{{ modulo.componentes?.length || 0 }} componentes</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="modulo-card-action">
+                                        <span>✓ Seleccionar</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Selector de componentes modal -->
                 <div v-if="mostrarSelectorComponentes" class="modal-overlay" @click="cerrarSelectorComponentes">
                     <div class="modal-content modal-componentes-mejorado" @click.stop>
@@ -490,6 +540,7 @@ const cantidadNuevaModulo = ref(1);
 const cargandoModuloModal = ref(false);
 const mostrarSelectorClientes = ref(false);
 const mostrarSelectorComponentes = ref(false);
+const mostrarSelectorModulosParaComponentes = ref(false);
 const moduloParaAgregarComponente = ref(null);
 const componenteSeleccionado = ref(null);
 const cantidadNuevoComponente = ref(1);
@@ -850,6 +901,20 @@ const cerrarSelectorModulos = () => {
 const cerrarModalCantidad = () => {
     moduloSeleccionadoModal.value = null;
     cantidadNuevaModulo.value = 1;
+};
+
+const abrirSelectorModulosParaComponente = () => {
+    mostrarSelectorModulosParaComponentes.value = true;
+};
+
+const cerrarSelectorModulosParaComponentes = () => {
+    mostrarSelectorModulosParaComponentes.value = false;
+};
+
+const seleccionarModuloParaComponente = (modulo) => {
+    moduloParaAgregarComponente.value = modulo;
+    mostrarSelectorModulosParaComponentes.value = false;
+    abrirSelectorComponentes(modulo);
 };
 
 const abrirSelectorComponentes = (modulo) => {
@@ -1558,6 +1623,11 @@ onMounted(() => {
     transition: all 0.3s ease;
 }
 
+.header-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
 .estado-selector:hover {
     border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-1px);
@@ -1612,7 +1682,7 @@ onMounted(() => {
     margin: 0;
 }
 
-.btn-add-module {
+.btn-add-module, .btn-add-component {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
@@ -1629,10 +1699,40 @@ onMounted(() => {
     box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
+.btn-add-component {
+    background: linear-gradient(135deg, #4a90e2 0%, #357ab8 100%);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.btn-add-module:hover, .btn-add-component:hover {
+    transform: translateY(-3px);
+}
+
 .btn-add-module:hover {
     background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
-    transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+}
+
+.btn-add-component:hover {
+    background: linear-gradient(135deg, #357ab8 0%, #2a6296 100%);
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+}
+
+.btn-add-component:disabled {
+    background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.btn-add-component:disabled:hover {
+    transform: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.header-buttons {
+    display: flex;
+    gap: 0.75rem;
 }
 
 .btn-icon {
@@ -2380,6 +2480,24 @@ onMounted(() => {
     color: #d4a574;
     font-weight: 700;
     font-size: 1.1rem;
+}
+
+.modulo-stats {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.stat-icon {
+    font-size: 1rem;
 }
 
 .modulo-card-action {
