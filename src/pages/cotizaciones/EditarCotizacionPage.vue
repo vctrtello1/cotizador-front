@@ -119,7 +119,7 @@
                             <span class="section-subtitle">{{ todosLosComponentes.length }} componente(s)</span>
                         </div>
                         <div class="header-buttons">
-                            <button @click="abrirSelectorModulosParaComponente" class="btn-add-component" :disabled="modulosAsignados.length === 0">
+                            <button v-if="modulosAsignados.length > 0" @click="abrirSelectorModulosParaComponente" class="btn-add-component">
                                 <span class="btn-icon">⚙️</span>
                                 <span>Agregar Componente</span>
                             </button>
@@ -135,7 +135,7 @@
                     </div>
 
                     <div v-else class="componentes-list-flat">
-                        <div v-for="comp in todosLosComponentes" :key="`${comp.modulo_id}-${comp.id}`" class="component-item-card">
+                        <div v-for="comp in todosLosComponentes" :key="`${comp.modulo_index}-${comp.id}`" class="component-item-card">
                             <div class="component-card-header">
                                 <div class="component-badge">{{ comp.modulo_nombre }}</div>
                                 <button 
@@ -569,17 +569,18 @@ const todosLosComponentes = computed(() => {
     const componentes = [];
     
     if (cotizacion.value?.modulos && Array.isArray(cotizacion.value.modulos)) {
-        for (const modulo of cotizacion.value.modulos) {
+        cotizacion.value.modulos.forEach((modulo, moduloIndex) => {
             if (modulo.componentes && Array.isArray(modulo.componentes)) {
                 for (const comp of modulo.componentes) {
                     componentes.push({
                         ...comp,
                         modulo_id: modulo.id,
-                        modulo_nombre: modulo.nombre
+                        modulo_nombre: modulo.nombre,
+                        modulo_index: moduloIndex
                     });
                 }
             }
-        }
+        });
     }
     
     return componentes;
@@ -768,29 +769,41 @@ const eliminarComponente = async (componente, modulo, compIndex) => {
 };
 
 const actualizarCantidadComponenteFlat = async (comp) => {
-    const modulo = cotizacion.value.modulos.find(m => m.id === comp.modulo_id);
+    const modulo = cotizacion.value.modulos[comp.modulo_index];
     if (modulo) {
         const componente = modulo.componentes.find(c => c.id === comp.id);
         if (componente) {
+            // Sincronizar la cantidad del componente en el módulo con la del comp plano
+            componente.cantidad = comp.cantidad;
             await actualizarCantidadComponente(componente, modulo);
         }
     }
 };
 
 const incrementarCantidadComponenteFlat = async (comp) => {
-    comp.cantidad = (comp.cantidad || 1) + 1;
-    await actualizarCantidadComponenteFlat(comp);
+    const modulo = cotizacion.value.modulos[comp.modulo_index];
+    if (modulo) {
+        const componente = modulo.componentes.find(c => c.id === comp.id);
+        if (componente) {
+            componente.cantidad = (componente.cantidad || 1) + 1;
+            await actualizarCantidadComponente(componente, modulo);
+        }
+    }
 };
 
 const decrementarCantidadComponenteFlat = async (comp) => {
-    if (comp.cantidad > 1) {
-        comp.cantidad--;
-        await actualizarCantidadComponenteFlat(comp);
+    const modulo = cotizacion.value.modulos[comp.modulo_index];
+    if (modulo) {
+        const componente = modulo.componentes.find(c => c.id === comp.id);
+        if (componente && componente.cantidad > 1) {
+            componente.cantidad--;
+            await actualizarCantidadComponente(componente, modulo);
+        }
     }
 };
 
 const eliminarComponenteFlat = async (comp) => {
-    const modulo = cotizacion.value.modulos.find(m => m.id === comp.modulo_id);
+    const modulo = cotizacion.value.modulos[comp.modulo_index];
     if (modulo) {
         const compIndex = modulo.componentes.findIndex(c => c.id === comp.id);
         if (compIndex !== -1) {
@@ -1099,23 +1112,35 @@ const confirmarAgregarModulo = async () => {
             costo_total: normalizarCostoTotal(modulo)
         });
 
+        // Forzar reactividad
+        cotizacion.value.modulos = [...cotizacion.value.modulos];
+
         console.log('Módulo agregado localmente:', modulo.nombre);
+        console.log('📊 Total módulos:', cotizacion.value.modulos.length);
+        console.log('📊 Total componentes en módulo:', modulo.componentes?.length || 0);
 
         // Guardar los componentes del módulo en componentes_por_cotizacion
         try {
             if (modulo.componentes && modulo.componentes.length > 0) {
                 console.log('🔵 Guardando componentes del módulo en componentes_por_cotizacion...');
+                console.log('📊 Cantidad de módulos:', cantidadNuevaModulo.value);
                 for (const componente of modulo.componentes) {
                     try {
+                        // Multiplicar la cantidad del componente por la cantidad de módulos
+                        const cantidadBase = componente.cantidad || 1;
+                        const cantidadTotal = cantidadBase * cantidadNuevaModulo.value;
                         const datosComponente = {
                             cotizacion_id: cotizacion.value.id,
                             componente_id: componente.id,
                             modulo_id: modulo.id,
-                            cantidad: componente.cantidad || 1
+                            cantidad: cantidadTotal
                         };
-                        console.log('📤 Guardando componente:', componente.nombre, datosComponente);
+                        console.log('📤 Guardando componente:', componente.nombre, `${cantidadBase} × ${cantidadNuevaModulo.value} = ${cantidadTotal}`, datosComponente);
                         await storeComponentesPorCotizacion.crearComponentePorCotizacion(datosComponente);
                         console.log('✅ Componente guardado:', componente.nombre);
+                        
+                        // Actualizar también la cantidad en el componente local del módulo
+                        componente.cantidad = cantidadTotal;
                     } catch (compErr) {
                         console.warn('⚠️ Error guardando componente:', componente.nombre, compErr);
                         // Continuar con los demás componentes aunque uno falle
@@ -1175,7 +1200,13 @@ const cargarCotizacion = async () => {
             cotizacion.value = data;
         }
 
-        // Inicializar si no existen
+        // Normalizar estructura: el backend devuelve "modulos_ordenados" pero usamos "modulos" en el frontend
+        if (!cotizacion.value.modulos && cotizacion.value.modulos_ordenados) {
+            cotizacion.value.modulos = cotizacion.value.modulos_ordenados;
+        }
+        if (!cotizacion.value.modulos) {
+            cotizacion.value.modulos = [];
+        }
         if (!cotizacion.value.modulos_ordenados) {
             cotizacion.value.modulos_ordenados = [];
         }
