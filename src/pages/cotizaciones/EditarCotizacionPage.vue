@@ -119,7 +119,7 @@
                             <span class="section-subtitle">{{ todosLosComponentes.length }} componente(s)</span>
                         </div>
                         <div class="header-buttons">
-                            <button v-if="modulosAsignados.length > 0 && todosLosComponentes.length > 0" @click="abrirSelectorModulosParaComponente" class="btn-add-component">
+                            <button v-if="modulosAsignados.length > 0" @click="abrirSelectorComponentesDirecto" class="btn-add-component">
                                 <span class="btn-icon">⚙️</span>
                                 <span>Agregar Componente</span>
                             </button>
@@ -385,19 +385,29 @@
                     <div class="modal-content modal-componentes-mejorado" @click.stop>
                         <div class="modal-header-componentes">
                             <div class="modal-icon">🧩</div>
-                            <h3>Agregar Componente a {{ moduloParaAgregarComponente?.nombre }}</h3>
+                            <h3>{{ moduloParaAgregarComponente ? `Agregar Componente a ${moduloParaAgregarComponente.nombre}` : 'Selecciona un Componente' }}</h3>
                             <button class="btn-close-componentes" @click="cerrarSelectorComponentes">✕</button>
                         </div>
 
                         <div class="modal-body-componentes">
-                            <div v-if="componentesDisponiblesParaModulo.length === 0" class="empty-state-mejorado">
+                            <div class="search-box">
+                                <input 
+                                    v-model="busquedaComponente" 
+                                    type="text" 
+                                    placeholder="🔍 Buscar por nombre, código o descripción..."
+                                    class="search-input"
+                                    @click.stop
+                                />
+                            </div>
+
+                            <div v-if="componentesFiltrados.length === 0" class="empty-state-mejorado">
                                 <div class="empty-icon">📦</div>
-                                <p>No hay componentes disponibles para agregar</p>
+                                <p>{{ busquedaComponente ? 'No se encontraron componentes' : 'No hay componentes disponibles para agregar' }}</p>
                             </div>
 
                             <div v-else class="componentes-grid-selector">
                                 <div 
-                                    v-for="componente in componentesDisponiblesParaModulo" 
+                                    v-for="componente in componentesFiltrados" 
                                     :key="componente.id"
                                     class="componente-card-selector"
                                     @click="seleccionarComponente(componente)"
@@ -409,7 +419,7 @@
                                     <div class="componente-card-body">
                                         <p v-if="componente.descripcion">{{ componente.descripcion }}</p>
                                         <div class="componente-precio">
-                                            ${{ formatCurrency(componente.costo_total) }}
+                                            ${{ formatCurrency(componente.precio_unitario ?? componente.costo_total) }}
                                         </div>
                                     </div>
                                 </div>
@@ -544,6 +554,7 @@ const mostrarSelectorModulosParaComponentes = ref(false);
 const moduloParaAgregarComponente = ref(null);
 const componenteSeleccionado = ref(null);
 const cantidadNuevoComponente = ref(1);
+const busquedaComponente = ref('');
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -563,6 +574,26 @@ const componentesDisponiblesParaModulo = computed(() => {
     
     // Filtrar componentes que no están en este módulo
     return componentes.value.filter(c => !idsYaAgregados.includes(c.id));
+});
+
+const todosComponentesDisponibles = computed(() => {
+    // Retornar TODOS los componentes sin filtrar
+    return componentes.value;
+});
+
+const componentesFiltrados = computed(() => {
+    const lista = moduloParaAgregarComponente.value ? componentesDisponiblesParaModulo.value : todosComponentesDisponibles.value;
+    
+    if (!busquedaComponente.value) {
+        return lista;
+    }
+    
+    const termino = busquedaComponente.value.toLowerCase();
+    return lista.filter(c => 
+        c.nombre.toLowerCase().includes(termino) ||
+        c.codigo?.toLowerCase().includes(termino) ||
+        c.descripcion?.toLowerCase().includes(termino)
+    );
 });
 
 const todosLosComponentes = computed(() => {
@@ -944,6 +975,14 @@ const cerrarModalCantidad = () => {
     cantidadNuevaModulo.value = 1;
 };
 
+const abrirSelectorComponentesDirecto = () => {
+    // Abrir selector de componentes sin seleccionar módulo primero
+    moduloParaAgregarComponente.value = null; // null indica que se debe mostrar selector de módulo después
+    componenteSeleccionado.value = null;
+    cantidadNuevoComponente.value = 1;
+    mostrarSelectorComponentes.value = true;
+};
+
 const abrirSelectorModulosParaComponente = () => {
     mostrarSelectorModulosParaComponentes.value = true;
 };
@@ -955,7 +994,14 @@ const cerrarSelectorModulosParaComponentes = () => {
 const seleccionarModuloParaComponente = (modulo) => {
     moduloParaAgregarComponente.value = modulo;
     mostrarSelectorModulosParaComponentes.value = false;
-    abrirSelectorComponentes(modulo);
+    
+    // Si ya hay un componente seleccionado, ir directo al modal de cantidad
+    // Si no, abrir selector de componentes para ese módulo
+    if (componenteSeleccionado.value) {
+        // Ya tiene componente, no abrir selector de componentes
+    } else {
+        abrirSelectorComponentes(modulo);
+    }
 };
 
 const abrirSelectorComponentes = (modulo) => {
@@ -970,12 +1016,18 @@ const cerrarSelectorComponentes = () => {
     moduloParaAgregarComponente.value = null;
     componenteSeleccionado.value = null;
     cantidadNuevoComponente.value = 1;
+    busquedaComponente.value = '';
 };
 
 const seleccionarComponente = (componente) => {
     componenteSeleccionado.value = componente;
     cantidadNuevoComponente.value = 1;
     mostrarSelectorComponentes.value = false;
+    
+    // Si no hay módulo seleccionado, mostrar selector de módulos
+    if (!moduloParaAgregarComponente.value) {
+        mostrarSelectorModulosParaComponentes.value = true;
+    }
 };
 
 const cerrarModalCantidadComponente = () => {
@@ -3481,6 +3533,30 @@ onMounted(() => {
     padding: 2rem;
     max-height: 500px;
     overflow-y: auto;
+}
+
+.search-box {
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e8ddd7;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.search-input::placeholder {
+    color: #999;
 }
 
 .componentes-grid-selector {
