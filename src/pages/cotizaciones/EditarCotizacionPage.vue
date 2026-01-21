@@ -1542,6 +1542,9 @@ const seleccionarYAgregarMaterial = async (material) => {
         componenteEditando.value.materiales.push(nuevoMaterial);
         console.log('✅ Material agregado:', material.nombre);
         
+        // Recalcular el costo del componente
+        await recalcularCostoComponente();
+        
         // Cerrar el modal automáticamente
         cerrarModalAgregarMaterial();
     } catch (err) {
@@ -1598,6 +1601,9 @@ const eliminarMaterial = async (material) => {
         if (index !== -1) {
             componenteEditando.value.materiales.splice(index, 1);
             console.log('✅ Material eliminado:', material.material?.nombre);
+            
+            // Recalcular el costo del componente
+            await recalcularCostoComponente();
         }
     } catch (err) {
         console.error('❌ Error al eliminar material:', err);
@@ -1620,6 +1626,9 @@ const aumentarCantidadMaterial = async (material) => {
         // Actualizar localmente
         material.cantidad = nuevaCantidad;
         console.log('➕ Cantidad aumentada:', material.material?.nombre, material.cantidad);
+        
+        // Recalcular el costo del componente
+        await recalcularCostoComponente();
     } catch (err) {
         console.error('❌ Error al aumentar cantidad:', err);
         alert('Error al actualizar la cantidad');
@@ -1642,10 +1651,71 @@ const disminuirCantidadMaterial = async (material) => {
             // Actualizar localmente
             material.cantidad = nuevaCantidad;
             console.log('➖ Cantidad disminuida:', material.material?.nombre, material.cantidad);
+            
+            // Recalcular el costo del componente
+            await recalcularCostoComponente();
         } catch (err) {
             console.error('❌ Error al disminuir cantidad:', err);
             alert('Error al actualizar la cantidad');
         }
+    }
+};
+
+const recalcularCostoComponente = async () => {
+    try {
+        // Calcular costo de materiales
+        const costoMateriales = (componenteEditando.value.materiales || []).reduce((sum, mat) => {
+            const precioUnitario = mat.material?.precio_unitario || 0;
+            const cantidad = mat.cantidad || 0;
+            return sum + (precioUnitario * cantidad);
+        }, 0);
+        
+        // Calcular costo de herrajes
+        const costoHerrajes = (componenteEditando.value.herrajes || []).reduce((sum, her) => {
+            const costoUnitario = her.herraje?.costo_unitario || 0;
+            const cantidad = her.cantidad || 0;
+            return sum + (costoUnitario * cantidad);
+        }, 0);
+        
+        // Calcular costo de mano de obra
+        const costoManoObra = (componenteEditando.value.horas_mano_obra || []).reduce((sum, hora) => {
+            const costoHora = hora.mano_obra?.costo_hora || 0;
+            const horas = hora.horas || 0;
+            return sum + (costoHora * horas);
+        }, 0);
+        
+        // Costo del acabado
+        const costoAcabado = parseFloat(componenteEditando.value.acabado?.costo || 0);
+        
+        // Costo total del componente
+        const costoTotal = costoMateriales + costoHerrajes + costoManoObra + costoAcabado;
+        
+        // Actualizar el precio_unitario usando reactividad de Vue
+        componenteEditando.value = {
+            ...componenteEditando.value,
+            precio_unitario: costoTotal
+        };
+        
+        // Actualizar el componente en la lista principal (todosLosComponentes)
+        // Buscar en todos los módulos y actualizar el componente correspondiente
+        cotizacion.value.modulos.forEach(modulo => {
+            const componente = modulo.componentes?.find(c => c.id === componenteEditando.value.id);
+            if (componente) {
+                componente.precio_unitario = costoTotal;
+                console.log('✅ Componente actualizado en módulo:', modulo.nombre);
+            }
+        });
+        
+        console.log('💰 Costo recalculado:', {
+            materiales: costoMateriales,
+            herrajes: costoHerrajes,
+            manoObra: costoManoObra,
+            acabado: costoAcabado,
+            total: costoTotal
+        });
+        
+    } catch (err) {
+        console.error('❌ Error al recalcular costo:', err);
     }
 };
 
