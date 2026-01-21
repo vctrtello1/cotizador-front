@@ -1797,36 +1797,56 @@ onMounted(() => {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 12px 24px;
+    padding: 14px 28px;
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
-    border-radius: 12px;
-    font-weight: 600;
+    border-radius: 14px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1rem;
     white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.35);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-add-module::before, .btn-add-component::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-add-module:hover::before, .btn-add-component:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-add-component {
-    background: linear-gradient(135deg, #4a90e2 0%, #357ab8 100%);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+    background: linear-gradient(135deg, #5a9fd4 0%, #4a8fc2 100%);
+    box-shadow: 0 6px 20px rgba(90, 159, 212, 0.35);
 }
 
 .btn-add-module:hover, .btn-add-component:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px) scale(1.02);
 }
 
 .btn-add-module:hover {
     background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
-    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+    box-shadow: 0 10px 30px rgba(212, 165, 116, 0.5);
 }
 
 .btn-add-component:hover {
-    background: linear-gradient(135deg, #357ab8 0%, #2a6296 100%);
-    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+    background: linear-gradient(135deg, #4a8fc2 0%, #3a7fb0 100%);
+    box-shadow: 0 10px 30px rgba(90, 159, 212, 0.5);
 }
 
 .btn-add-component:disabled {
@@ -3537,26 +3557,40 @@ onMounted(() => {
 
 .search-box {
     margin-bottom: 1.5rem;
+    position: relative;
 }
 
 .search-input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 20px 14px 48px;
     border: 2px solid #e8ddd7;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 1rem;
-    transition: all 0.3s ease;
-    background: white;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-box::before {
+    content: '🔍';
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
+    pointer-events: none;
 }
 
 .search-input:focus {
     outline: none;
     border-color: #d4a574;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.2), 0 0 0 4px rgba(212, 165, 116, 0.1);
+    transform: translateY(-1px);
 }
 
 .search-input::placeholder {
     color: #999;
+    font-weight: 500;
 }
 
 .componentes-grid-selector {
@@ -3568,16 +3602,39 @@ onMounted(() => {
 .componente-card-selector {
     background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
     border: 2px solid #e8ddd7;
-    border-radius: 12px;
-    padding: 1.5rem;
+    border-radius: 16px;
+    padding: 1.8rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.componente-card-selector::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #d4a574, #c89564, #d4a574);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+}
+
+.componente-card-selector:hover::before {
+    transform: translateX(0);
 }
 
 .componente-card-selector:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(139, 90, 60, 0.2);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 16px 40px rgba(139, 90, 60, 0.25);
     border-color: #d4a574;
+    background: linear-gradient(135deg, #ffffff 0%, #faf8f5 100%);
+}
+
+.componente-card-selector:active {
+    transform: translateY(-4px) scale(0.99);
 }
 
 .componente-card-header {
@@ -3607,9 +3664,25 @@ onMounted(() => {
 }
 
 .componente-precio {
+    font-size: 1.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #d4a574 0%, #8b5a3c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+    display: inline-block;
+    position: relative;
+}
+
+.componente-precio::before {
+    content: '💰';
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    -webkit-text-fill-color: #d4a574;
     font-size: 1.2rem;
-    font-weight: 700;
-    color: #8B5A3C;
 }
 
 .modal-cantidad-componente {
