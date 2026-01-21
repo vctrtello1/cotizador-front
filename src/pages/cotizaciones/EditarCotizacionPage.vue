@@ -719,8 +719,8 @@
                                     <div
                                         v-for="material in materialesFiltrados"
                                         :key="material.id"
-                                        :class="['selector-item', { selected: materialSeleccionado?.id === material.id }]"
-                                        @click="materialSeleccionado = material"
+                                        class="selector-item"
+                                        @click="seleccionarYAgregarMaterial(material)"
                                     >
                                         <div class="selector-item-content">
                                             <span class="selector-icon">📦</span>
@@ -730,29 +730,11 @@
                                                 <span class="selector-price">${{ formatCurrency(material.precio_unitario || 0) }} / unidad</span>
                                             </div>
                                         </div>
-                                        <span v-if="materialSeleccionado?.id === material.id" class="selector-check">✓</span>
                                     </div>
                                     <div v-if="materialesFiltrados.length === 0" class="empty-selector">
                                         <p>No se encontraron materiales</p>
                                     </div>
                                 </div>
-
-                                <!-- Control de cantidad -->
-                                <div v-if="materialSeleccionado" class="cantidad-selector">
-                                    <label>Cantidad:</label>
-                                    <div class="cantidad-input-group">
-                                        <button @click="cantidadMaterial = Math.max(1, cantidadMaterial - 1)" class="btn-cantidad">−</button>
-                                        <input v-model.number="cantidadMaterial" type="number" min="1" class="cantidad-input" />
-                                        <button @click="cantidadMaterial++" class="btn-cantidad">+</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal-footer">
-                                <button @click="cerrarModalAgregarMaterial" class="btn-secondary">Cancelar</button>
-                                <button @click="confirmarAgregarMaterial" class="btn-primary-modal" :disabled="!materialSeleccionado">
-                                    Agregar Material
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -1526,6 +1508,30 @@ const cerrarModalAgregarMaterial = () => {
     materialSeleccionado.value = null;
     cantidadMaterial.value = 1;
     busquedaMaterial.value = '';
+};
+
+const seleccionarYAgregarMaterial = (material) => {
+    // Verificar si el material ya existe
+    const existe = componenteEditando.value.materiales.find(m => m.material_id === material.id);
+    if (existe) {
+        alert('Este material ya está agregado al componente');
+        return;
+    }
+    
+    // Agregar el material con cantidad por defecto de 1
+    const nuevoMaterial = {
+        id: Date.now(), // ID temporal
+        material_id: material.id,
+        componente_id: componenteEditando.value.componente_id,
+        cantidad: 1,
+        material: material
+    };
+    
+    componenteEditando.value.materiales.push(nuevoMaterial);
+    console.log('✅ Material agregado:', material.nombre);
+    
+    // Cerrar el modal automáticamente
+    cerrarModalAgregarMaterial();
 };
 
 const confirmarAgregarMaterial = () => {
