@@ -556,6 +556,7 @@ const moduloParaAgregarComponente = ref(null);
 const componenteSeleccionado = ref(null);
 const cantidadNuevoComponente = ref(1);
 const busquedaComponente = ref('');
+const mostrarModalCantidadComponente = ref(false);
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -1024,11 +1025,16 @@ const cerrarSelectorComponentes = () => {
 const seleccionarComponente = (componente) => {
     componenteSeleccionado.value = componente;
     cantidadNuevoComponente.value = 1;
-    mostrarSelectorComponentes.value = false;
     
     // Asignar automáticamente el primer módulo disponible
     if (modulosAsignados.value.length > 0) {
         moduloParaAgregarComponente.value = modulosAsignados.value[0];
+        
+        // Mostrar el modal de cantidad
+        mostrarModalCantidadComponente.value = true;
+    } else {
+        error.value = 'No hay módulos disponibles. Agrega un módulo primero.';
+        setTimeout(() => { error.value = null; }, 3000);
     }
 };
 
@@ -1120,8 +1126,10 @@ const confirmarAgregarComponente = async () => {
         success.value = `Componente "${componente.nombre}" agregado correctamente`;
         setTimeout(() => { success.value = null; }, 3000);
         
+        // Cerrar el modal de cantidad pero mantener abierto el de componentes
         cerrarModalCantidadComponente();
-        cerrarSelectorComponentes();
+        // NO cerrar el selector de componentes para permitir agregar más
+        // cerrarSelectorComponentes();
     } catch (err) {
         console.error('❌ Error al agregar componente:', err);
         error.value = 'Error al agregar el componente: ' + (err.response?.data?.message || err.message);
