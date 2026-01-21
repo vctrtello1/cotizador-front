@@ -1362,20 +1362,22 @@ const abrirModalEditarComponente = async (componente) => {
         // Cargar acabado si existe
         let acabado = null;
         console.log('🔍 componenteCompleto.acabado_id:', componenteCompleto.acabado_id);
-        console.log('🔍 componenteCompleto.accesorios:', componenteCompleto.accesorios);
         
-        // El acabado puede venir en accesorios o acabado_id
-        if (componenteCompleto.accesorios && Array.isArray(componenteCompleto.accesorios) && componenteCompleto.accesorios.length > 0) {
-            // Si viene en accesorios, tomar el primero
-            acabado = componenteCompleto.accesorios[0];
-            console.log('✅ Acabado obtenido de accesorios:', acabado);
-        } else if (componenteCompleto.acabado_id && typeof componenteCompleto.acabado_id === 'number') {
-            try {
-                const acabadoResponse = await getAcabadoById(componenteCompleto.acabado_id);
-                acabado = acabadoResponse.data || acabadoResponse;
-                console.log('✅ Acabado cargado desde API:', acabado);
-            } catch (err) {
-                console.warn('⚠️ Error al cargar acabado:', err);
+        // El acabado puede venir como objeto completo o como ID
+        if (componenteCompleto.acabado_id) {
+            if (typeof componenteCompleto.acabado_id === 'object' && componenteCompleto.acabado_id.id) {
+                // Si acabado_id es un objeto, usarlo directamente
+                acabado = componenteCompleto.acabado_id;
+                console.log('✅ Acabado obtenido directamente:', acabado);
+            } else if (typeof componenteCompleto.acabado_id === 'number') {
+                // Si es un ID numérico, cargarlo desde la API
+                try {
+                    const acabadoResponse = await getAcabadoById(componenteCompleto.acabado_id);
+                    acabado = acabadoResponse.data || acabadoResponse;
+                    console.log('✅ Acabado cargado desde API:', acabado);
+                } catch (err) {
+                    console.warn('⚠️ Error al cargar acabado:', err);
+                }
             }
         }
         
