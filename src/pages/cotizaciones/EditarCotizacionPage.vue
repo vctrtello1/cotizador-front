@@ -438,15 +438,7 @@
 
                         <div class="modal-body-cantidad">
                             <div class="cantidad-info">
-                                <div class="form-group">
-                                    <label><strong>Selecciona el Módulo:</strong></label>
-                                    <select v-model="moduloParaAgregarComponente" class="form-input modulo-select">
-                                        <option :value="null" disabled>-- Selecciona un módulo --</option>
-                                        <option v-for="modulo in modulosAsignados" :key="modulo.id" :value="modulo">
-                                            {{ modulo.nombre }}
-                                        </option>
-                                    </select>
-                                </div>
+                                <p v-if="moduloParaAgregarComponente"><strong>Módulo:</strong> {{ moduloParaAgregarComponente.nombre }}</p>
                                 <p><strong>Precio unitario:</strong> ${{ formatCurrency(componenteSeleccionado.precio_unitario ?? componenteSeleccionado.costo_total) }}</p>
                                 <p v-if="componenteSeleccionado.descripcion"><strong>Descripción:</strong> {{ componenteSeleccionado.descripcion }}</p>
                             </div>
@@ -1033,7 +1025,11 @@ const seleccionarComponente = (componente) => {
     componenteSeleccionado.value = componente;
     cantidadNuevoComponente.value = 1;
     mostrarSelectorComponentes.value = false;
-    // No abrir selector de módulos, el modal de cantidad incluirá un selector
+    
+    // Asignar automáticamente el primer módulo disponible
+    if (modulosAsignados.value.length > 0) {
+        moduloParaAgregarComponente.value = modulosAsignados.value[0];
+    }
 };
 
 const cerrarModalCantidadComponente = () => {
