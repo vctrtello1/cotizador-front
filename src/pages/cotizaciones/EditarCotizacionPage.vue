@@ -512,6 +512,13 @@
                                 <div class="tabs-container">
                                     <button 
                                         type="button"
+                                        :class="['tab-btn', { active: tabActiva === 'informacion' }]"
+                                        @click="tabActiva = 'informacion'"
+                                    >
+                                        ℹ️ Información
+                                    </button>
+                                    <button 
+                                        type="button"
                                         :class="['tab-btn', { active: tabActiva === 'materiales' }]"
                                         @click="tabActiva = 'materiales'"
                                     >
@@ -542,6 +549,101 @@
 
                                 <!-- Contenido de tabs -->
                                 <div class="tab-content">
+                                    <!-- Tab Información -->
+                                    <div v-if="tabActiva === 'informacion'" class="tab-panel">
+                                        <div class="tab-panel-header">
+                                            <h5>Información del Componente</h5>
+                                            <p class="tab-description">Edita la información básica del componente</p>
+                                        </div>
+                                        <div class="form-edit-component">
+                                            <div class="form-group">
+                                                <label for="nombre-componente">Nombre *</label>
+                                                <input 
+                                                    id="nombre-componente"
+                                                    type="text" 
+                                                    v-model="componenteEditando.nombre" 
+                                                    class="input-text"
+                                                    required
+                                                />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="descripcion-componente">Descripción</label>
+                                                <textarea 
+                                                    id="descripcion-componente"
+                                                    v-model="componenteEditando.descripcion" 
+                                                    class="input-textarea"
+                                                    rows="4"
+                                                ></textarea>
+                                            </div>
+                                            
+                                            <!-- Grid para dimensiones y medidas -->
+                                            <div class="form-grid-dimensions">
+                                                <div class="form-group">
+                                                    <label for="unidad-medida-componente">Unidad de Medida</label>
+                                                    <input 
+                                                        id="unidad-medida-componente"
+                                                        type="text" 
+                                                        v-model="componenteEditando.unidad_de_medida" 
+                                                        class="input-text"
+                                                        placeholder="ej: m², piezas, kg"
+                                                    />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="alto-componente">Alto</label>
+                                                    <input 
+                                                        id="alto-componente"
+                                                        type="number" 
+                                                        v-model.number="componenteEditando.alto" 
+                                                        class="input-text"
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="ancho-componente">Ancho</label>
+                                                    <input 
+                                                        id="ancho-componente"
+                                                        type="number" 
+                                                        v-model.number="componenteEditando.ancho" 
+                                                        class="input-text"
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="largo-componente">Largo</label>
+                                                    <input 
+                                                        id="largo-componente"
+                                                        type="number" 
+                                                        v-model.number="componenteEditando.largo" 
+                                                        class="input-text"
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="precio-unitario-componente">Precio Unitario *</label>
+                                                    <input 
+                                                        id="precio-unitario-componente"
+                                                        type="number" 
+                                                        v-model.number="componenteEditando.precio_unitario" 
+                                                        class="input-text"
+                                                        step="0.01"
+                                                        min="0"
+                                                        required
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-actions-inline">
+                                                <button class="btn-save-changes" @click="guardarCambiosComponente">
+                                                    💾 Guardar Cambios
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Tab Materiales -->
                                     <div v-if="tabActiva === 'materiales'" class="tab-panel">
                                         <div class="tab-panel-header">
@@ -557,9 +659,14 @@
                                                 <div class="item-header">
                                                     <span class="item-icon">📦</span>
                                                     <span class="item-name">{{ mat.material?.nombre || 'Sin nombre' }}</span>
-                                                    <button class="btn-delete-item" @click="eliminarMaterial(mat)" title="Eliminar material">
-                                                        🗑️
-                                                    </button>
+                                                    <div class="item-header-actions">
+                                                        <button class="btn-edit-item" @click="abrirModalEditarMaterial(mat)" title="Editar material">
+                                                            ✏️
+                                                        </button>
+                                                        <button class="btn-delete-item" @click="eliminarMaterial(mat)" title="Eliminar material">
+                                                            🗑️
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div class="item-details">
                                                     <div class="item-detail-row">
@@ -777,6 +884,130 @@
                     </div>
                 </Transition>
 
+                <!-- Modal Editar Material -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalEditarMaterial" class="modal-overlay" @click="cerrarModalEditarMaterial">
+                        <div class="modal-content modal-edit-material" @click.stop>
+                            <div class="modal-header">
+                                <h3>✏️ Editar Material</h3>
+                                <button class="btn-close" @click="cerrarModalEditarMaterial">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div v-if="materialEditando" class="edit-material-form">
+                                    <div class="form-group">
+                                        <label for="nombre-material-edit">Nombre del Material *</label>
+                                        <input 
+                                            id="nombre-material-edit"
+                                            type="text" 
+                                            v-model="materialEditando.material.nombre" 
+                                            class="input-text"
+                                            required
+                                        />
+                                    </div>
+                                    
+                                    <!-- Información del Material Editable -->
+                                    <div class="material-details-grid">
+                                        <div class="detail-item">
+                                            <label for="unidad-medida-edit">Unidad de Medida</label>
+                                            <input 
+                                                id="unidad-medida-edit"
+                                                type="text" 
+                                                v-model="materialEditando.material.unidad_medida" 
+                                                class="input-text"
+                                                placeholder="ej: m², piezas, kg"
+                                            />
+                                        </div>
+                                        <div class="detail-item">
+                                            <label for="alto-edit">Alto</label>
+                                            <input 
+                                                id="alto-edit"
+                                                type="number" 
+                                                v-model.number="materialEditando.material.alto" 
+                                                class="input-text"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                        <div class="detail-item">
+                                            <label for="ancho-edit">Ancho</label>
+                                            <input 
+                                                id="ancho-edit"
+                                                type="number" 
+                                                v-model.number="materialEditando.material.ancho" 
+                                                class="input-text"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                        <div class="detail-item">
+                                            <label for="largo-edit">Largo</label>
+                                            <input 
+                                                id="largo-edit"
+                                                type="number" 
+                                                v-model.number="materialEditando.material.largo" 
+                                                class="input-text"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                        <div class="detail-item">
+                                            <label for="precio-unitario-edit">Precio Unitario *</label>
+                                            <input 
+                                                id="precio-unitario-edit"
+                                                type="number" 
+                                                v-model.number="materialEditando.material.precio_unitario" 
+                                                class="input-text"
+                                                step="0.01"
+                                                min="0"
+                                                required
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="cantidad-editar">Cantidad en el Componente</label>
+                                        <div class="cantidad-input-group">
+                                            <button class="btn-cantidad" @click="disminuirCantidadEdicion">−</button>
+                                            <input 
+                                                id="cantidad-editar"
+                                                type="number" 
+                                                v-model.number="cantidadEdicionMaterial" 
+                                                min="1"
+                                                class="cantidad-input"
+                                            />
+                                            <button class="btn-cantidad" @click="aumentarCantidadEdicion">+</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="cost-summary">
+                                            <div class="cost-row total">
+                                                <span>Subtotal:</span>
+                                                <span class="cost-value">${{ formatCurrency((materialEditando.material?.precio_unitario || 0) * cantidadEdicionMaterial) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    
+
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button @click="cerrarModalEditarMaterial" class="btn-cancel">
+                                    <span class="btn-icon">✕</span>
+                                    Cancelar
+                                </button>
+                                <button @click="guardarEdicionMaterial" class="btn-primary">
+                                    <span class="btn-icon">✔️</span>
+                                    Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
                 <!-- Modal para agregar herraje -->
                 <Transition name="modal">
                     <div v-if="mostrarModalAgregarHerraje" class="modal-overlay" @click="cerrarModalAgregarHerraje">
@@ -978,6 +1209,11 @@ const materialSeleccionado = ref(null);
 const cantidadMaterial = ref(1);
 const busquedaMaterial = ref('');
 const materialesDisponibles = ref([]);
+
+const mostrarModalEditarMaterial = ref(false);
+const materialEditando = ref(null);
+const cantidadEdicionMaterial = ref(1);
+
 const mostrarModalAgregarHerraje = ref(false);
 const busquedaHerraje = ref('');
 const herrajesDisponibles = ref([]);
@@ -1620,7 +1856,7 @@ const abrirModalEditarComponente = async (componente) => {
         console.log('✅ componenteEditando preparado:', componenteEditando.value);
         
         cantidadEdicion.value = componente.cantidad;
-        tabActiva.value = 'materiales';
+        tabActiva.value = 'informacion';
         mostrarModalEditarComponente.value = true;
     } catch (err) {
         console.error('❌ Error al cargar datos del componente:', err);
@@ -1633,7 +1869,52 @@ const cerrarModalEditarComponente = () => {
     mostrarModalEditarComponente.value = false;
     componenteEditando.value = null;
     cantidadEdicion.value = 1;
-    tabActiva.value = 'materiales';
+    tabActiva.value = 'informacion';
+};
+
+const guardarCambiosComponente = async () => {
+    try {
+        const { actualizarComponente } = await import('../../http/componentes-api');
+        
+        await actualizarComponente(componenteEditando.value.componente_id, {
+            nombre: componenteEditando.value.nombre,
+            descripcion: componenteEditando.value.descripcion,
+            unidad_de_medida: componenteEditando.value.unidad_de_medida,
+            alto: componenteEditando.value.alto,
+            ancho: componenteEditando.value.ancho,
+            largo: componenteEditando.value.largo,
+            precio_unitario: componenteEditando.value.precio_unitario,
+            modulo_id: componenteEditando.value.modulo_id,
+            acabado_id: componenteEditando.value.acabado_id
+        });
+        
+        console.log('✅ Componente actualizado correctamente');
+        
+        // Actualizar en la lista local
+        const index = cotizacionSeleccionada.value.componentes_por_cotizacion.findIndex(
+            c => c.componente_id === componenteEditando.value.componente_id
+        );
+        if (index !== -1) {
+            cotizacionSeleccionada.value.componentes_por_cotizacion[index] = {
+                ...cotizacionSeleccionada.value.componentes_por_cotizacion[index],
+                nombre: componenteEditando.value.nombre,
+                descripcion: componenteEditando.value.descripcion,
+                unidad_de_medida: componenteEditando.value.unidad_de_medida,
+                alto: componenteEditando.value.alto,
+                ancho: componenteEditando.value.ancho,
+                largo: componenteEditando.value.largo,
+                precio_unitario: componenteEditando.value.precio_unitario
+            };
+        }
+        
+        // Recargar cotización para actualizar todos los datos
+        await cargarCotizacion(cotizacionId.value);
+        
+        alert('✅ Componente actualizado correctamente');
+    } catch (err) {
+        console.error('❌ Error al guardar cambios:', err);
+        alert('Error al guardar los cambios del componente');
+    }
 };
 
 // Funciones para gestionar materiales
@@ -1787,6 +2068,62 @@ const disminuirCantidadMaterial = async (material) => {
             console.error('❌ Error al disminuir cantidad:', err);
             alert('Error al actualizar la cantidad');
         }
+    }
+};
+
+// ===== FUNCIONES PARA EDITAR MATERIAL =====
+const abrirModalEditarMaterial = (material) => {
+    materialEditando.value = material;
+    cantidadEdicionMaterial.value = material.cantidad || 1;
+    mostrarModalEditarMaterial.value = true;
+};
+
+const cerrarModalEditarMaterial = () => {
+    mostrarModalEditarMaterial.value = false;
+    materialEditando.value = null;
+    cantidadEdicionMaterial.value = 1;
+};
+
+const aumentarCantidadEdicion = () => {
+    cantidadEdicionMaterial.value++;
+};
+
+const disminuirCantidadEdicion = () => {
+    if (cantidadEdicionMaterial.value > 1) {
+        cantidadEdicionMaterial.value--;
+    }
+};
+
+const guardarEdicionMaterial = async () => {
+    try {
+        // Actualizar el material en la tabla de materiales
+        const { actualizarMaterial } = await import('../../http/materiales-api');
+        await actualizarMaterial(materialEditando.value.material_id, {
+            nombre: materialEditando.value.material.nombre,
+            unidad_medida: materialEditando.value.material.unidad_medida,
+            alto: materialEditando.value.material.alto,
+            ancho: materialEditando.value.material.ancho,
+            largo: materialEditando.value.material.largo,
+            precio_unitario: materialEditando.value.material.precio_unitario,
+            tipo_de_material_id: materialEditando.value.material.tipo_de_material_id
+        });
+        
+        // Actualizar la cantidad en la relación material_por_componente
+        await actualizarMaterialPorComponente(materialEditando.value.id, {
+            material_id: materialEditando.value.material_id,
+            componente_id: materialEditando.value.componente_id,
+            cantidad: cantidadEdicionMaterial.value
+        });
+        
+        // Actualizar localmente
+        materialEditando.value.cantidad = cantidadEdicionMaterial.value;
+        console.log('✅ Material actualizado:', materialEditando.value.material?.nombre, cantidadEdicionMaterial.value);
+        
+        await recalcularCostoComponente();
+        cerrarModalEditarMaterial();
+    } catch (err) {
+        console.error('❌ Error al guardar cambios:', err);
+        alert('Error al guardar los cambios del material');
     }
 };
 
@@ -5610,6 +5947,141 @@ onMounted(() => {
     border-radius: 8px;
 }
 
+/* Material Details Grid */
+.material-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1.2rem;
+    background: #f9f7f4;
+    border-radius: 10px;
+    border: 1px solid #e8ddd7;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.detail-item label {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 1rem;
+    color: #2c2c2c;
+    font-weight: 600;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e8ddd7;
+}
+
+.detail-value.price {
+    color: #d4a574;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* Form Edit Component */
+.form-edit-component {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 10px;
+}
+
+.form-edit-component .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-edit-component label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c2c2c;
+    margin-bottom: 0.5rem;
+}
+
+.form-grid-dimensions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-grid-dimensions .form-group:last-child {
+    grid-column: 1 / -1;
+}
+
+.input-text {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #2c2c2c;
+    transition: all 0.3s ease;
+}
+
+.input-text:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.input-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #2c2c2c;
+    font-family: inherit;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+.input-textarea:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.form-actions-inline {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 2px solid #e8ddd7;
+}
+
+.btn-save-changes {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.9rem 1.8rem;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+}
+
+.btn-save-changes:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.4);
+    background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
+}
+
 @media (max-width: 768px) {
     .editar-cotizacion-container {
         padding: 20px 16px;
@@ -5625,6 +6097,14 @@ onMounted(() => {
     }
 
     .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .material-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid-dimensions {
         grid-template-columns: 1fr;
     }
 

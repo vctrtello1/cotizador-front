@@ -15,6 +15,11 @@ export const crearComponente = async (datos) => {
   return response.data;
 };
 
+export const actualizarComponente = async (id, datos) => {
+  const response = await api.put(`/componentes/${id}`, datos);
+  return response.data;
+};
+
 export const eliminarComponente = async (id) => {
   const response = await api.delete(`/componentes/${id}`);
   return response.data;
