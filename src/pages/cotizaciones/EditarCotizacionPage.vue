@@ -429,7 +429,7 @@
                 </div>
 
                 <!-- Modal de cantidad para componente -->
-                <div v-if="componenteSeleccionado" class="modal-overlay" @click="cerrarModalCantidadComponente">
+                <div v-if="mostrarModalCantidadComponente && componenteSeleccionado" class="modal-overlay" @click="cerrarModalCantidadComponente">
                     <div class="modal-content modal-cantidad-componente" @click.stop>
                         <div class="modal-header-cantidad">
                             <h3>⚙️ {{ componenteSeleccionado.nombre }}</h3>
@@ -553,6 +553,7 @@ const mostrarSelectorClientes = ref(false);
 const mostrarSelectorComponentes = ref(false);
 const mostrarSelectorModulosParaComponentes = ref(false);
 const moduloParaAgregarComponente = ref(null);
+const moduloIdSeleccionado = ref(null);
 const componenteSeleccionado = ref(null);
 const cantidadNuevoComponente = ref(1);
 const busquedaComponente = ref('');
@@ -601,8 +602,12 @@ const componentesFiltrados = computed(() => {
 const todosLosComponentes = computed(() => {
     const componentes = [];
     
+    console.log('🔄 Recalculando todosLosComponentes...');
+    console.log('📊 Módulos en cotización:', cotizacion.value?.modulos?.length || 0);
+    
     if (cotizacion.value?.modulos && Array.isArray(cotizacion.value.modulos)) {
         cotizacion.value.modulos.forEach((modulo, moduloIndex) => {
+            console.log(`📦 Módulo ${modulo.nombre}: ${modulo.componentes?.length || 0} componentes`);
             if (modulo.componentes && Array.isArray(modulo.componentes)) {
                 for (const comp of modulo.componentes) {
                     componentes.push({
@@ -618,6 +623,7 @@ const todosLosComponentes = computed(() => {
         });
     }
     
+    console.log('✅ Total componentes en lista plana:', componentes.length);
     return componentes;
 });
 
@@ -1029,6 +1035,7 @@ const seleccionarComponente = (componente) => {
     // Asignar automáticamente el primer módulo disponible
     if (modulosAsignados.value.length > 0) {
         moduloParaAgregarComponente.value = modulosAsignados.value[0];
+        moduloIdSeleccionado.value = modulosAsignados.value[0].id;
         
         // Mostrar el modal de cantidad
         mostrarModalCantidadComponente.value = true;
@@ -1039,6 +1046,7 @@ const seleccionarComponente = (componente) => {
 };
 
 const cerrarModalCantidadComponente = () => {
+    mostrarModalCantidadComponente.value = false;
     componenteSeleccionado.value = null;
     cantidadNuevoComponente.value = 1;
 };
@@ -1061,75 +1069,89 @@ const incrementarCantidadNuevoComponente = () => {
 };
 
 const confirmarAgregarComponente = async () => {
-    if (!componenteSeleccionado.value || !moduloParaAgregarComponente.value) return;
+    if (!componenteSeleccionado.value || !moduloIdSeleccionado.value) return;
     
     try {
         const componente = componenteSeleccionado.value;
-        const moduloRef = moduloParaAgregarComponente.value;
+        const moduloId = moduloIdSeleccionado.value;
         
-        console.log('🔵 Agregando componente:', componente.nombre, 'al módulo:', moduloRef.nombre);
+        console.log('🔵 Agregando componente:', componente.nombre, 'al módulo ID:', moduloId);
         
-        // Encontrar el módulo en el array reactivo de cotizacion.value.modulos
-        const moduloIndex = cotizacion.value.modulos.findIndex(m => m.id === moduloRef.id);
-        
-        if (moduloIndex === -1) {
+        // Buscar el módulo por ID (puede haber sido reconstruido)
+        const modulo = cotizacion.value.modulos.find(m => m.id === moduloId);
+        if (!modulo) {
             error.value = 'Error: El módulo no está en la cotización. Agrega el módulo primero.';
             setTimeout(() => { error.value = null; }, 5000);
             return;
         }
         
-        const modulo = cotizacion.value.modulos[moduloIndex];
-        
-        // Agregar componente al módulo localmente
-        if (!modulo.componentes) {
-            modulo.componentes = [];
-        }
+        console.log('✅ Módulo encontrado:', modulo.nombre);
         
         // Verificar que el componente no esté ya agregado
-        const yaExiste = modulo.componentes.some(c => c.id === componente.id);
-        if (yaExiste) {
-            error.value = 'Este componente ya está agregado al módulo';
-            setTimeout(() => { error.value = null; }, 3000);
-            return;
+        console.log('🔍 Verificando duplicados. Componentes en módulo:', modulo.componentes?.length || 0);
+        const componenteExistente = modulo.componentes?.find(c => c.id === componente.id);
+        console.log('🔍 ¿Ya existe?', !!componenteExistente);
+        
+        if (componenteExistente) {
+            console.log('⚡ Componente ya existe, incrementando cantidad...');
+            // En lugar de mostrar error, incrementar la cantidad
+            const nuevaCantidad = componenteExistente.cantidad + cantidadNuevoComponente.value;
+            
+            try {
+                // Buscar el registro en la API para actualizarlo
+                const componentesEnApi = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+                const registroApi = componentesEnApi.find(cpc => 
+                    cpc.cotizacion_id === cotizacion.value.id && 
+                    cpc.componente_id === componente.id &&
+                    cpc.modulo_id === moduloId
+                );
+                
+                if (registroApi) {
+                    await storeComponentesPorCotizacion.actualizarComponentePorCotizacion(
+                        registroApi.id,
+                        { cantidad: nuevaCantidad }
+                    );
+                    
+                    // Reconstruir desde la API
+                    await sincronizarComponentesExistentes();
+                    
+                    success.value = `Cantidad de "${componente.nombre}" actualizada a ${nuevaCantidad}`;
+                    setTimeout(() => { success.value = null; }, 3000);
+                    
+                    cerrarModalCantidadComponente();
+                    return;
+                }
+            } catch (err) {
+                console.error('❌ Error al actualizar cantidad:', err);
+                error.value = 'Error al actualizar la cantidad';
+                setTimeout(() => { error.value = null; }, 3000);
+                return;
+            }
         }
         
-        const nuevoComponente = {
-            id: componente.id,
-            nombre: componente.nombre,
-            descripcion: componente.descripcion,
-            precio_unitario: componente.precio_unitario ?? componente.costo_total ?? componente.componente?.costo_total ?? 0,
-            cantidad: cantidadNuevoComponente.value
-        };
+        console.log('✅ Componente no está duplicado, procediendo a guardar...');
         
-        // Forzar reactividad creando un nuevo array
-        modulo.componentes = [...modulo.componentes, nuevoComponente];
-        
-        // También actualizar el array completo de módulos para forzar reactividad
-        cotizacion.value.modulos = [...cotizacion.value.modulos];
-        
-        console.log('✅ Componente agregado localmente al módulo');
-        console.log('📊 Total componentes en módulo:', modulo.componentes.length);
-        
-        // IMPORTANTE: Solo guardar el componente, NO crear un módulo nuevo
-        console.log('🔵 Guardando componente en API (sin crear módulo nuevo)...');
+        // Guardar directamente en la API sin modificar el estado local
+        console.log('🔵 Guardando componente en API...');
         const datosComponente = {
             cotizacion_id: cotizacion.value.id,
             componente_id: componente.id,
-            modulo_id: modulo.id,
+            modulo_id: moduloId,
             cantidad: cantidadNuevoComponente.value
         };
         
         console.log('📤 Datos a enviar:', datosComponente);
         await storeComponentesPorCotizacion.crearComponentePorCotizacion(datosComponente);
-        console.log('✅ Componente guardado en API (módulo ya existía)');
+        console.log('✅ Componente guardado en API');
+        
+        // Reconstruir todo desde la API
+        await sincronizarComponentesExistentes();
         
         success.value = `Componente "${componente.nombre}" agregado correctamente`;
         setTimeout(() => { success.value = null; }, 3000);
         
         // Cerrar el modal de cantidad pero mantener abierto el de componentes
         cerrarModalCantidadComponente();
-        // NO cerrar el selector de componentes para permitir agregar más
-        // cerrarSelectorComponentes();
     } catch (err) {
         console.error('❌ Error al agregar componente:', err);
         error.value = 'Error al agregar el componente: ' + (err.response?.data?.message || err.message);
@@ -1384,95 +1406,78 @@ const sincronizarComponentesExistentes = async () => {
         
         // Recargar componentes después de limpiar duplicados
         const componentesLimpios = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+        console.log('📋 Todos los componentes después de limpiar:', componentesLimpios);
+        console.log('🔍 ID de cotización actual:', cotizacion.value.id);
         const componentesEstaCotzacion = componentesLimpios.filter(cpc => cpc.cotizacion_id === cotizacion.value.id);
+        console.log('📋 Componentes filtrados para esta cotización:', componentesEstaCotzacion);
         
         // Inicializar array de módulos si no existe
         if (!cotizacion.value.modulos) {
             cotizacion.value.modulos = [];
         }
         
-        // Si hay componentes en la API pero no hay módulos, reconstruir módulos desde los componentes
-        if (componentesEstaCotzacion.length > 0 && cotizacion.value.modulos.length === 0) {
-            console.log('🏗️ Reconstruyendo módulos desde componentes de la API...');
+        // SIEMPRE reconstruir módulos desde los componentes de la API
+        console.log('🏗️ Reconstruyendo módulos desde componentes de la API...');
+        console.log('📋 Componentes a reconstruir:', componentesEstaCotzacion);
+        
+        // Agrupar componentes por modulo_id
+        const modulosPorId = new Map();
+        
+        for (const compApi of componentesEstaCotzacion) {
+            console.log(`🔍 Procesando componente ID ${compApi.componente_id}, modulo_id: ${compApi.modulo_id}`);
             
-            // Agrupar componentes por modulo_id
-            const modulosPorId = new Map();
-            
-            for (const compApi of componentesEstaCotzacion) {
-                if (compApi.modulo_id) {
-                    if (!modulosPorId.has(compApi.modulo_id)) {
-                        // Buscar el módulo completo en el store de módulos
-                        const moduloCompleto = modulos.value.find(m => m.id === compApi.modulo_id);
-                        
-                        if (moduloCompleto) {
-                            // Crear una copia del módulo con sus componentes
-                            modulosPorId.set(compApi.modulo_id, {
-                                ...moduloCompleto,
-                                cantidad: 1,
-                                componentes: []
-                            });
-                        }
+            if (compApi.modulo_id) {
+                if (!modulosPorId.has(compApi.modulo_id)) {
+                    // Buscar el módulo completo en el store de módulos
+                    const moduloCompleto = modulos.value.find(m => m.id === compApi.modulo_id);
+                    
+                    if (moduloCompleto) {
+                        console.log(`✅ Módulo ${moduloCompleto.nombre} encontrado para componente ${compApi.componente_id}`);
+                        // Crear una copia del módulo con sus componentes
+                        modulosPorId.set(compApi.modulo_id, {
+                            ...moduloCompleto,
+                            cantidad: 1,
+                            componentes: []
+                        });
+                    } else {
+                        console.warn(`⚠️ No se encontró módulo con ID ${compApi.modulo_id}`);
+                    }
+                }
+                
+                // Agregar el componente al módulo
+                const moduloEnMapa = modulosPorId.get(compApi.modulo_id);
+                if (moduloEnMapa) {
+                    // Buscar el componente completo en el store de componentes
+                    let componenteCompleto = componentes.value.find(c => c.id === compApi.componente_id);
+                    
+                    // Si no se encuentra en componentes.value, usar los datos de compApi.componente
+                    if (!componenteCompleto && compApi.componente) {
+                        componenteCompleto = compApi.componente;
+                        console.log('⚠️ Usando componente desde API:', componenteCompleto.nombre);
                     }
                     
-                    // Agregar el componente al módulo
-                    const moduloEnMapa = modulosPorId.get(compApi.modulo_id);
-                    if (moduloEnMapa) {
-                        // Buscar el componente completo en el módulo original
-                        const moduloOriginal = modulos.value.find(m => m.id === compApi.modulo_id);
-                        if (moduloOriginal && moduloOriginal.componentes) {
-                            const componenteCompleto = moduloOriginal.componentes.find(c => c.id === compApi.componente_id);
-                            if (componenteCompleto) {
-                                moduloEnMapa.componentes.push({
-                                    ...componenteCompleto,
-                                    cantidad: compApi.cantidad
-                                });
-                            }
-                        }
+                    if (componenteCompleto) {
+                        console.log(`✅ Agregando ${componenteCompleto.nombre} al módulo ${moduloEnMapa.nombre}`);
+                        moduloEnMapa.componentes.push({
+                            id: componenteCompleto.id,
+                            nombre: componenteCompleto.nombre,
+                            descripcion: componenteCompleto.descripcion,
+                            cantidad: compApi.cantidad,
+                            precio_unitario: componenteCompleto.precio_unitario ?? componenteCompleto.costo_total ?? 0
+                        });
+                    } else {
+                        console.warn('⚠️ No se encontró componente con ID:', compApi.componente_id);
                     }
                 }
+            } else {
+                console.warn(`⚠️ Componente ${compApi.componente_id} no tiene modulo_id`);
             }
-            
-            // Agregar los módulos reconstruidos a la cotización
-            cotizacion.value.modulos = Array.from(modulosPorId.values());
-            console.log(`✅ ${cotizacion.value.modulos.length} módulos reconstruidos con sus componentes`);
         }
         
-        // Recorrer todos los módulos y sus componentes para sincronizar
-        if (cotizacion.value.modulos && cotizacion.value.modulos.length > 0) {
-            for (const modulo of cotizacion.value.modulos) {
-                if (modulo.componentes && modulo.componentes.length > 0) {
-                    for (const componente of modulo.componentes) {
-                        // Verificar si ya existe en la API
-                        const existeEnApi = componentesLimpios.find(cpc => 
-                            cpc.cotizacion_id === cotizacion.value.id && 
-                            cpc.componente_id === componente.id
-                        );
-                        
-                        if (!existeEnApi) {
-                            // No existe, crearlo
-                            try {
-                                const datosComponente = {
-                                    cotizacion_id: cotizacion.value.id,
-                                    componente_id: componente.id,
-                                    modulo_id: modulo.id,
-                                    cantidad: componente.cantidad || 1
-                                };
-                                console.log('➕ Sincronizando componente:', componente.nombre);
-                                await storeComponentesPorCotizacion.crearComponentePorCotizacion(datosComponente);
-                            } catch (err) {
-                                console.warn('⚠️ Error sincronizando componente:', componente.nombre, err);
-                            }
-                        } else {
-                            // Actualizar cantidad si es diferente
-                            if (existeEnApi.cantidad !== componente.cantidad) {
-                                componente.cantidad = existeEnApi.cantidad;
-                            }
-                        }
-                    }
-                }
-            }
-            console.log('✅ Sincronización de componentes completada');
-        }
+        // Actualizar los módulos en la cotización
+        cotizacion.value.modulos = Array.from(modulosPorId.values());
+        console.log(`✅ ${cotizacion.value.modulos.length} módulos reconstruidos con ${componentesEstaCotzacion.length} componentes`);
+        console.log('✅ Sincronización de componentes completada');
     } catch (err) {
         console.error('❌ Error en sincronización de componentes:', err);
         // No lanzar error para no bloquear la carga de la cotización
