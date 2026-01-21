@@ -547,17 +547,28 @@
                                         <div class="tab-panel-header">
                                             <h5>Materiales del Componente</h5>
                                             <p class="tab-description">Visualiza los materiales asociados a este componente</p>
+                                            <button class="btn-add-item" @click="agregarMaterial">
+                                                <span class="btn-icon">➕</span>
+                                                Agregar Material
+                                            </button>
                                         </div>
                                         <div v-if="componenteEditando.materiales && componenteEditando.materiales.length > 0" class="items-list">
                                             <div v-for="mat in componenteEditando.materiales" :key="mat.id" class="item-card">
                                                 <div class="item-header">
                                                     <span class="item-icon">📦</span>
                                                     <span class="item-name">{{ mat.material?.nombre || 'Sin nombre' }}</span>
+                                                    <button class="btn-delete-item" @click="eliminarMaterial(mat)" title="Eliminar material">
+                                                        🗑️
+                                                    </button>
                                                 </div>
                                                 <div class="item-details">
                                                     <div class="item-detail-row">
                                                         <span class="detail-label">Cantidad:</span>
-                                                        <span class="detail-value">{{ mat.cantidad }} unidades</span>
+                                                        <div class="cantidad-controls">
+                                                            <button class="btn-cantidad" @click="disminuirCantidadMaterial(mat)">−</button>
+                                                            <span class="detail-value">{{ mat.cantidad }}</span>
+                                                            <button class="btn-cantidad" @click="aumentarCantidadMaterial(mat)">+</button>
+                                                        </div>
                                                     </div>
                                                     <div class="item-detail-row">
                                                         <span class="detail-label">Costo unitario:</span>
@@ -1417,6 +1428,34 @@ const cerrarModalEditarComponente = () => {
     componenteEditando.value = null;
     cantidadEdicion.value = 1;
     tabActiva.value = 'materiales';
+};
+
+// Funciones para gestionar materiales
+const agregarMaterial = () => {
+    // TODO: Implementar modal para agregar material
+    console.log('🔵 Agregar material');
+};
+
+const eliminarMaterial = (material) => {
+    if (confirm(`¿Estás seguro de eliminar el material "${material.material?.nombre || 'Sin nombre'}"?`)) {
+        const index = componenteEditando.value.materiales.findIndex(m => m.id === material.id);
+        if (index !== -1) {
+            componenteEditando.value.materiales.splice(index, 1);
+            console.log('✅ Material eliminado:', material.material?.nombre);
+        }
+    }
+};
+
+const aumentarCantidadMaterial = (material) => {
+    material.cantidad = (material.cantidad || 0) + 1;
+    console.log('➕ Cantidad aumentada:', material.material?.nombre, material.cantidad);
+};
+
+const disminuirCantidadMaterial = (material) => {
+    if (material.cantidad > 1) {
+        material.cantidad -= 1;
+        console.log('➖ Cantidad disminuida:', material.material?.nombre, material.cantidad);
+    }
 };
 
 const cambiarComponenteSeleccionado = () => {
@@ -3437,6 +3476,9 @@ onMounted(() => {
 
 .tab-panel-header {
     margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .tab-panel-header h5 {
@@ -3450,6 +3492,35 @@ onMounted(() => {
     margin: 0;
     color: #8B5A3C;
     font-size: 0.95rem;
+}
+
+.btn-add-item {
+    align-self: flex-start;
+    background: linear-gradient(135deg, #d4a574 0%, #b8865e 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(139, 90, 60, 0.2);
+}
+
+.btn-add-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 90, 60, 0.3);
+    background: linear-gradient(135deg, #b8865e 0%, #d4a574 100%);
+}
+
+.btn-add-item .btn-icon {
+    font-size: 1rem;
+    margin: 0;
+    padding: 0;
 }
 
 .items-list {
@@ -3493,6 +3564,23 @@ onMounted(() => {
     flex: 1;
 }
 
+.btn-delete-item {
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.btn-delete-item:hover {
+    background: #cc0000;
+    transform: scale(1.1);
+}
+
 .item-details {
     display: flex;
     flex-direction: column;
@@ -3504,6 +3592,49 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     padding: 0.4rem 0;
+}
+
+.cantidad-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: white;
+    border-radius: 8px;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #e8ddd7;
+}
+
+.btn-cantidad {
+    background: #d4a574;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.btn-cantidad:hover {
+    background: #b8865e;
+    transform: scale(1.1);
+}
+
+.btn-cantidad:active {
+    transform: scale(0.95);
+}
+
+.cantidad-controls .detail-value {
+    min-width: 40px;
+    text-align: center;
+    font-weight: 700;
+    color: #6B4423;
 }
 
 .item-detail-row.subtotal {
