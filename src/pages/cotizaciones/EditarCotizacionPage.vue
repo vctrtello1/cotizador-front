@@ -3628,49 +3628,80 @@ onMounted(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .modal-content {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.1);
     max-width: 500px;
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
-    border-bottom: 2px solid #e8ddd7;
+    padding: 1.8rem 2rem;
+    background: linear-gradient(135deg, #f9f7f4 0%, #ffffff 100%);
+    border-bottom: 1px solid #e8ddd7;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .modal-header h3 {
     margin: 0;
-    font-size: 1.3rem;
-    color: #5a4037;
+    font-size: 1.4rem;
+    color: #1a1a1a;
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 .btn-close {
-    background: none;
+    background: rgba(0, 0, 0, 0.05);
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    color: #999;
-    transition: all 0.2s;
+    color: #666;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
 }
 
 .btn-close:hover {
-    color: #5a4037;
-    transform: scale(1.2);
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+    transform: scale(1.1);
 }
 
 .modal-body {
@@ -4527,8 +4558,11 @@ onMounted(() => {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
+    padding-top: 1rem;
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
     border-bottom: 2px solid #e8ddd7;
     overflow-x: auto;
+    position: relative;
 }
 
 .tab-btn {
@@ -4539,20 +4573,34 @@ onMounted(() => {
     font-weight: 600;
     color: #8B5A3C;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-bottom: 3px solid transparent;
     white-space: nowrap;
+    border-radius: 8px 8px 0 0;
+    position: relative;
 }
 
 .tab-btn:hover {
     color: #6B4423;
-    background: rgba(212, 165, 116, 0.1);
+    background: rgba(212, 165, 116, 0.12);
 }
 
 .tab-btn.active {
     color: #6B4423;
     border-bottom-color: #d4a574;
     background: rgba(212, 165, 116, 0.15);
+    font-weight: 700;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #d4a574, transparent);
+    border-radius: 2px;
 }
 
 .tab-content {
@@ -4596,25 +4644,30 @@ onMounted(() => {
 
 .btn-add-item {
     align-self: flex-start;
-    background: linear-gradient(135deg, #d4a574 0%, #b8865e 100%);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 0.6rem 1.2rem;
+    border-radius: 12px;
+    padding: 0.85rem 1.6rem;
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(139, 90, 60, 0.2);
+    gap: 0.6rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.3);
 }
 
 .btn-add-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 90, 60, 0.3);
-    background: linear-gradient(135deg, #b8865e 0%, #d4a574 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.45);
+    background: linear-gradient(135deg, #e0b585 0%, #d4a574 100%);
+}
+
+.btn-add-item:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 .btn-add-item .btn-icon {
@@ -4630,16 +4683,17 @@ onMounted(() => {
 }
 
 .item-card {
-    background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
-    border: 2px solid #e8ddd7;
+    background: white;
+    border: 1px solid #e8ddd7;
     border-radius: 12px;
     padding: 1.25rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .item-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(139, 90, 60, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.2);
     border-color: #d4a574;
 }
 
@@ -4664,21 +4718,48 @@ onMounted(() => {
     flex: 1;
 }
 
-.btn-delete-item {
-    background: #ff4444;
+.item-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-edit-item {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     line-height: 1;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-edit-item:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-delete-item {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .btn-delete-item:hover {
-    background: #cc0000;
-    transform: scale(1.1);
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 .item-details {
@@ -4705,25 +4786,31 @@ onMounted(() => {
 }
 
 .btn-cantidad {
-    background: #d4a574;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
-    border-radius: 6px;
-    width: 28px;
-    height: 28px;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
     font-size: 1.2rem;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     line-height: 1;
+    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.2);
 }
 
 .btn-cantidad:hover {
-    background: #b8865e;
-    transform: scale(1.1);
+    background: linear-gradient(135deg, #e0b585 0%, #d4a574 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(212, 165, 116, 0.3);
+}
+
+.btn-cantidad:active {
+    transform: translateY(0);
 }
 
 .btn-cantidad:active {
@@ -6021,36 +6108,52 @@ onMounted(() => {
 
 .input-text {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1.1rem;
     border: 2px solid #e8ddd7;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
-    color: #2c2c2c;
-    transition: all 0.3s ease;
+    color: #1a1a1a;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fafafa;
+}
+
+.input-text:hover {
+    border-color: #d4a574;
+    background: white;
 }
 
 .input-text:focus {
     outline: none;
     border-color: #d4a574;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.1);
+    transform: translateY(-1px);
 }
 
 .input-textarea {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1.1rem;
     border: 2px solid #e8ddd7;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
-    color: #2c2c2c;
+    color: #1a1a1a;
     font-family: inherit;
     resize: vertical;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fafafa;
+    min-height: 100px;
+}
+
+.input-textarea:hover {
+    border-color: #d4a574;
+    background: white;
 }
 
 .input-textarea:focus {
     outline: none;
     border-color: #d4a574;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.1);
 }
 
 .form-actions-inline {
@@ -6063,23 +6166,46 @@ onMounted(() => {
 .btn-save-changes {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.9rem 1.8rem;
+    gap: 0.6rem;
+    padding: 1rem 2rem;
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.35);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-save-changes::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-save-changes:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-save-changes:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.4);
-    background: linear-gradient(135deg, #c89564 0%, #b8845a 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.5);
+}
+
+.btn-save-changes:active {
+    transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
