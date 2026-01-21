@@ -1275,25 +1275,82 @@ const cerrarModalCantidadComponente = () => {
     cantidadNuevoComponente.value = 1;
 };
 
-const abrirModalEditarComponente = (componente) => {
-    // Los datos del componente ya están cargados en componente.componente
-    // No necesitamos hacer otra llamada a la API
-    componenteEditando.value = {
-        ...componente,
-        // Los datos completos del componente (materiales, herrajes, mano_de_obra, acabado)
-        // ya están en componente.componente desde sincronizarComponentesExistentes
-        ...(componente.componente || {}),
-        // Mantener datos específicos de la cotización
-        id: componente.id, // ID de la relación componente_por_cotizacion
-        componente_id: componente.componente_id,
-        modulo_nombre: componente.modulo_nombre,
-        modulo_id: componente.modulo_id,
-        cantidad: componente.cantidad
-    };
-    
-    cantidadEdicion.value = componente.cantidad;
-    tabActiva.value = 'materiales';
-    mostrarModalEditarComponente.value = true;
+const abrirModalEditarComponente = async (componente) => {
+    try {
+        console.log('🔵 Abriendo modal para editar componente:', componente);
+        console.log('🔍 componente.componente_id:', componente.componente_id);
+        console.log('🔍 componente.id:', componente.id);
+        
+        // Importar las APIs necesarias
+        const { getComponenteById } = await import('../../http/componentes-api');
+        const { fetchMaterialesPorComponente } = await import('../../http/materiales_por_componente-api.js');
+        const { fetchCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
+        const { fetchHorasDeManoDeObraPorComponentes } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
+        
+        // Cargar datos base del componente
+        const componenteCompletoResponse = await getComponenteById(componente.componente_id);
+        const componenteCompleto = componenteCompletoResponse.data || componenteCompletoResponse;
+        console.log('✅ Componente completo cargado:', componenteCompleto);
+        
+        // Cargar materiales relacionados - usar fetch all y filtrar
+        let materiales = [];
+        try {
+            const todosMaterialesResponse = await fetchMaterialesPorComponente();
+            const todosMateriales = Array.isArray(todosMaterialesResponse) ? todosMaterialesResponse : (todosMaterialesResponse.data || []);
+            materiales = todosMateriales.filter(m => m.componente_id === componente.componente_id);
+            console.log('✅ Materiales encontrados:', materiales.length);
+        } catch (err) {
+            console.warn('⚠️ Error al cargar materiales:', err);
+        }
+        
+        // Cargar herrajes relacionados
+        let herrajes = [];
+        try {
+            const todasCantidadesResponse = await fetchCantidadPorHerraje();
+            const todasCantidades = Array.isArray(todasCantidadesResponse) ? todasCantidadesResponse : (todasCantidadesResponse.data || []);
+            herrajes = todasCantidades.filter(h => h.componente_id === componente.componente_id);
+            console.log('✅ Herrajes encontrados:', herrajes.length);
+        } catch (err) {
+            console.warn('⚠️ Error al cargar herrajes:', err);
+        }
+        
+        // Cargar horas de mano de obra
+        let horasManoObra = [];
+        try {
+            const todasHorasResponse = await fetchHorasDeManoDeObraPorComponentes();
+            const todasHoras = Array.isArray(todasHorasResponse) ? todasHorasResponse : (todasHorasResponse.data || []);
+            horasManoObra = todasHoras.filter(h => h.componente_id === componente.componente_id);
+            console.log('✅ Horas de mano de obra encontradas:', horasManoObra.length);
+        } catch (err) {
+            console.warn('⚠️ Error al cargar horas de mano de obra:', err);
+        }
+        
+        // Combinar todos los datos
+        componenteEditando.value = {
+            ...componente,
+            ...componenteCompleto,
+            // Agregar las relaciones cargadas
+            materiales: materiales || [],
+            herrajes: herrajes || [],
+            horas_mano_obra: horasManoObra || [],
+            // Mantener datos específicos de la cotización
+            id: componente.id, // ID de la relación componente_por_cotizacion
+            componente_id: componente.componente_id,
+            modulo_nombre: componente.modulo_nombre,
+            modulo_id: componente.modulo_id,
+            cantidad: componente.cantidad
+        };
+        
+        console.log('✅ componenteEditando preparado:', componenteEditando.value);
+        
+        cantidadEdicion.value = componente.cantidad;
+        tabActiva.value = 'materiales';
+        mostrarModalEditarComponente.value = true;
+    } catch (err) {
+        console.error('❌ Error al cargar datos del componente:', err);
+        error.value = 'Error al cargar los datos del componente';
+        setTimeout(() => { error.value = null; }, 3000);
+    }
 };
 
 const cerrarModalEditarComponente = () => {
@@ -1762,6 +1819,7 @@ const sincronizarComponentesExistentes = async () => {
                         console.log(`✅ Agregando ${componenteCompleto.nombre} al módulo ${moduloEnMapa.nombre}`);
                         moduloEnMapa.componentes.push({
                             id: componenteCompleto.id,
+                            componente_id: componenteCompleto.id, // ID del componente en la tabla componentes
                             nombre: componenteCompleto.nombre,
                             descripcion: componenteCompleto.descripcion,
                             cantidad: compApi.cantidad,
