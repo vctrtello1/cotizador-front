@@ -409,7 +409,7 @@
                                     <div class="componente-card-body">
                                         <p v-if="componente.descripcion">{{ componente.descripcion }}</p>
                                         <div class="componente-precio">
-                                            ${{ formatCurrency(componente.precio_unitario) }}
+                                            ${{ formatCurrency(componente.costo_total) }}
                                         </div>
                                     </div>
                                 </div>
@@ -428,7 +428,7 @@
 
                         <div class="modal-body-cantidad">
                             <div class="cantidad-info">
-                                <p><strong>Precio unitario:</strong> ${{ formatCurrency(componenteSeleccionado.precio_unitario) }}</p>
+                                <p><strong>Precio unitario:</strong> ${{ formatCurrency(componenteSeleccionado.costo_total) }}</p>
                                 <p v-if="componenteSeleccionado.descripcion"><strong>Descripción:</strong> {{ componenteSeleccionado.descripcion }}</p>
                             </div>
 
@@ -443,7 +443,7 @@
 
                             <div class="subtotal-display">
                                 <span class="label">Subtotal:</span>
-                                <span class="value">${{ formatCurrency(componenteSeleccionado.precio_unitario * cantidadNuevoComponente) }}</span>
+                                <span class="value">${{ formatCurrency(componenteSeleccionado.costo_total * cantidadNuevoComponente) }}</span>
                             </div>
                         </div>
 
