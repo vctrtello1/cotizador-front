@@ -679,12 +679,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="modal-footer-cantidad">
-                                <button @click="cerrarModalEditarComponente" class="btn-primary-modal">
-                                    ✓ Cerrar
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </Transition>
