@@ -574,6 +574,8 @@ const todosLosComponentes = computed(() => {
                 for (const comp of modulo.componentes) {
                     componentes.push({
                         ...comp,
+                        // Normalizar precio_unitario: usar costo_total si precio_unitario no existe
+                        precio_unitario: comp.precio_unitario ?? comp.costo_total ?? comp.componente?.costo_total ?? 0,
                         modulo_id: modulo.id,
                         modulo_nombre: modulo.nombre,
                         modulo_index: moduloIndex
@@ -636,25 +638,29 @@ const calcularSubtotal = (componente) => {
 };
 
 const calcularPrecioUnitarioModulo = (modulo) => {
-    // Sumar el precio unitario de todos los componentes del módulo
+    // Sumar el subtotal de todos los componentes del módulo (precio × cantidad)
     if (!modulo.componentes || !Array.isArray(modulo.componentes)) return 0;
     return modulo.componentes.reduce((sum, comp) => {
-        const precio = Number(comp.precio_unitario) || 0;
-        return sum + precio;
+        // Usar precio_unitario, o costo_total si no existe
+        const precio = Number(comp.precio_unitario ?? comp.costo_total ?? comp.componente?.costo_total) || 0;
+        const cantidad = Number(comp.cantidad) || 1;
+        return sum + (precio * cantidad);
     }, 0);
 };
 
 const calcularSubtotalModulo = (modulo) => {
-    // Usar costo_total del API si existe, sino calcular desde componentes
+    // Calcular desde componentes actuales para reflejar cantidades actualizadas
+    if (modulo.componentes && Array.isArray(modulo.componentes) && modulo.componentes.length > 0) {
+        return calcularPrecioUnitarioModulo(modulo);
+    }
+    
+    // Fallback: usar costo_total del API solo si no hay componentes
     if (modulo.costo_total) {
         const cantidad = Number(modulo.cantidad) || 1;
         return Number(modulo.costo_total) * cantidad;
     }
     
-    // Fallback: calcular desde componentes
-    const precioUnitario = calcularPrecioUnitarioModulo(modulo);
-    const cantidad = Number(modulo.cantidad) || 1;
-    return precioUnitario * cantidad;
+    return 0;
 };
 
 const actualizarTotales = () => {
@@ -776,6 +782,8 @@ const actualizarCantidadComponenteFlat = async (comp) => {
             // Sincronizar la cantidad del componente en el módulo con la del comp plano
             componente.cantidad = comp.cantidad;
             await actualizarCantidadComponente(componente, modulo);
+            // Forzar reactividad para actualizar el subtotal
+            cotizacion.value.modulos = [...cotizacion.value.modulos];
         }
     }
 };
@@ -787,6 +795,8 @@ const incrementarCantidadComponenteFlat = async (comp) => {
         if (componente) {
             componente.cantidad = (componente.cantidad || 1) + 1;
             await actualizarCantidadComponente(componente, modulo);
+            // Forzar reactividad para actualizar el subtotal
+            cotizacion.value.modulos = [...cotizacion.value.modulos];
         }
     }
 };
@@ -798,6 +808,8 @@ const decrementarCantidadComponenteFlat = async (comp) => {
         if (componente && componente.cantidad > 1) {
             componente.cantidad--;
             await actualizarCantidadComponente(componente, modulo);
+            // Forzar reactividad para actualizar el subtotal
+            cotizacion.value.modulos = [...cotizacion.value.modulos];
         }
     }
 };
@@ -1006,7 +1018,7 @@ const confirmarAgregarComponente = async () => {
             id: componente.id,
             nombre: componente.nombre,
             descripcion: componente.descripcion,
-            precio_unitario: componente.precio_unitario,
+            precio_unitario: componente.precio_unitario ?? componente.costo_total ?? componente.componente?.costo_total ?? 0,
             cantidad: cantidadNuevoComponente.value
         };
         
