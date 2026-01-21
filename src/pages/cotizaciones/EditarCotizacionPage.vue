@@ -189,7 +189,8 @@
                 </div>
 
                 <!-- Selector de módulos modal -->
-                <div v-if="mostrarSelectorModulos" class="modal-overlay" @click="cerrarSelectorModulos">
+                <Transition name="modal">
+                    <div v-if="mostrarSelectorModulos" class="modal-overlay" @click="cerrarSelectorModulos">
                     <div class="modal-content modal-modulos-mejorado" @click.stop>
                         <div class="modal-header-modulos">
                             <div class="modal-icon">🧩</div>
@@ -231,10 +232,11 @@
                         </div>
                     </div>
                 </div>
+                </Transition>
 
                 <!-- Modal para definir cantidad del módulo -->
-                <template v-if="moduloSeleccionadoModal && !cargandoModuloModal">
-                    <div class="modal-overlay" @click="cerrarModalCantidad">
+                <Transition name="modal">
+                    <div v-if="moduloSeleccionadoModal && !cargandoModuloModal" class="modal-overlay" @click="cerrarModalCantidad">
                         <div class="modal-content modal-cantidad-mejorado" @click.stop>
                             <div class="modal-header-cantidad">
                                 <div class="modal-icon">📦</div>
@@ -285,10 +287,11 @@
                             </div>
                         </div>
                     </div>
-                </template>
+                </Transition>
 
                 <!-- Modal selector de clientes -->
-                <div v-if="mostrarSelectorClientes" class="modal-overlay" @click="cerrarSelectorClientes">
+                <Transition name="modal">
+                    <div v-if="mostrarSelectorClientes" class="modal-overlay" @click="cerrarSelectorClientes">
                     <div class="modal-content modal-clientes-mejorado" @click.stop>
                         <div class="modal-header-clientes">
                             <div class="modal-icon">👥</div>
@@ -335,9 +338,11 @@
                         </div>
                     </div>
                 </div>
+                </Transition>
 
                 <!-- Modal selector de módulos para agregar componente -->
-                <div v-if="mostrarSelectorModulosParaComponentes" class="modal-overlay" @click="cerrarSelectorModulosParaComponentes">
+                <Transition name="modal">
+                    <div v-if="mostrarSelectorModulosParaComponentes" class="modal-overlay" @click="cerrarSelectorModulosParaComponentes">
                     <div class="modal-content modal-modulos-mejorado" @click.stop>
                         <div class="modal-header-modulos">
                             <div class="modal-icon">🏗️</div>
@@ -379,9 +384,11 @@
                         </div>
                     </div>
                 </div>
+                </Transition>
 
                 <!-- Selector de componentes modal -->
-                <div v-if="mostrarSelectorComponentes" class="modal-overlay" @click="cerrarSelectorComponentes">
+                <Transition name="modal">
+                    <div v-if="mostrarSelectorComponentes" class="modal-overlay" @click="cerrarSelectorComponentes">
                     <div class="modal-content modal-componentes-mejorado" @click.stop>
                         <div class="modal-header-componentes">
                             <div class="modal-icon">🧩</div>
@@ -427,9 +434,11 @@
                         </div>
                     </div>
                 </div>
+                </Transition>
 
                 <!-- Modal de cantidad para componente -->
-                <div v-if="mostrarModalCantidadComponente && componenteSeleccionado" class="modal-overlay" @click="cerrarModalCantidadComponente">
+                <Transition name="modal">
+                    <div v-if="mostrarModalCantidadComponente && componenteSeleccionado" class="modal-overlay" @click="cerrarModalCantidadComponente">
                     <div class="modal-content modal-cantidad-componente" @click.stop>
                         <div class="modal-header-cantidad">
                             <h3>⚙️ {{ componenteSeleccionado.nombre }}</h3>
@@ -468,6 +477,7 @@
                         </div>
                     </div>
                 </div>
+                </Transition>
 
                 <!-- Resumen de totales -->
                 <div class="form-section resumen-section">
@@ -3919,11 +3929,11 @@ onMounted(() => {
 
 /* Transiciones para agregar/eliminar componentes */
 .component-list-enter-active {
-    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .component-list-leave-active {
-    transition: all 0.7s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    transition: all 2s cubic-bezier(0.55, 0.085, 0.68, 0.53);
 }
 
 .component-list-enter-from {
@@ -3937,7 +3947,34 @@ onMounted(() => {
 }
 
 .component-list-move {
-    transition: transform 0.8s cubic-bezier(0.55, 0, 0.1, 1);
+    transition: transform 2s cubic-bezier(0.55, 0, 0.1, 1);
+}
+
+/* Transiciones para los modales */
+.modal-enter-active {
+    transition: all 0.3s ease-out;
+}
+
+.modal-leave-active {
+    transition: all 0.25s ease-in;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+.modal-enter-from .modal-content,
+.modal-leave-to .modal-content {
+    transform: scale(0.9) translateY(-20px);
+}
+
+.modal-enter-active .modal-content {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-leave-active .modal-content {
+    transition: transform 0.25s ease-in;
 }
 
 .component-item-card {
