@@ -694,6 +694,70 @@
                     </div>
                 </Transition>
 
+                <!-- Modal para agregar material -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalAgregarMaterial" class="modal-overlay" @click="cerrarModalAgregarMaterial">
+                        <div class="modal-content modal-selector" @click.stop>
+                            <div class="modal-header">
+                                <h3>📦 Seleccionar Material</h3>
+                                <button class="btn-close" @click="cerrarModalAgregarMaterial">✕</button>
+                            </div>
+
+                            <div class="modal-body">
+                                <!-- Buscador -->
+                                <div class="search-box">
+                                    <input
+                                        v-model="busquedaMaterial"
+                                        type="text"
+                                        placeholder="🔍 Buscar material por nombre..."
+                                        class="search-input"
+                                    />
+                                </div>
+
+                                <!-- Lista de materiales -->
+                                <div class="selector-list">
+                                    <div
+                                        v-for="material in materialesFiltrados"
+                                        :key="material.id"
+                                        :class="['selector-item', { selected: materialSeleccionado?.id === material.id }]"
+                                        @click="materialSeleccionado = material"
+                                    >
+                                        <div class="selector-item-content">
+                                            <span class="selector-icon">📦</span>
+                                            <div class="selector-info">
+                                                <span class="selector-name">{{ material.nombre }}</span>
+                                                <span class="selector-description">{{ material.descripcion || 'Sin descripción' }}</span>
+                                                <span class="selector-price">${{ formatCurrency(material.precio_unitario || 0) }} / unidad</span>
+                                            </div>
+                                        </div>
+                                        <span v-if="materialSeleccionado?.id === material.id" class="selector-check">✓</span>
+                                    </div>
+                                    <div v-if="materialesFiltrados.length === 0" class="empty-selector">
+                                        <p>No se encontraron materiales</p>
+                                    </div>
+                                </div>
+
+                                <!-- Control de cantidad -->
+                                <div v-if="materialSeleccionado" class="cantidad-selector">
+                                    <label>Cantidad:</label>
+                                    <div class="cantidad-input-group">
+                                        <button @click="cantidadMaterial = Math.max(1, cantidadMaterial - 1)" class="btn-cantidad">−</button>
+                                        <input v-model.number="cantidadMaterial" type="number" min="1" class="cantidad-input" />
+                                        <button @click="cantidadMaterial++" class="btn-cantidad">+</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button @click="cerrarModalAgregarMaterial" class="btn-secondary">Cancelar</button>
+                                <button @click="confirmarAgregarMaterial" class="btn-primary-modal" :disabled="!materialSeleccionado">
+                                    Agregar Material
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
                 <!-- Resumen de totales -->
                 <div class="form-section resumen-section">
                     <h2 class="section-title">💰 Resumen Financiero</h2>
@@ -787,6 +851,11 @@ const mostrarModalEditarComponente = ref(false);
 const componenteEditando = ref(null);
 const cantidadEdicion = ref(1);
 const tabActiva = ref('materiales');
+const mostrarModalAgregarMaterial = ref(false);
+const materialSeleccionado = ref(null);
+const cantidadMaterial = ref(1);
+const busquedaMaterial = ref('');
+const materialesDisponibles = ref([]);
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -1431,10 +1500,70 @@ const cerrarModalEditarComponente = () => {
 };
 
 // Funciones para gestionar materiales
-const agregarMaterial = () => {
-    // TODO: Implementar modal para agregar material
-    console.log('🔵 Agregar material');
+const agregarMaterial = async () => {
+    try {
+        // Cargar materiales disponibles
+        const { fetchMateriales } = await import('../../http/materiales-api.js');
+        const response = await fetchMateriales();
+        materialesDisponibles.value = Array.isArray(response) ? response : (response.data || []);
+        
+        // Resetear selección
+        materialSeleccionado.value = null;
+        cantidadMaterial.value = 1;
+        busquedaMaterial.value = '';
+        
+        // Abrir modal
+        mostrarModalAgregarMaterial.value = true;
+        console.log('🔵 Modal de agregar material abierto');
+    } catch (err) {
+        console.error('❌ Error al cargar materiales:', err);
+        alert('Error al cargar la lista de materiales');
+    }
 };
+
+const cerrarModalAgregarMaterial = () => {
+    mostrarModalAgregarMaterial.value = false;
+    materialSeleccionado.value = null;
+    cantidadMaterial.value = 1;
+    busquedaMaterial.value = '';
+};
+
+const confirmarAgregarMaterial = () => {
+    if (!materialSeleccionado.value) {
+        alert('Por favor selecciona un material');
+        return;
+    }
+    
+    // Verificar si el material ya existe
+    const existe = componenteEditando.value.materiales.find(m => m.material_id === materialSeleccionado.value.id);
+    if (existe) {
+        alert('Este material ya está agregado al componente');
+        return;
+    }
+    
+    // Agregar el material
+    const nuevoMaterial = {
+        id: Date.now(), // ID temporal
+        material_id: materialSeleccionado.value.id,
+        componente_id: componenteEditando.value.componente_id,
+        cantidad: cantidadMaterial.value,
+        material: materialSeleccionado.value
+    };
+    
+    componenteEditando.value.materiales.push(nuevoMaterial);
+    console.log('✅ Material agregado:', materialSeleccionado.value.nombre);
+    
+    cerrarModalAgregarMaterial();
+};
+
+const materialesFiltrados = computed(() => {
+    if (!busquedaMaterial.value) return materialesDisponibles.value;
+    const busqueda = busquedaMaterial.value.toLowerCase();
+    return materialesDisponibles.value.filter(m => 
+        m.nombre?.toLowerCase().includes(busqueda) ||
+        m.descripcion?.toLowerCase().includes(busqueda)
+    );
+});
 
 const eliminarMaterial = (material) => {
     if (confirm(`¿Estás seguro de eliminar el material "${material.material?.nombre || 'Sin nombre'}"?`)) {
@@ -2723,6 +2852,138 @@ onMounted(() => {
 
 .modal-modulos {
     max-width: 600px;
+}
+
+/* ===== MODAL: Selector de Materiales ===== */
+.modal-selector {
+    max-width: 600px;
+}
+
+.selector-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 1rem 0;
+    border: 1px solid #e8ddd7;
+    border-radius: 8px;
+}
+
+.selector-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.selector-item:hover {
+    background: #faf8f5;
+}
+
+.selector-item.selected {
+    background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%);
+    border-left: 4px solid #d4a574;
+}
+
+.selector-item-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.selector-icon {
+    font-size: 2rem;
+}
+
+.selector-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.selector-name {
+    font-weight: 700;
+    color: #6B4423;
+    font-size: 1rem;
+}
+
+.selector-description {
+    font-size: 0.85rem;
+    color: #8B5A3C;
+}
+
+.selector-price {
+    font-size: 0.9rem;
+    color: #d4a574;
+    font-weight: 600;
+}
+
+.selector-check {
+    font-size: 1.5rem;
+    color: #d4a574;
+}
+
+.empty-selector {
+    padding: 2rem;
+    text-align: center;
+    color: #999;
+}
+
+.cantidad-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #faf8f5;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.cantidad-selector label {
+    font-weight: 600;
+    color: #6B4423;
+}
+
+.cantidad-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cantidad-input {
+    width: 80px;
+    padding: 0.5rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.cantidad-input:focus {
+    outline: none;
+    border-color: #d4a574;
+}
+
+.search-box {
+    margin-bottom: 1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
 }
 
 /* ===== MODAL: Selector de Módulos Mejorado ===== */
