@@ -438,7 +438,16 @@
 
                         <div class="modal-body-cantidad">
                             <div class="cantidad-info">
-                                <p><strong>Precio unitario:</strong> ${{ formatCurrency(componenteSeleccionado.costo_total) }}</p>
+                                <div class="form-group">
+                                    <label><strong>Selecciona el Módulo:</strong></label>
+                                    <select v-model="moduloParaAgregarComponente" class="form-input modulo-select">
+                                        <option :value="null" disabled>-- Selecciona un módulo --</option>
+                                        <option v-for="modulo in modulosAsignados" :key="modulo.id" :value="modulo">
+                                            {{ modulo.nombre }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <p><strong>Precio unitario:</strong> ${{ formatCurrency(componenteSeleccionado.precio_unitario ?? componenteSeleccionado.costo_total) }}</p>
                                 <p v-if="componenteSeleccionado.descripcion"><strong>Descripción:</strong> {{ componenteSeleccionado.descripcion }}</p>
                             </div>
 
@@ -453,7 +462,7 @@
 
                             <div class="subtotal-display">
                                 <span class="label">Subtotal:</span>
-                                <span class="value">${{ formatCurrency(componenteSeleccionado.costo_total * cantidadNuevoComponente) }}</span>
+                                <span class="value">${{ formatCurrency((componenteSeleccionado.precio_unitario ?? componenteSeleccionado.costo_total) * cantidadNuevoComponente) }}</span>
                             </div>
                         </div>
 
@@ -461,7 +470,7 @@
                             <button @click="cambiarComponenteSeleccionado" class="btn-secondary-modal">
                                 ← Cambiar Componente
                             </button>
-                            <button @click="confirmarAgregarComponente" class="btn-primary-modal">
+                            <button @click="confirmarAgregarComponente" class="btn-primary-modal" :disabled="!moduloParaAgregarComponente">
                                 ✓ Agregar Componente
                             </button>
                         </div>
@@ -995,13 +1004,14 @@ const seleccionarModuloParaComponente = (modulo) => {
     moduloParaAgregarComponente.value = modulo;
     mostrarSelectorModulosParaComponentes.value = false;
     
-    // Si ya hay un componente seleccionado, ir directo al modal de cantidad
-    // Si no, abrir selector de componentes para ese módulo
-    if (componenteSeleccionado.value) {
-        // Ya tiene componente, no abrir selector de componentes
-    } else {
+    // Si ya hay un componente seleccionado, el modal de cantidad ya estará visible
+    // porque componenteSeleccionado.value != null
+    // El usuario confirmará desde el modal de cantidad con el botón "Agregar Componente"
+    if (!componenteSeleccionado.value) {
         abrirSelectorComponentes(modulo);
     }
+    // Si hay componente seleccionado, el modal de cantidad ya se está mostrando
+    // porque v-if="componenteSeleccionado" en el template
 };
 
 const abrirSelectorComponentes = (modulo) => {
@@ -1023,11 +1033,7 @@ const seleccionarComponente = (componente) => {
     componenteSeleccionado.value = componente;
     cantidadNuevoComponente.value = 1;
     mostrarSelectorComponentes.value = false;
-    
-    // Si no hay módulo seleccionado, mostrar selector de módulos
-    if (!moduloParaAgregarComponente.value) {
-        mostrarSelectorModulosParaComponentes.value = true;
-    }
+    // No abrir selector de módulos, el modal de cantidad incluirá un selector
 };
 
 const cerrarModalCantidadComponente = () => {
@@ -1038,6 +1044,7 @@ const cerrarModalCantidadComponente = () => {
 const cambiarComponenteSeleccionado = () => {
     componenteSeleccionado.value = null;
     cantidadNuevoComponente.value = 1;
+    moduloParaAgregarComponente.value = null;
     mostrarSelectorComponentes.value = true;
 };
 
@@ -1064,7 +1071,9 @@ const confirmarAgregarComponente = async () => {
         const moduloIndex = cotizacion.value.modulos.findIndex(m => m.id === moduloRef.id);
         
         if (moduloIndex === -1) {
-            throw new Error('Módulo no encontrado en la cotización');
+            error.value = 'Error: El módulo no está en la cotización. Agrega el módulo primero.';
+            setTimeout(() => { error.value = null; }, 5000);
+            return;
         }
         
         const modulo = cotizacion.value.modulos[moduloIndex];
@@ -1099,8 +1108,8 @@ const confirmarAgregarComponente = async () => {
         console.log('✅ Componente agregado localmente al módulo');
         console.log('📊 Total componentes en módulo:', modulo.componentes.length);
         
-        // Guardar en la API
-        console.log('🔵 Guardando componente en API...');
+        // IMPORTANTE: Solo guardar el componente, NO crear un módulo nuevo
+        console.log('🔵 Guardando componente en API (sin crear módulo nuevo)...');
         const datosComponente = {
             cotizacion_id: cotizacion.value.id,
             componente_id: componente.id,
@@ -1110,7 +1119,7 @@ const confirmarAgregarComponente = async () => {
         
         console.log('📤 Datos a enviar:', datosComponente);
         await storeComponentesPorCotizacion.crearComponentePorCotizacion(datosComponente);
-        console.log('✅ Componente guardado en API');
+        console.log('✅ Componente guardado en API (módulo ya existía)');
         
         success.value = `Componente "${componente.nombre}" agregado correctamente`;
         setTimeout(() => { success.value = null; }, 3000);
@@ -3761,6 +3770,39 @@ onMounted(() => {
 .btn-primary-modal:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(139, 90, 60, 0.3);
+}
+
+.btn-primary-modal:disabled {
+    background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-primary-modal:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.modulo-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e8ddd7;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.modulo-select:focus {
+    outline: none;
+    border-color: #d4a574;
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
+}
+
+.modulo-select option {
+    padding: 10px;
 }
 
 /* Vista plana de componentes */
