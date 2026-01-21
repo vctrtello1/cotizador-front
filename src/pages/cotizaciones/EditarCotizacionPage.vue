@@ -1589,9 +1589,11 @@ const abrirModalEditarComponente = async (componente) => {
         // Consolidar mano de obra desde horas_mano_obra
         let manoDeObraConsolidada = null;
         let horasManoObraTotal = 0;
+        let horasManoObraId = null;
         if (horasManoObra && horasManoObra.length > 0) {
             // Tomar la primera mano de obra asociada
             manoDeObraConsolidada = horasManoObra[0]?.mano_obra || null;
+            horasManoObraId = horasManoObra[0]?.id || null;
             // Sumar todas las horas
             horasManoObraTotal = horasManoObra.reduce((sum, hora) => sum + (hora.horas || 0), 0);
         }
@@ -1605,6 +1607,7 @@ const abrirModalEditarComponente = async (componente) => {
             herrajes: herrajes || [],
             mano_de_obra: manoDeObraConsolidada,
             horas_mano_obra: horasManoObraTotal,
+            horas_mano_obra_id: horasManoObraId,
             acabado: acabado,
             // Mantener datos específicos de la cotización
             id: componente.id, // ID de la relación componente_por_cotizacion
@@ -1939,47 +1942,112 @@ const cambiarManoDeObra = agregarManoDeObra;
 const cerrarModalAgregarManoObra = () => cerrarModal(mostrarModalAgregarManoObra, busquedaManoObra);
 
 const seleccionarYAgregarManoObra = async (manoObra) => {
-    componenteEditando.value = { 
-        ...componenteEditando.value, 
-        mano_de_obra: manoObra, 
-        mano_de_obra_id: manoObra.id,
-        horas_mano_obra: 1
-    };
-    
-    await recalcularCostoComponente();
-    cerrarModalAgregarManoObra();
+    try {
+        // Si ya existe un registro, actualizarlo; si no, crear uno nuevo
+        if (componenteEditando.value.horas_mano_obra_id) {
+            // Actualizar registro existente
+            await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
+                mano_de_obra_id: manoObra.id,
+                componente_id: componenteEditando.value.componente_id,
+                horas: componenteEditando.value.horas_mano_obra || 1
+            });
+        } else {
+            // Crear nuevo registro
+            const response = await crearHoras({
+                mano_de_obra_id: manoObra.id,
+                componente_id: componenteEditando.value.componente_id,
+                horas: 1
+            });
+            
+            // Guardar el ID del nuevo registro
+            componenteEditando.value.horas_mano_obra_id = (response.data || response).id;
+        }
+        
+        componenteEditando.value = { 
+            ...componenteEditando.value, 
+            mano_de_obra: manoObra, 
+            mano_de_obra_id: manoObra.id,
+            horas_mano_obra: componenteEditando.value.horas_mano_obra || 1
+        };
+        
+        await recalcularCostoComponente();
+        cerrarModalAgregarManoObra();
+    } catch (err) {
+        console.error('❌ Error al cambiar mano de obra:', err);
+        alert('Error al cambiar la mano de obra');
+    }
 };
 
 const manoDeObraFiltrada = computed(() => filtrarItems(manoDeObraDisponible.value, busquedaManoObra.value));
 
 const eliminarManoDeObra = async () => {
-    componenteEditando.value = { 
-        ...componenteEditando.value, 
-        mano_de_obra: null, 
-        mano_de_obra_id: null,
-        horas_mano_obra: 0
-    };
-    
-    await recalcularCostoComponente();
+    try {
+        // Si existe un registro en la BD, eliminarlo
+        if (componenteEditando.value.horas_mano_obra_id) {
+            await eliminarHoras(componenteEditando.value.horas_mano_obra_id);
+        }
+        
+        componenteEditando.value = { 
+            ...componenteEditando.value, 
+            mano_de_obra: null, 
+            mano_de_obra_id: null,
+            horas_mano_obra: 0,
+            horas_mano_obra_id: null
+        };
+        
+        await recalcularCostoComponente();
+    } catch (err) {
+        console.error('❌ Error al eliminar mano de obra:', err);
+        alert('Error al eliminar la mano de obra');
+    }
 };
 
 const aumentarHorasManoDeObra = async () => {
     const nuevasHoras = (componenteEditando.value.horas_mano_obra || 1) + 1;
-    componenteEditando.value = {
-        ...componenteEditando.value,
-        horas_mano_obra: nuevasHoras
-    };
-    await recalcularCostoComponente();
+    
+    try {
+        if (componenteEditando.value.horas_mano_obra_id) {
+            await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
+                mano_de_obra_id: componenteEditando.value.mano_de_obra_id,
+                componente_id: componenteEditando.value.componente_id,
+                horas: nuevasHoras
+            });
+        }
+        
+        componenteEditando.value = {
+            ...componenteEditando.value,
+            horas_mano_obra: nuevasHoras
+        };
+        await recalcularCostoComponente();
+    } catch (err) {
+        console.error('❌ Error al aumentar horas:', err);
+        alert('Error al actualizar las horas');
+    }
 };
 
 const disminuirHorasManoDeObra = async () => {
     const horasActuales = componenteEditando.value.horas_mano_obra || 1;
     if (horasActuales > 1) {
-        componenteEditando.value = {
-            ...componenteEditando.value,
-            horas_mano_obra: horasActuales - 1
-        };
-        await recalcularCostoComponente();
+        const nuevasHoras = horasActuales - 1;
+        
+        try {
+            if (componenteEditando.value.horas_mano_obra_id) {
+                await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
+                    mano_de_obra_id: componenteEditando.value.mano_de_obra_id,
+                    componente_id: componenteEditando.value.componente_id,
+                    horas: nuevasHoras
+                });
+            }
+            
+            componenteEditando.value = {
+                ...componenteEditando.value,
+                horas_mano_obra: nuevasHoras
+            };
+            await recalcularCostoComponente();
+        } catch (err) {
+            console.error('❌ Error al disminuir horas:', err);
+            alert('Error al actualizar las horas');
+        }
     }
 };
 
