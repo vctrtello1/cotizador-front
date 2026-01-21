@@ -119,7 +119,7 @@
                             <span class="section-subtitle">{{ todosLosComponentes.length }} componente(s)</span>
                         </div>
                         <div class="header-buttons">
-                            <button v-if="modulosAsignados.length > 0" @click="abrirSelectorModulosParaComponente" class="btn-add-component">
+                            <button v-if="modulosAsignados.length > 0 && todosLosComponentes.length > 0" @click="abrirSelectorModulosParaComponente" class="btn-add-component">
                                 <span class="btn-icon">⚙️</span>
                                 <span>Agregar Componente</span>
                             </button>
@@ -737,6 +737,15 @@ const eliminarComponente = async (componente, modulo, compIndex) => {
         // Eliminar del array local primero
         modulo.componentes.splice(compIndex, 1);
         console.log('🗑️ Componente eliminado localmente');
+        
+        // Si el módulo quedó sin componentes, eliminarlo también
+        if (modulo.componentes.length === 0) {
+            const moduloIndex = cotizacion.value.modulos.findIndex(m => m.id === modulo.id);
+            if (moduloIndex !== -1) {
+                cotizacion.value.modulos.splice(moduloIndex, 1);
+                console.log('🗑️ Módulo eliminado porque quedó sin componentes');
+            }
+        }
         
         // Forzar reactividad para actualizar el total
         cotizacion.value.modulos = [...cotizacion.value.modulos];
