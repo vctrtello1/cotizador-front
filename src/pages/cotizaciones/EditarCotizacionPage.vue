@@ -502,10 +502,6 @@
                                 <!-- Información del componente -->
                                 <div class="componente-info-header">
                                     <h4 class="componente-nombre-grande">{{ componenteEditando.nombre }}</h4>
-                                    <div class="componente-meta">
-                                        <span class="meta-badge">📦 {{ componenteEditando.modulo_nombre }}</span>
-                                        <span class="meta-price">${{ formatCurrency(componenteEditando.precio_unitario) }} / unidad</span>
-                                    </div>
                                 </div>
 
                                 <!-- Tabs para navegar entre secciones -->
@@ -2098,8 +2094,10 @@ const agregarHerraje = () => abrirModalSeleccion(
 const cerrarModalAgregarHerraje = () => cerrarModal(mostrarModalAgregarHerraje, busquedaHerraje);
 
 const seleccionarYAgregarHerraje = async (herraje) => {
+    // Verificar si el herraje ya está agregado (sin mostrar mensaje)
     if (componenteEditando.value.herrajes.find(h => h.herraje_id === herraje.id)) {
-        return alert('Este herraje ya está agregado al componente');
+        cerrarModalAgregarHerraje();
+        return;
     }
     
     try {
