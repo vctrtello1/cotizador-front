@@ -138,14 +138,24 @@
                         <div v-for="comp in todosLosComponentes" :key="`comp-${comp.modulo_id}-${comp.id}`" class="component-item-card">
                             <div class="component-card-header">
                                 <div class="component-badge">{{ comp.modulo_nombre }}</div>
-                                <button 
-                                    type="button" 
-                                    class="btn-eliminar-componente-card" 
-                                    @click="eliminarComponenteFlat(comp)"
-                                    title="Eliminar componente"
-                                >
-                                    🗑️
-                                </button>
+                                <div class="component-actions-group">
+                                    <button 
+                                        type="button" 
+                                        class="btn-editar-componente-card" 
+                                        @click="abrirModalEditarComponente(comp)"
+                                        title="Editar componente"
+                                    >
+                                        ✏️
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        class="btn-eliminar-componente-card" 
+                                        @click="eliminarComponenteFlat(comp)"
+                                        title="Eliminar componente"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
                             </div>
                             
                             <div class="component-card-body">
@@ -479,6 +489,206 @@
                 </div>
                 </Transition>
 
+                <!-- Modal de edición de componente -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalEditarComponente && componenteEditando" class="modal-overlay" @click="cerrarModalEditarComponente">
+                        <div class="modal-content modal-editar-componente-grande" @click.stop>
+                            <div class="modal-header-cantidad">
+                                <h3>✏️ Editar Componente</h3>
+                                <button class="btn-close-cantidad" @click="cerrarModalEditarComponente">✕</button>
+                            </div>
+
+                            <div class="modal-body-editar-componente">
+                                <!-- Información del componente -->
+                                <div class="componente-info-header">
+                                    <h4 class="componente-nombre-grande">{{ componenteEditando.nombre }}</h4>
+                                    <div class="componente-meta">
+                                        <span class="meta-badge">📦 {{ componenteEditando.modulo_nombre }}</span>
+                                        <span class="meta-price">${{ formatCurrency(componenteEditando.precio_unitario) }} / unidad</span>
+                                    </div>
+                                </div>
+
+                                <!-- Tabs para navegar entre secciones -->
+                                <div class="tabs-container">
+                                    <button 
+                                        type="button"
+                                        :class="['tab-btn', { active: tabActiva === 'materiales' }]"
+                                        @click="tabActiva = 'materiales'"
+                                    >
+                                        📋 Materiales
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        :class="['tab-btn', { active: tabActiva === 'herrajes' }]"
+                                        @click="tabActiva = 'herrajes'"
+                                    >
+                                        🔩 Herrajes
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        :class="['tab-btn', { active: tabActiva === 'mano-obra' }]"
+                                        @click="tabActiva = 'mano-obra'"
+                                    >
+                                        👷 Mano de Obra
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        :class="['tab-btn', { active: tabActiva === 'acabado' }]"
+                                        @click="tabActiva = 'acabado'"
+                                    >
+                                        🎨 Acabado
+                                    </button>
+                                </div>
+
+                                <!-- Contenido de tabs -->
+                                <div class="tab-content">
+                                    <!-- Tab Materiales -->
+                                    <div v-if="tabActiva === 'materiales'" class="tab-panel">
+                                        <div class="tab-panel-header">
+                                            <h5>Materiales del Componente</h5>
+                                            <p class="tab-description">Visualiza los materiales asociados a este componente</p>
+                                        </div>
+                                        <div v-if="componenteEditando.materiales && componenteEditando.materiales.length > 0" class="items-list">
+                                            <div v-for="mat in componenteEditando.materiales" :key="mat.id" class="item-card">
+                                                <div class="item-header">
+                                                    <span class="item-icon">📦</span>
+                                                    <span class="item-name">{{ mat.material?.nombre || 'Sin nombre' }}</span>
+                                                </div>
+                                                <div class="item-details">
+                                                    <div class="item-detail-row">
+                                                        <span class="detail-label">Cantidad:</span>
+                                                        <span class="detail-value">{{ mat.cantidad }} unidades</span>
+                                                    </div>
+                                                    <div class="item-detail-row">
+                                                        <span class="detail-label">Costo unitario:</span>
+                                                        <span class="detail-value">${{ formatCurrency(mat.material?.costo_unitario || 0) }}</span>
+                                                    </div>
+                                                    <div class="item-detail-row subtotal">
+                                                        <span class="detail-label">Subtotal:</span>
+                                                        <span class="detail-value">${{ formatCurrency((mat.material?.costo_unitario || 0) * (mat.cantidad || 0)) }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-else class="empty-tab-state">
+                                            <div class="empty-icon">📦</div>
+                                            <p>Este componente no tiene materiales asignados</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tab Herrajes -->
+                                    <div v-if="tabActiva === 'herrajes'" class="tab-panel">
+                                        <div class="tab-panel-header">
+                                            <h5>Herrajes del Componente</h5>
+                                            <p class="tab-description">Visualiza los herrajes asociados a este componente</p>
+                                        </div>
+                                        <div v-if="componenteEditando.herrajes && componenteEditando.herrajes.length > 0" class="items-list">
+                                            <div v-for="her in componenteEditando.herrajes" :key="her.id" class="item-card">
+                                                <div class="item-header">
+                                                    <span class="item-icon">🔩</span>
+                                                    <span class="item-name">{{ her.herraje?.nombre || 'Sin nombre' }}</span>
+                                                </div>
+                                                <div class="item-details">
+                                                    <div class="item-detail-row">
+                                                        <span class="detail-label">Cantidad:</span>
+                                                        <span class="detail-value">{{ her.cantidad }} unidades</span>
+                                                    </div>
+                                                    <div class="item-detail-row">
+                                                        <span class="detail-label">Costo unitario:</span>
+                                                        <span class="detail-value">${{ formatCurrency(her.herraje?.costo_unitario || 0) }}</span>
+                                                    </div>
+                                                    <div class="item-detail-row subtotal">
+                                                        <span class="detail-label">Subtotal:</span>
+                                                        <span class="detail-value">${{ formatCurrency((her.herraje?.costo_unitario || 0) * (her.cantidad || 0)) }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-else class="empty-tab-state">
+                                            <div class="empty-icon">🔩</div>
+                                            <p>Este componente no tiene herrajes asignados</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tab Mano de Obra -->
+                                    <div v-if="tabActiva === 'mano-obra'" class="tab-panel">
+                                        <div class="tab-panel-header">
+                                            <h5>Mano de Obra del Componente</h5>
+                                            <p class="tab-description">Visualiza la mano de obra asociada a este componente</p>
+                                        </div>
+                                        <div v-if="componenteEditando.mano_de_obra" class="items-list">
+                                            <div class="item-card">
+                                                <div class="item-header">
+                                                    <span class="item-icon">👷</span>
+                                                    <span class="item-name">{{ componenteEditando.mano_de_obra.nombre || 'Sin nombre' }}</span>
+                                                </div>
+                                                <div class="item-details">
+                                                    <div v-if="componenteEditando.mano_de_obra.descripcion" class="item-detail-row">
+                                                        <span class="detail-label">Descripción:</span>
+                                                        <span class="detail-value">{{ componenteEditando.mano_de_obra.descripcion }}</span>
+                                                    </div>
+                                                    <div class="item-detail-row">
+                                                        <span class="detail-label">Costo por hora:</span>
+                                                        <span class="detail-value">${{ formatCurrency(componenteEditando.mano_de_obra.costo_hora || 0) }}</span>
+                                                    </div>
+                                                    <div v-if="componenteEditando.horas_mano_obra && componenteEditando.horas_mano_obra.length > 0" class="item-detail-row">
+                                                        <span class="detail-label">Horas asignadas:</span>
+                                                        <span class="detail-value">{{ componenteEditando.horas_mano_obra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</span>
+                                                    </div>
+                                                    <div v-if="componenteEditando.mano_de_obra.costo_hora && componenteEditando.horas_mano_obra" class="item-detail-row subtotal">
+                                                        <span class="detail-label">Costo total:</span>
+                                                        <span class="detail-value">${{ formatCurrency(componenteEditando.mano_de_obra.costo_hora * componenteEditando.horas_mano_obra.reduce((sum, h) => sum + (h.horas || 0), 0)) }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-else class="empty-tab-state">
+                                            <div class="empty-icon">👷</div>
+                                            <p>Este componente no tiene mano de obra asignada</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tab Acabado -->
+                                    <div v-if="tabActiva === 'acabado'" class="tab-panel">
+                                        <div class="tab-panel-header">
+                                            <h5>Acabado del Componente</h5>
+                                            <p class="tab-description">Visualiza el acabado asociado a este componente</p>
+                                        </div>
+                                        <div v-if="componenteEditando.acabado" class="items-list">
+                                            <div class="item-card">
+                                                <div class="item-header">
+                                                    <span class="item-icon">🎨</span>
+                                                    <span class="item-name">{{ componenteEditando.acabado.nombre || 'Sin nombre' }}</span>
+                                                </div>
+                                                <div class="item-details">
+                                                    <div v-if="componenteEditando.acabado.descripcion" class="item-detail-row">
+                                                        <span class="detail-label">Descripción:</span>
+                                                        <span class="detail-value">{{ componenteEditando.acabado.descripcion }}</span>
+                                                    </div>
+                                                    <div class="item-detail-row subtotal">
+                                                        <span class="detail-label">Costo:</span>
+                                                        <span class="detail-value">${{ formatCurrency(componenteEditando.acabado.costo || 0) }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-else class="empty-tab-state">
+                                            <div class="empty-icon">🎨</div>
+                                            <p>Este componente no tiene acabado asignado</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer-cantidad">
+                                <button @click="cerrarModalEditarComponente" class="btn-primary-modal">
+                                    ✓ Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
                 <!-- Resumen de totales -->
                 <div class="form-section resumen-section">
                     <h2 class="section-title">💰 Resumen Financiero</h2>
@@ -568,6 +778,10 @@ const componenteSeleccionado = ref(null);
 const cantidadNuevoComponente = ref(1);
 const busquedaComponente = ref('');
 const mostrarModalCantidadComponente = ref(false);
+const mostrarModalEditarComponente = ref(false);
+const componenteEditando = ref(null);
+const cantidadEdicion = ref(1);
+const tabActiva = ref('materiales');
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -1059,6 +1273,34 @@ const cerrarModalCantidadComponente = () => {
     mostrarModalCantidadComponente.value = false;
     componenteSeleccionado.value = null;
     cantidadNuevoComponente.value = 1;
+};
+
+const abrirModalEditarComponente = (componente) => {
+    // Los datos del componente ya están cargados en componente.componente
+    // No necesitamos hacer otra llamada a la API
+    componenteEditando.value = {
+        ...componente,
+        // Los datos completos del componente (materiales, herrajes, mano_de_obra, acabado)
+        // ya están en componente.componente desde sincronizarComponentesExistentes
+        ...(componente.componente || {}),
+        // Mantener datos específicos de la cotización
+        id: componente.id, // ID de la relación componente_por_cotizacion
+        componente_id: componente.componente_id,
+        modulo_nombre: componente.modulo_nombre,
+        modulo_id: componente.modulo_id,
+        cantidad: componente.cantidad
+    };
+    
+    cantidadEdicion.value = componente.cantidad;
+    tabActiva.value = 'materiales';
+    mostrarModalEditarComponente.value = true;
+};
+
+const cerrarModalEditarComponente = () => {
+    mostrarModalEditarComponente.value = false;
+    componenteEditando.value = null;
+    cantidadEdicion.value = 1;
+    tabActiva.value = 'materiales';
 };
 
 const cambiarComponenteSeleccionado = () => {
@@ -2976,6 +3218,219 @@ onMounted(() => {
     border-top: 1px solid #e8ddd7;
 }
 
+/* Estilos para el modal de edición de componente */
+.modal-editar-componente-grande {
+    max-width: 900px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-body-editar-componente {
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.componente-info-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #e8ddd7;
+}
+
+.componente-nombre-grande {
+    font-size: 1.5rem;
+    color: #6B4423;
+    margin: 0 0 0.75rem 0;
+    font-weight: 700;
+}
+
+.componente-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.meta-badge {
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.meta-price {
+    color: #059669;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.tabs-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e8ddd7;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #8B5A3C;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: #6B4423;
+    background: rgba(212, 165, 116, 0.1);
+}
+
+.tab-btn.active {
+    color: #6B4423;
+    border-bottom-color: #d4a574;
+    background: rgba(212, 165, 116, 0.15);
+}
+
+.tab-content {
+    min-height: 300px;
+}
+
+.tab-panel {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tab-panel-header {
+    margin-bottom: 1.5rem;
+}
+
+.tab-panel-header h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    color: #6B4423;
+    font-weight: 700;
+}
+
+.tab-description {
+    margin: 0;
+    color: #8B5A3C;
+    font-size: 0.95rem;
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.item-card {
+    background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
+    border: 2px solid #e8ddd7;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 90, 60, 0.15);
+    border-color: #d4a574;
+}
+
+.item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e8ddd7;
+}
+
+.item-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.item-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #6B4423;
+    flex: 1;
+}
+
+.item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.item-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+}
+
+.item-detail-row.subtotal {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 2px dashed #d4a574;
+    font-weight: 700;
+}
+
+.detail-label {
+    color: #8B5A3C;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #6B4423;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.item-detail-row.subtotal .detail-value {
+    color: #059669;
+    font-size: 1.05rem;
+}
+
+.empty-tab-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #8B5A3C;
+}
+
+.empty-tab-state .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-tab-state p {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 500;
+}
+
 .modal-actions-group {
     display: flex;
     gap: 1rem;
@@ -4012,6 +4467,33 @@ onMounted(() => {
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 600;
+}
+
+.component-actions-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-editar-componente-card {
+    background: rgba(59, 130, 246, 0.1);
+    border: none;
+    color: #3b82f6;
+    font-size: 1.2rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-editar-componente-card:hover {
+    background: #3b82f6;
+    color: white;
+    transform: scale(1.1);
 }
 
 .btn-eliminar-componente-card {
