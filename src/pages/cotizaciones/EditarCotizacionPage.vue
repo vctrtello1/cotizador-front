@@ -134,8 +134,8 @@
                         <p>No hay componentes asignados a esta cotización</p>
                     </div>
 
-                    <div v-else class="componentes-list-flat">
-                        <div v-for="comp in todosLosComponentes" :key="`${comp.modulo_index}-${comp.id}`" class="component-item-card">
+                    <TransitionGroup v-else name="component-list" tag="div" class="componentes-list-flat">
+                        <div v-for="comp in todosLosComponentes" :key="`comp-${comp.modulo_id}-${comp.id}`" class="component-item-card">
                             <div class="component-card-header">
                                 <div class="component-badge">{{ comp.modulo_nombre }}</div>
                                 <button 
@@ -185,7 +185,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <!-- Selector de módulos modal -->
@@ -3915,6 +3915,29 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+
+/* Transiciones para agregar/eliminar componentes */
+.component-list-enter-active {
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.component-list-leave-active {
+    transition: all 0.7s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+.component-list-enter-from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+}
+
+.component-list-leave-to {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+}
+
+.component-list-move {
+    transition: transform 0.8s cubic-bezier(0.55, 0, 0.1, 1);
 }
 
 .component-item-card {
