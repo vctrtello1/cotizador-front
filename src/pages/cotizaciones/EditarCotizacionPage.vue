@@ -649,12 +649,16 @@ const calcularPrecioUnitarioModulo = (modulo) => {
 };
 
 const calcularSubtotalModulo = (modulo) => {
-    // Calcular desde componentes actuales para reflejar cantidades actualizadas
-    if (modulo.componentes && Array.isArray(modulo.componentes) && modulo.componentes.length > 0) {
-        return calcularPrecioUnitarioModulo(modulo);
+    // Siempre calcular desde componentes actuales para reflejar cambios
+    if (modulo.componentes && Array.isArray(modulo.componentes)) {
+        if (modulo.componentes.length > 0) {
+            return calcularPrecioUnitarioModulo(modulo);
+        }
+        // Si el array existe pero está vacío, el subtotal es 0
+        return 0;
     }
     
-    // Fallback: usar costo_total del API solo si no hay componentes
+    // Fallback: usar costo_total del API solo si no existe el array de componentes
     if (modulo.costo_total) {
         const cantidad = Number(modulo.cantidad) || 1;
         return Number(modulo.costo_total) * cantidad;
@@ -733,6 +737,9 @@ const eliminarComponente = async (componente, modulo, compIndex) => {
         // Eliminar del array local primero
         modulo.componentes.splice(compIndex, 1);
         console.log('🗑️ Componente eliminado localmente');
+        
+        // Forzar reactividad para actualizar el total
+        cotizacion.value.modulos = [...cotizacion.value.modulos];
         
         // Intentar eliminar de la API
         try {
