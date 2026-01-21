@@ -512,13 +512,6 @@
                                 <div class="tabs-container">
                                     <button 
                                         type="button"
-                                        :class="['tab-btn', { active: tabActiva === 'informacion' }]"
-                                        @click="tabActiva = 'informacion'"
-                                    >
-                                        ℹ️ Información
-                                    </button>
-                                    <button 
-                                        type="button"
                                         :class="['tab-btn', { active: tabActiva === 'materiales' }]"
                                         @click="tabActiva = 'materiales'"
                                     >
@@ -549,101 +542,6 @@
 
                                 <!-- Contenido de tabs -->
                                 <div class="tab-content">
-                                    <!-- Tab Información -->
-                                    <div v-if="tabActiva === 'informacion'" class="tab-panel">
-                                        <div class="tab-panel-header">
-                                            <h5>Información del Componente</h5>
-                                            <p class="tab-description">Edita la información básica del componente</p>
-                                        </div>
-                                        <div class="form-edit-component">
-                                            <div class="form-group">
-                                                <label for="nombre-componente">Nombre *</label>
-                                                <input 
-                                                    id="nombre-componente"
-                                                    type="text" 
-                                                    v-model="componenteEditando.nombre" 
-                                                    class="input-text"
-                                                    required
-                                                />
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="descripcion-componente">Descripción</label>
-                                                <textarea 
-                                                    id="descripcion-componente"
-                                                    v-model="componenteEditando.descripcion" 
-                                                    class="input-textarea"
-                                                    rows="4"
-                                                ></textarea>
-                                            </div>
-                                            
-                                            <!-- Grid para dimensiones y medidas -->
-                                            <div class="form-grid-dimensions">
-                                                <div class="form-group">
-                                                    <label for="unidad-medida-componente">Unidad de Medida</label>
-                                                    <input 
-                                                        id="unidad-medida-componente"
-                                                        type="text" 
-                                                        v-model="componenteEditando.unidad_de_medida" 
-                                                        class="input-text"
-                                                        placeholder="ej: m², piezas, kg"
-                                                    />
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="alto-componente">Alto</label>
-                                                    <input 
-                                                        id="alto-componente"
-                                                        type="number" 
-                                                        v-model.number="componenteEditando.alto" 
-                                                        class="input-text"
-                                                        step="0.01"
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="ancho-componente">Ancho</label>
-                                                    <input 
-                                                        id="ancho-componente"
-                                                        type="number" 
-                                                        v-model.number="componenteEditando.ancho" 
-                                                        class="input-text"
-                                                        step="0.01"
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="largo-componente">Largo</label>
-                                                    <input 
-                                                        id="largo-componente"
-                                                        type="number" 
-                                                        v-model.number="componenteEditando.largo" 
-                                                        class="input-text"
-                                                        step="0.01"
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                                <div class="form-group">
-                                                    <label for="precio-unitario-componente">Precio Unitario *</label>
-                                                    <input 
-                                                        id="precio-unitario-componente"
-                                                        type="number" 
-                                                        v-model.number="componenteEditando.precio_unitario" 
-                                                        class="input-text"
-                                                        step="0.01"
-                                                        min="0"
-                                                        required
-                                                        placeholder="0.00"
-                                                    />
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="form-actions-inline">
-                                                <button class="btn-save-changes" @click="guardarCambiosComponente">
-                                                    💾 Guardar Cambios
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <!-- Tab Materiales -->
                                     <div v-if="tabActiva === 'materiales'" class="tab-panel">
                                         <div class="tab-panel-header">
@@ -962,30 +860,6 @@
                                                 required
                                                 placeholder="0.00"
                                             />
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="cantidad-editar">Cantidad en el Componente</label>
-                                        <div class="cantidad-input-group">
-                                            <button class="btn-cantidad" @click="disminuirCantidadEdicion">−</button>
-                                            <input 
-                                                id="cantidad-editar"
-                                                type="number" 
-                                                v-model.number="cantidadEdicionMaterial" 
-                                                min="1"
-                                                class="cantidad-input"
-                                            />
-                                            <button class="btn-cantidad" @click="aumentarCantidadEdicion">+</button>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <div class="cost-summary">
-                                            <div class="cost-row total">
-                                                <span>Subtotal:</span>
-                                                <span class="cost-value">${{ formatCurrency((materialEditando.material?.precio_unitario || 0) * cantidadEdicionMaterial) }}</span>
-                                            </div>
                                         </div>
                                     </div>
 
@@ -1856,7 +1730,7 @@ const abrirModalEditarComponente = async (componente) => {
         console.log('✅ componenteEditando preparado:', componenteEditando.value);
         
         cantidadEdicion.value = componente.cantidad;
-        tabActiva.value = 'informacion';
+        tabActiva.value = 'materiales';
         mostrarModalEditarComponente.value = true;
     } catch (err) {
         console.error('❌ Error al cargar datos del componente:', err);
@@ -1869,7 +1743,7 @@ const cerrarModalEditarComponente = () => {
     mostrarModalEditarComponente.value = false;
     componenteEditando.value = null;
     cantidadEdicion.value = 1;
-    tabActiva.value = 'informacion';
+    tabActiva.value = 'materiales';
 };
 
 const guardarCambiosComponente = async () => {
