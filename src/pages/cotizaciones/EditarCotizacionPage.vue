@@ -1289,6 +1289,7 @@ const abrirModalEditarComponente = async (componente) => {
         const { fetchMateriales } = await import('../../http/materiales-api.js');
         const { fetchHerrajes } = await import('../../http/herrajes-api.js');
         const { fetchClientes: fetchManoDeObra } = await import('../../http/mano_de_obra-api .js');
+        const { fetchAcabados, getAcabadoById } = await import('../../http/acabado-api .js');
         
         // Cargar datos base del componente
         const componenteCompletoResponse = await getComponenteById(componente.componente_id);
@@ -1358,6 +1359,33 @@ const abrirModalEditarComponente = async (componente) => {
             console.warn('⚠️ Error al cargar horas de mano de obra:', err);
         }
         
+        // Cargar acabado si existe
+        let acabado = null;
+        console.log('🔍 componenteCompleto.acabado_id:', componenteCompleto.acabado_id);
+        console.log('🔍 componenteCompleto.accesorios:', componenteCompleto.accesorios);
+        
+        // El acabado puede venir en accesorios o acabado_id
+        if (componenteCompleto.accesorios && Array.isArray(componenteCompleto.accesorios) && componenteCompleto.accesorios.length > 0) {
+            // Si viene en accesorios, tomar el primero
+            acabado = componenteCompleto.accesorios[0];
+            console.log('✅ Acabado obtenido de accesorios:', acabado);
+        } else if (componenteCompleto.acabado_id && typeof componenteCompleto.acabado_id === 'number') {
+            try {
+                const acabadoResponse = await getAcabadoById(componenteCompleto.acabado_id);
+                acabado = acabadoResponse.data || acabadoResponse;
+                console.log('✅ Acabado cargado desde API:', acabado);
+            } catch (err) {
+                console.warn('⚠️ Error al cargar acabado:', err);
+            }
+        }
+        
+        // Consolidar mano de obra desde horas_mano_obra
+        let manoDeObraConsolidada = null;
+        if (horasManoObra && horasManoObra.length > 0) {
+            // Tomar la primera mano de obra asociada
+            manoDeObraConsolidada = horasManoObra[0]?.mano_obra || null;
+        }
+        
         // Combinar todos los datos
         componenteEditando.value = {
             ...componente,
@@ -1366,6 +1394,8 @@ const abrirModalEditarComponente = async (componente) => {
             materiales: materiales || [],
             herrajes: herrajes || [],
             horas_mano_obra: horasManoObra || [],
+            mano_de_obra: manoDeObraConsolidada,
+            acabado: acabado,
             // Mantener datos específicos de la cotización
             id: componente.id, // ID de la relación componente_por_cotizacion
             componente_id: componente.componente_id,
