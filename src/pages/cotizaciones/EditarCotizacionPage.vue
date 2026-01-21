@@ -1286,18 +1286,39 @@ const abrirModalEditarComponente = async (componente) => {
         const { fetchMaterialesPorComponente } = await import('../../http/materiales_por_componente-api.js');
         const { fetchCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
         const { fetchHorasDeManoDeObraPorComponentes } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
+        const { fetchMateriales } = await import('../../http/materiales-api.js');
+        const { fetchHerrajes } = await import('../../http/herrajes-api.js');
+        const { fetchClientes: fetchManoDeObra } = await import('../../http/mano_de_obra-api .js');
         
         // Cargar datos base del componente
         const componenteCompletoResponse = await getComponenteById(componente.componente_id);
         const componenteCompleto = componenteCompletoResponse.data || componenteCompletoResponse;
         console.log('✅ Componente completo cargado:', componenteCompleto);
         
+        // Cargar catálogos completos para hacer el join
+        const [todosMaterialesResponse, todosHerrajesResponse, todaManoObraResponse] = await Promise.all([
+            fetchMateriales().catch(() => []),
+            fetchHerrajes().catch(() => []),
+            fetchManoDeObra().catch(() => [])
+        ]);
+        
+        // Normalizar respuestas de catálogos
+        const todosMaterialesData = Array.isArray(todosMaterialesResponse) ? todosMaterialesResponse : (todosMaterialesResponse.data || []);
+        const todosHerrajesData = Array.isArray(todosHerrajesResponse) ? todosHerrajesResponse : (todosHerrajesResponse.data || []);
+        const todaManoObraData = Array.isArray(todaManoObraResponse) ? todaManoObraResponse : (todaManoObraResponse.data || []);
+        
         // Cargar materiales relacionados - usar fetch all y filtrar
         let materiales = [];
         try {
             const todosMaterialesResponse = await fetchMaterialesPorComponente();
             const todosMateriales = Array.isArray(todosMaterialesResponse) ? todosMaterialesResponse : (todosMaterialesResponse.data || []);
-            materiales = todosMateriales.filter(m => m.componente_id === componente.componente_id);
+            const materialesFiltrados = todosMateriales.filter(m => m.componente_id === componente.componente_id);
+            
+            // Hacer join con los materiales completos
+            materiales = materialesFiltrados.map(mat => ({
+                ...mat,
+                material: todosMaterialesData.find(m => m.id === mat.material_id)
+            }));
             console.log('✅ Materiales encontrados:', materiales.length);
         } catch (err) {
             console.warn('⚠️ Error al cargar materiales:', err);
@@ -1308,7 +1329,13 @@ const abrirModalEditarComponente = async (componente) => {
         try {
             const todasCantidadesResponse = await fetchCantidadPorHerraje();
             const todasCantidades = Array.isArray(todasCantidadesResponse) ? todasCantidadesResponse : (todasCantidadesResponse.data || []);
-            herrajes = todasCantidades.filter(h => h.componente_id === componente.componente_id);
+            const herrajesFiltrados = todasCantidades.filter(h => h.componente_id === componente.componente_id);
+            
+            // Hacer join con los herrajes completos
+            herrajes = herrajesFiltrados.map(her => ({
+                ...her,
+                herraje: todosHerrajesData.find(h => h.id === her.herraje_id)
+            }));
             console.log('✅ Herrajes encontrados:', herrajes.length);
         } catch (err) {
             console.warn('⚠️ Error al cargar herrajes:', err);
@@ -1319,7 +1346,13 @@ const abrirModalEditarComponente = async (componente) => {
         try {
             const todasHorasResponse = await fetchHorasDeManoDeObraPorComponentes();
             const todasHoras = Array.isArray(todasHorasResponse) ? todasHorasResponse : (todasHorasResponse.data || []);
-            horasManoObra = todasHoras.filter(h => h.componente_id === componente.componente_id);
+            const horasFiltradas = todasHoras.filter(h => h.componente_id === componente.componente_id);
+            
+            // Hacer join con la mano de obra completa
+            horasManoObra = horasFiltradas.map(hora => ({
+                ...hora,
+                mano_obra: todaManoObraData.find(mo => mo.id === hora.mano_de_obra_id)
+            }));
             console.log('✅ Horas de mano de obra encontradas:', horasManoObra.length);
         } catch (err) {
             console.warn('⚠️ Error al cargar horas de mano de obra:', err);
