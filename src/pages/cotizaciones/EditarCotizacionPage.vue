@@ -1058,14 +1058,64 @@ const cambiarComponenteSeleccionado = () => {
     mostrarSelectorComponentes.value = true;
 };
 
-const decrementarCantidadNuevoComponente = () => {
+const decrementarCantidadNuevoComponente = async () => {
     if (cantidadNuevoComponente.value > 1) {
         cantidadNuevoComponente.value--;
+        
+        // Si el componente ya existe en el módulo, actualizar directamente en la API
+        if (componenteSeleccionado.value && moduloIdSeleccionado.value) {
+            try {
+                // Buscar directamente en la API
+                const componentesEnApi = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+                const registroApi = componentesEnApi.find(cpc => 
+                    cpc.cotizacion_id === cotizacion.value.id && 
+                    cpc.componente_id === componenteSeleccionado.value.id &&
+                    cpc.modulo_id === moduloIdSeleccionado.value
+                );
+                
+                if (registroApi) {
+                    // Actualizar directamente en la API
+                    await storeComponentesPorCotizacion.actualizarComponentePorCotizacion(
+                        registroApi.id,
+                        { cantidad: cantidadNuevoComponente.value }
+                    );
+                    // Sincronizar para refrescar la vista
+                    await sincronizarComponentesExistentes();
+                }
+            } catch (err) {
+                console.error('❌ Error al actualizar cantidad:', err);
+            }
+        }
     }
 };
 
-const incrementarCantidadNuevoComponente = () => {
+const incrementarCantidadNuevoComponente = async () => {
     cantidadNuevoComponente.value++;
+    
+    // Si el componente ya existe en el módulo, actualizar directamente en la API
+    if (componenteSeleccionado.value && moduloIdSeleccionado.value) {
+        try {
+            // Buscar directamente en la API
+            const componentesEnApi = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+            const registroApi = componentesEnApi.find(cpc => 
+                cpc.cotizacion_id === cotizacion.value.id && 
+                cpc.componente_id === componenteSeleccionado.value.id &&
+                cpc.modulo_id === moduloIdSeleccionado.value
+            );
+            
+            if (registroApi) {
+                // Actualizar directamente en la API
+                await storeComponentesPorCotizacion.actualizarComponentePorCotizacion(
+                    registroApi.id,
+                    { cantidad: cantidadNuevoComponente.value }
+                );
+                // Sincronizar para refrescar la vista
+                await sincronizarComponentesExistentes();
+            }
+        } catch (err) {
+            console.error('❌ Error al actualizar cantidad:', err);
+        }
+    }
 };
 
 const confirmarAgregarComponente = async () => {
