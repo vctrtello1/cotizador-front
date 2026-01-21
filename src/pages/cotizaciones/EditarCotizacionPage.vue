@@ -2826,6 +2826,8 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
+    padding: 0;
     transition: all 0.2s;
 }
 
@@ -3662,6 +3664,11 @@ onMounted(() => {
     height: 36px;
     border-radius: 50%;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
     transition: all 0.2s ease;
 }
 
