@@ -592,17 +592,28 @@
                                         <div class="tab-panel-header">
                                             <h5>Herrajes del Componente</h5>
                                             <p class="tab-description">Visualiza los herrajes asociados a este componente</p>
+                                            <button class="btn-add-item" @click="agregarHerraje">
+                                                <span class="btn-icon">➕</span>
+                                                Agregar Herraje
+                                            </button>
                                         </div>
                                         <div v-if="componenteEditando.herrajes && componenteEditando.herrajes.length > 0" class="items-list">
                                             <div v-for="her in componenteEditando.herrajes" :key="her.id" class="item-card">
                                                 <div class="item-header">
                                                     <span class="item-icon">🔩</span>
                                                     <span class="item-name">{{ her.herraje?.nombre || 'Sin nombre' }}</span>
+                                                    <button class="btn-delete-item" @click="eliminarHerraje(her)" title="Eliminar herraje">
+                                                        🗑️
+                                                    </button>
                                                 </div>
                                                 <div class="item-details">
                                                     <div class="item-detail-row">
                                                         <span class="detail-label">Cantidad:</span>
-                                                        <span class="detail-value">{{ her.cantidad }} unidades</span>
+                                                        <div class="cantidad-controls">
+                                                            <button class="btn-cantidad" @click="disminuirCantidadHerraje(her)">−</button>
+                                                            <span class="detail-value">{{ her.cantidad }}</span>
+                                                            <button class="btn-cantidad" @click="aumentarCantidadHerraje(her)">+</button>
+                                                        </div>
                                                     </div>
                                                     <div class="item-detail-row">
                                                         <span class="detail-label">Costo unitario:</span>
@@ -626,29 +637,40 @@
                                         <div class="tab-panel-header">
                                             <h5>Mano de Obra del Componente</h5>
                                             <p class="tab-description">Visualiza la mano de obra asociada a este componente</p>
+                                            <button class="btn-add-item" @click="agregarManoDeObra">
+                                                <span class="btn-icon">➕</span>
+                                                Agregar Mano de Obra
+                                            </button>
                                         </div>
-                                        <div v-if="componenteEditando.mano_de_obra" class="items-list">
-                                            <div class="item-card">
+                                        <div v-if="componenteEditando.horas_mano_obra && componenteEditando.horas_mano_obra.length > 0" class="items-list">
+                                            <div v-for="hora in componenteEditando.horas_mano_obra" :key="hora.id" class="item-card">
                                                 <div class="item-header">
                                                     <span class="item-icon">👷</span>
-                                                    <span class="item-name">{{ componenteEditando.mano_de_obra.nombre || 'Sin nombre' }}</span>
+                                                    <span class="item-name">{{ hora.mano_obra?.nombre || 'Sin nombre' }}</span>
+                                                    <button class="btn-delete-item" @click="eliminarManoDeObra(hora)" title="Eliminar mano de obra">
+                                                        🗑️
+                                                    </button>
                                                 </div>
                                                 <div class="item-details">
-                                                    <div v-if="componenteEditando.mano_de_obra.descripcion" class="item-detail-row">
+                                                    <div v-if="hora.mano_obra?.descripcion" class="item-detail-row">
                                                         <span class="detail-label">Descripción:</span>
-                                                        <span class="detail-value">{{ componenteEditando.mano_de_obra.descripcion }}</span>
+                                                        <span class="detail-value">{{ hora.mano_obra.descripcion }}</span>
                                                     </div>
                                                     <div class="item-detail-row">
                                                         <span class="detail-label">Costo por hora:</span>
-                                                        <span class="detail-value">${{ formatCurrency(componenteEditando.mano_de_obra.costo_hora || 0) }}</span>
+                                                        <span class="detail-value">${{ formatCurrency(hora.mano_obra?.costo_hora || 0) }}</span>
                                                     </div>
-                                                    <div v-if="componenteEditando.horas_mano_obra && componenteEditando.horas_mano_obra.length > 0" class="item-detail-row">
-                                                        <span class="detail-label">Horas asignadas:</span>
-                                                        <span class="detail-value">{{ componenteEditando.horas_mano_obra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</span>
+                                                    <div class="item-detail-row">
+                                                        <span class="detail-label">Horas:</span>
+                                                        <div class="cantidad-controls">
+                                                            <button class="btn-cantidad" @click="disminuirHorasManoDeObra(hora)">−</button>
+                                                            <span class="detail-value">{{ hora.horas }}</span>
+                                                            <button class="btn-cantidad" @click="aumentarHorasManoDeObra(hora)">+</button>
+                                                        </div>
                                                     </div>
-                                                    <div v-if="componenteEditando.mano_de_obra.costo_hora && componenteEditando.horas_mano_obra" class="item-detail-row subtotal">
+                                                    <div class="item-detail-row subtotal">
                                                         <span class="detail-label">Costo total:</span>
-                                                        <span class="detail-value">${{ formatCurrency(componenteEditando.mano_de_obra.costo_hora * componenteEditando.horas_mano_obra.reduce((sum, h) => sum + (h.horas || 0), 0)) }}</span>
+                                                        <span class="detail-value">${{ formatCurrency((hora.mano_obra?.costo_hora || 0) * (hora.horas || 0)) }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -664,12 +686,23 @@
                                         <div class="tab-panel-header">
                                             <h5>Acabado del Componente</h5>
                                             <p class="tab-description">Visualiza el acabado asociado a este componente</p>
+                                            <button v-if="!componenteEditando.acabado" class="btn-add-item" @click="agregarAcabado">
+                                                <span class="btn-icon">➕</span>
+                                                Seleccionar Acabado
+                                            </button>
+                                            <button v-else class="btn-add-item" @click="cambiarAcabado" style="background: linear-gradient(135deg, #8B5A3C 0%, #6B4423 100%);">
+                                                <span class="btn-icon">🔄</span>
+                                                Cambiar Acabado
+                                            </button>
                                         </div>
                                         <div v-if="componenteEditando.acabado" class="items-list">
                                             <div class="item-card">
                                                 <div class="item-header">
                                                     <span class="item-icon">🎨</span>
                                                     <span class="item-name">{{ componenteEditando.acabado.nombre || 'Sin nombre' }}</span>
+                                                    <button class="btn-delete-item" @click="eliminarAcabado" title="Eliminar acabado">
+                                                        🗑️
+                                                    </button>
                                                 </div>
                                                 <div class="item-details">
                                                     <div v-if="componenteEditando.acabado.descripcion" class="item-detail-row">
@@ -733,6 +766,102 @@
                                     </div>
                                     <div v-if="materialesFiltrados.length === 0" class="empty-selector">
                                         <p>No se encontraron materiales</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para agregar herraje -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalAgregarHerraje" class="modal-overlay" @click="cerrarModalAgregarHerraje">
+                        <div class="modal-content modal-selector" @click.stop>
+                            <div class="modal-header">
+                                <h3>🔩 Seleccionar Herraje</h3>
+                                <button class="btn-close" @click="cerrarModalAgregarHerraje">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="search-box">
+                                    <input v-model="busquedaHerraje" type="text" placeholder="🔍 Buscar herraje..." class="search-input" />
+                                </div>
+                                <div class="selector-list">
+                                    <div v-for="herraje in herrajesFiltrados" :key="herraje.id" class="selector-item" @click="seleccionarYAgregarHerraje(herraje)">
+                                        <div class="selector-item-content">
+                                            <span class="selector-icon">🔩</span>
+                                            <div class="selector-info">
+                                                <span class="selector-name">{{ herraje.nombre }}</span>
+                                                <span class="selector-description">{{ herraje.descripcion || 'Sin descripción' }}</span>
+                                                <span class="selector-price">${{ formatCurrency(herraje.costo_unitario || 0) }} / unidad</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="herrajesFiltrados.length === 0" class="empty-selector">
+                                        <p>No se encontraron herrajes</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para agregar mano de obra -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalAgregarManoObra" class="modal-overlay" @click="cerrarModalAgregarManoObra">
+                        <div class="modal-content modal-selector" @click.stop>
+                            <div class="modal-header">
+                                <h3>👷 Seleccionar Mano de Obra</h3>
+                                <button class="btn-close" @click="cerrarModalAgregarManoObra">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="search-box">
+                                    <input v-model="busquedaManoObra" type="text" placeholder="🔍 Buscar mano de obra..." class="search-input" />
+                                </div>
+                                <div class="selector-list">
+                                    <div v-for="mano in manoDeObraFiltrada" :key="mano.id" class="selector-item" @click="seleccionarYAgregarManoObra(mano)">
+                                        <div class="selector-item-content">
+                                            <span class="selector-icon">👷</span>
+                                            <div class="selector-info">
+                                                <span class="selector-name">{{ mano.nombre }}</span>
+                                                <span class="selector-description">{{ mano.descripcion || 'Sin descripción' }}</span>
+                                                <span class="selector-price">${{ formatCurrency(mano.costo_hora || 0) }} / hora</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="manoDeObraFiltrada.length === 0" class="empty-selector">
+                                        <p>No se encontró mano de obra</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para seleccionar acabado -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalSeleccionarAcabado" class="modal-overlay" @click="cerrarModalSeleccionarAcabado">
+                        <div class="modal-content modal-selector" @click.stop>
+                            <div class="modal-header">
+                                <h3>🎨 Seleccionar Acabado</h3>
+                                <button class="btn-close" @click="cerrarModalSeleccionarAcabado">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="search-box">
+                                    <input v-model="busquedaAcabado" type="text" placeholder="🔍 Buscar acabado..." class="search-input" />
+                                </div>
+                                <div class="selector-list">
+                                    <div v-for="acabado in acabadosFiltrados" :key="acabado.id" class="selector-item" @click="seleccionarAcabado(acabado)">
+                                        <div class="selector-item-content">
+                                            <span class="selector-icon">🎨</span>
+                                            <div class="selector-info">
+                                                <span class="selector-name">{{ acabado.nombre }}</span>
+                                                <span class="selector-description">{{ acabado.descripcion || 'Sin descripción' }}</span>
+                                                <span class="selector-price">${{ formatCurrency(acabado.costo || 0) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="acabadosFiltrados.length === 0" class="empty-selector">
+                                        <p>No se encontraron acabados</p>
                                     </div>
                                 </div>
                             </div>
@@ -838,6 +967,15 @@ const materialSeleccionado = ref(null);
 const cantidadMaterial = ref(1);
 const busquedaMaterial = ref('');
 const materialesDisponibles = ref([]);
+const mostrarModalAgregarHerraje = ref(false);
+const busquedaHerraje = ref('');
+const herrajesDisponibles = ref([]);
+const mostrarModalAgregarManoObra = ref(false);
+const busquedaManoObra = ref('');
+const manoDeObraDisponible = ref([]);
+const mostrarModalSeleccionarAcabado = ref(false);
+const busquedaAcabado = ref('');
+const acabadosDisponibles = ref([]);
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -1717,6 +1855,297 @@ const recalcularCostoComponente = async () => {
     } catch (err) {
         console.error('❌ Error al recalcular costo:', err);
     }
+};
+
+// ===== FUNCIONES PARA HERRAJES =====
+const agregarHerraje = async () => {
+    try {
+        const { fetchHerrajes } = await import('../../http/herrajes-api.js');
+        const response = await fetchHerrajes();
+        herrajesDisponibles.value = Array.isArray(response) ? response : (response.data || []);
+        busquedaHerraje.value = '';
+        mostrarModalAgregarHerraje.value = true;
+    } catch (err) {
+        console.error('❌ Error al cargar herrajes:', err);
+        alert('Error al cargar la lista de herrajes');
+    }
+};
+
+const cerrarModalAgregarHerraje = () => {
+    mostrarModalAgregarHerraje.value = false;
+    busquedaHerraje.value = '';
+};
+
+const seleccionarYAgregarHerraje = async (herraje) => {
+    const existe = componenteEditando.value.herrajes.find(h => h.herraje_id === herraje.id);
+    if (existe) {
+        alert('Este herraje ya está agregado al componente');
+        return;
+    }
+    
+    try {
+        const { crearCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
+        const datos = {
+            herraje_id: herraje.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1
+        };
+        
+        const response = await crearCantidadPorHerraje(datos);
+        const herrajeCreado = response.data || response;
+        
+        const nuevoHerraje = {
+            id: herrajeCreado.id,
+            herraje_id: herraje.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1,
+            herraje: herraje
+        };
+        
+        componenteEditando.value.herrajes.push(nuevoHerraje);
+        await recalcularCostoComponente();
+        cerrarModalAgregarHerraje();
+    } catch (err) {
+        console.error('❌ Error al agregar herraje:', err);
+        alert('Error al agregar el herraje');
+    }
+};
+
+const herrajesFiltrados = computed(() => {
+    if (!busquedaHerraje.value) return herrajesDisponibles.value;
+    const busqueda = busquedaHerraje.value.toLowerCase();
+    return herrajesDisponibles.value.filter(h => 
+        h.nombre?.toLowerCase().includes(busqueda) ||
+        h.descripcion?.toLowerCase().includes(busqueda)
+    );
+});
+
+const eliminarHerraje = async (herraje) => {
+    try {
+        const { eliminarCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
+        await eliminarCantidadPorHerraje(herraje.id);
+        
+        const index = componenteEditando.value.herrajes.findIndex(h => h.id === herraje.id);
+        if (index !== -1) {
+            componenteEditando.value.herrajes.splice(index, 1);
+            await recalcularCostoComponente();
+        }
+    } catch (err) {
+        console.error('❌ Error al eliminar herraje:', err);
+        alert('Error al eliminar el herraje');
+    }
+};
+
+const aumentarCantidadHerraje = async (herraje) => {
+    const nuevaCantidad = (herraje.cantidad || 0) + 1;
+    
+    try {
+        const { actualizarCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
+        await actualizarCantidadPorHerraje(herraje.id, {
+            herraje_id: herraje.herraje_id,
+            componente_id: herraje.componente_id,
+            cantidad: nuevaCantidad
+        });
+        
+        herraje.cantidad = nuevaCantidad;
+        await recalcularCostoComponente();
+    } catch (err) {
+        console.error('❌ Error al aumentar cantidad:', err);
+        alert('Error al actualizar la cantidad');
+    }
+};
+
+const disminuirCantidadHerraje = async (herraje) => {
+    if (herraje.cantidad > 1) {
+        const nuevaCantidad = herraje.cantidad - 1;
+        
+        try {
+            const { actualizarCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
+            await actualizarCantidadPorHerraje(herraje.id, {
+                herraje_id: herraje.herraje_id,
+                componente_id: herraje.componente_id,
+                cantidad: nuevaCantidad
+            });
+            
+            herraje.cantidad = nuevaCantidad;
+            await recalcularCostoComponente();
+        } catch (err) {
+            console.error('❌ Error al disminuir cantidad:', err);
+            alert('Error al actualizar la cantidad');
+        }
+    }
+};
+
+// ===== FUNCIONES PARA MANO DE OBRA =====
+const agregarManoDeObra = async () => {
+    try {
+        const { fetchClientes: fetchManoDeObra } = await import('../../http/mano_de_obra-api .js');
+        const response = await fetchManoDeObra();
+        manoDeObraDisponible.value = Array.isArray(response) ? response : (response.data || []);
+        busquedaManoObra.value = '';
+        mostrarModalAgregarManoObra.value = true;
+    } catch (err) {
+        console.error('❌ Error al cargar mano de obra:', err);
+        alert('Error al cargar la lista de mano de obra');
+    }
+};
+
+const cerrarModalAgregarManoObra = () => {
+    mostrarModalAgregarManoObra.value = false;
+    busquedaManoObra.value = '';
+};
+
+const seleccionarYAgregarManoObra = async (manoObra) => {
+    const existe = componenteEditando.value.horas_mano_obra.find(h => h.mano_de_obra_id === manoObra.id);
+    if (existe) {
+        alert('Esta mano de obra ya está agregada al componente');
+        return;
+    }
+    
+    try {
+        const { crearHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
+        const datos = {
+            mano_de_obra_id: manoObra.id,
+            componente_id: componenteEditando.value.componente_id,
+            horas: 1
+        };
+        
+        const response = await crearHorasDeManoDeObraPorComponente(datos);
+        const horaCreada = response.data || response;
+        
+        const nuevaHora = {
+            id: horaCreada.id,
+            mano_de_obra_id: manoObra.id,
+            componente_id: componenteEditando.value.componente_id,
+            horas: 1,
+            mano_obra: manoObra
+        };
+        
+        componenteEditando.value.horas_mano_obra.push(nuevaHora);
+        await recalcularCostoComponente();
+        cerrarModalAgregarManoObra();
+    } catch (err) {
+        console.error('❌ Error al agregar mano de obra:', err);
+        alert('Error al agregar la mano de obra');
+    }
+};
+
+const manoDeObraFiltrada = computed(() => {
+    if (!busquedaManoObra.value) return manoDeObraDisponible.value;
+    const busqueda = busquedaManoObra.value.toLowerCase();
+    return manoDeObraDisponible.value.filter(m => 
+        m.nombre?.toLowerCase().includes(busqueda) ||
+        m.descripcion?.toLowerCase().includes(busqueda)
+    );
+});
+
+const eliminarManoDeObra = async (hora) => {
+    try {
+        const { eliminarHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
+        await eliminarHorasDeManoDeObraPorComponente(hora.id);
+        
+        const index = componenteEditando.value.horas_mano_obra.findIndex(h => h.id === hora.id);
+        if (index !== -1) {
+            componenteEditando.value.horas_mano_obra.splice(index, 1);
+            await recalcularCostoComponente();
+        }
+    } catch (err) {
+        console.error('❌ Error al eliminar mano de obra:', err);
+        alert('Error al eliminar la mano de obra');
+    }
+};
+
+const aumentarHorasManoDeObra = async (hora) => {
+    const nuevasHoras = (hora.horas || 0) + 1;
+    
+    try {
+        const { actualizarHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
+        await actualizarHorasDeManoDeObraPorComponente(hora.id, {
+            mano_de_obra_id: hora.mano_de_obra_id,
+            componente_id: hora.componente_id,
+            horas: nuevasHoras
+        });
+        
+        hora.horas = nuevasHoras;
+        await recalcularCostoComponente();
+    } catch (err) {
+        console.error('❌ Error al aumentar horas:', err);
+        alert('Error al actualizar las horas');
+    }
+};
+
+const disminuirHorasManoDeObra = async (hora) => {
+    if (hora.horas > 1) {
+        const nuevasHoras = hora.horas - 1;
+        
+        try {
+            const { actualizarHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
+            await actualizarHorasDeManoDeObraPorComponente(hora.id, {
+                mano_de_obra_id: hora.mano_de_obra_id,
+                componente_id: hora.componente_id,
+                horas: nuevasHoras
+            });
+            
+            hora.horas = nuevasHoras;
+            await recalcularCostoComponente();
+        } catch (err) {
+            console.error('❌ Error al disminuir horas:', err);
+            alert('Error al actualizar las horas');
+        }
+    }
+};
+
+// ===== FUNCIONES PARA ACABADO =====
+const agregarAcabado = async () => {
+    try {
+        const { fetchAcabados } = await import('../../http/acabado-api .js');
+        const response = await fetchAcabados();
+        acabadosDisponibles.value = Array.isArray(response) ? response : (response.data || []);
+        busquedaAcabado.value = '';
+        mostrarModalSeleccionarAcabado.value = true;
+    } catch (err) {
+        console.error('❌ Error al cargar acabados:', err);
+        alert('Error al cargar la lista de acabados');
+    }
+};
+
+const cambiarAcabado = agregarAcabado;
+
+const cerrarModalSeleccionarAcabado = () => {
+    mostrarModalSeleccionarAcabado.value = false;
+    busquedaAcabado.value = '';
+};
+
+const seleccionarAcabado = async (acabado) => {
+    // Aquí necesitarías una API para actualizar el acabado del componente
+    // Por ahora solo actualizo localmente
+    componenteEditando.value = {
+        ...componenteEditando.value,
+        acabado: acabado,
+        acabado_id: acabado.id
+    };
+    
+    await recalcularCostoComponente();
+    cerrarModalSeleccionarAcabado();
+};
+
+const acabadosFiltrados = computed(() => {
+    if (!busquedaAcabado.value) return acabadosDisponibles.value;
+    const busqueda = busquedaAcabado.value.toLowerCase();
+    return acabadosDisponibles.value.filter(a => 
+        a.nombre?.toLowerCase().includes(busqueda) ||
+        a.descripcion?.toLowerCase().includes(busqueda)
+    );
+});
+
+const eliminarAcabado = async () => {
+    componenteEditando.value = {
+        ...componenteEditando.value,
+        acabado: null,
+        acabado_id: null
+    };
+    
+    await recalcularCostoComponente();
 };
 
 const cambiarComponenteSeleccionado = () => {
