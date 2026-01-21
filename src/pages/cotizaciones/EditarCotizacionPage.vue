@@ -660,9 +660,21 @@
                                                         <span class="detail-label">Descripción:</span>
                                                         <span class="detail-value">{{ componenteEditando.mano_de_obra.descripcion }}</span>
                                                     </div>
-                                                    <div class="item-detail-row subtotal">
+                                                    <div class="item-detail-row">
                                                         <span class="detail-label">Costo por hora:</span>
                                                         <span class="detail-value">${{ formatCurrency(componenteEditando.mano_de_obra.costo_hora || 0) }}</span>
+                                                    </div>
+                                                    <div class="item-detail-row">
+                                                        <span class="detail-label">Horas:</span>
+                                                        <div class="cantidad-controls">
+                                                            <button class="btn-cantidad" @click="disminuirHorasManoDeObra">−</button>
+                                                            <span class="detail-value">{{ componenteEditando.horas_mano_obra || 1 }}</span>
+                                                            <button class="btn-cantidad" @click="aumentarHorasManoDeObra">+</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item-detail-row subtotal">
+                                                        <span class="detail-label">Costo total:</span>
+                                                        <span class="detail-value">${{ formatCurrency((componenteEditando.mano_de_obra.costo_hora || 0) * (componenteEditando.horas_mano_obra || 1)) }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1576,9 +1588,12 @@ const abrirModalEditarComponente = async (componente) => {
         
         // Consolidar mano de obra desde horas_mano_obra
         let manoDeObraConsolidada = null;
+        let horasManoObraTotal = 0;
         if (horasManoObra && horasManoObra.length > 0) {
             // Tomar la primera mano de obra asociada
             manoDeObraConsolidada = horasManoObra[0]?.mano_obra || null;
+            // Sumar todas las horas
+            horasManoObraTotal = horasManoObra.reduce((sum, hora) => sum + (hora.horas || 0), 0);
         }
         
         // Combinar todos los datos
@@ -1588,8 +1603,8 @@ const abrirModalEditarComponente = async (componente) => {
             // Agregar las relaciones cargadas
             materiales: materiales || [],
             herrajes: herrajes || [],
-            horas_mano_obra: horasManoObra || [],
             mano_de_obra: manoDeObraConsolidada,
+            horas_mano_obra: horasManoObraTotal,
             acabado: acabado,
             // Mantener datos específicos de la cotización
             id: componente.id, // ID de la relación componente_por_cotizacion
@@ -1839,7 +1854,7 @@ const recalcularCostoComponente = async () => {
         const costoHerrajes = (componenteEditando.value.herrajes || []).reduce((sum, her) => 
             sum + ((her.herraje?.costo_unitario || 0) * (her.cantidad || 0)), 0);
         
-        const costoManoObra = parseFloat(componenteEditando.value.mano_de_obra?.costo_hora || 0);
+        const costoManoObra = (componenteEditando.value.mano_de_obra?.costo_hora || 0) * (componenteEditando.value.horas_mano_obra || 0);
         
         const costoAcabado = parseFloat(componenteEditando.value.acabado?.costo || 0);
         const costoTotal = costoMateriales + costoHerrajes + costoManoObra + costoAcabado;
@@ -1927,7 +1942,8 @@ const seleccionarYAgregarManoObra = async (manoObra) => {
     componenteEditando.value = { 
         ...componenteEditando.value, 
         mano_de_obra: manoObra, 
-        mano_de_obra_id: manoObra.id 
+        mano_de_obra_id: manoObra.id,
+        horas_mano_obra: 1
     };
     
     await recalcularCostoComponente();
@@ -1940,10 +1956,31 @@ const eliminarManoDeObra = async () => {
     componenteEditando.value = { 
         ...componenteEditando.value, 
         mano_de_obra: null, 
-        mano_de_obra_id: null 
+        mano_de_obra_id: null,
+        horas_mano_obra: 0
     };
     
     await recalcularCostoComponente();
+};
+
+const aumentarHorasManoDeObra = async () => {
+    const nuevasHoras = (componenteEditando.value.horas_mano_obra || 1) + 1;
+    componenteEditando.value = {
+        ...componenteEditando.value,
+        horas_mano_obra: nuevasHoras
+    };
+    await recalcularCostoComponente();
+};
+
+const disminuirHorasManoDeObra = async () => {
+    const horasActuales = componenteEditando.value.horas_mano_obra || 1;
+    if (horasActuales > 1) {
+        componenteEditando.value = {
+            ...componenteEditando.value,
+            horas_mano_obra: horasActuales - 1
+        };
+        await recalcularCostoComponente();
+    }
 };
 
 // ===== ACABADO =====
