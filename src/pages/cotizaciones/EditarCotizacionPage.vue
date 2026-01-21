@@ -3957,6 +3957,9 @@ onMounted(() => {
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-eliminar-componente-card:hover {
