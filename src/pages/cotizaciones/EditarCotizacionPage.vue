@@ -637,40 +637,32 @@
                                         <div class="tab-panel-header">
                                             <h5>Mano de Obra del Componente</h5>
                                             <p class="tab-description">Visualiza la mano de obra asociada a este componente</p>
-                                            <button class="btn-add-item" @click="agregarManoDeObra">
+                                            <button v-if="!componenteEditando.mano_de_obra" class="btn-add-item" @click="agregarManoDeObra">
                                                 <span class="btn-icon">➕</span>
-                                                Agregar Mano de Obra
+                                                Seleccionar Mano de Obra
+                                            </button>
+                                            <button v-else class="btn-add-item" @click="cambiarManoDeObra" style="background: linear-gradient(135deg, #FF8C00 0%, #FF6B00 100%);">
+                                                <span class="btn-icon">🔄</span>
+                                                Cambiar Mano de Obra
                                             </button>
                                         </div>
-                                        <div v-if="componenteEditando.horas_mano_obra && componenteEditando.horas_mano_obra.length > 0" class="items-list">
-                                            <div v-for="hora in componenteEditando.horas_mano_obra" :key="hora.id" class="item-card">
+                                        <div v-if="componenteEditando.mano_de_obra" class="items-list">
+                                            <div class="item-card">
                                                 <div class="item-header">
                                                     <span class="item-icon">👷</span>
-                                                    <span class="item-name">{{ hora.mano_obra?.nombre || 'Sin nombre' }}</span>
-                                                    <button class="btn-delete-item" @click="eliminarManoDeObra(hora)" title="Eliminar mano de obra">
+                                                    <span class="item-name">{{ componenteEditando.mano_de_obra.nombre || 'Sin nombre' }}</span>
+                                                    <button class="btn-delete-item" @click="eliminarManoDeObra" title="Eliminar mano de obra">
                                                         🗑️
                                                     </button>
                                                 </div>
                                                 <div class="item-details">
-                                                    <div v-if="hora.mano_obra?.descripcion" class="item-detail-row">
+                                                    <div v-if="componenteEditando.mano_de_obra.descripcion" class="item-detail-row">
                                                         <span class="detail-label">Descripción:</span>
-                                                        <span class="detail-value">{{ hora.mano_obra.descripcion }}</span>
-                                                    </div>
-                                                    <div class="item-detail-row">
-                                                        <span class="detail-label">Costo por hora:</span>
-                                                        <span class="detail-value">${{ formatCurrency(hora.mano_obra?.costo_hora || 0) }}</span>
-                                                    </div>
-                                                    <div class="item-detail-row">
-                                                        <span class="detail-label">Horas:</span>
-                                                        <div class="cantidad-controls">
-                                                            <button class="btn-cantidad" @click="disminuirHorasManoDeObra(hora)">−</button>
-                                                            <span class="detail-value">{{ hora.horas }}</span>
-                                                            <button class="btn-cantidad" @click="aumentarHorasManoDeObra(hora)">+</button>
-                                                        </div>
+                                                        <span class="detail-value">{{ componenteEditando.mano_de_obra.descripcion }}</span>
                                                     </div>
                                                     <div class="item-detail-row subtotal">
-                                                        <span class="detail-label">Costo total:</span>
-                                                        <span class="detail-value">${{ formatCurrency((hora.mano_obra?.costo_hora || 0) * (hora.horas || 0)) }}</span>
+                                                        <span class="detail-label">Costo por hora:</span>
+                                                        <span class="detail-value">${{ formatCurrency(componenteEditando.mano_de_obra.costo_hora || 0) }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1847,8 +1839,7 @@ const recalcularCostoComponente = async () => {
         const costoHerrajes = (componenteEditando.value.herrajes || []).reduce((sum, her) => 
             sum + ((her.herraje?.costo_unitario || 0) * (her.cantidad || 0)), 0);
         
-        const costoManoObra = (componenteEditando.value.horas_mano_obra || []).reduce((sum, hora) => 
-            sum + ((hora.mano_obra?.costo_hora || 0) * (hora.horas || 0)), 0);
+        const costoManoObra = parseFloat(componenteEditando.value.mano_de_obra?.costo_hora || 0);
         
         const costoAcabado = parseFloat(componenteEditando.value.acabado?.costo || 0);
         const costoTotal = costoMateriales + costoHerrajes + costoManoObra + costoAcabado;
@@ -1928,48 +1919,31 @@ const agregarManoDeObra = () => abrirModalSeleccion(
     'mano de obra'
 );
 
+const cambiarManoDeObra = agregarManoDeObra;
+
 const cerrarModalAgregarManoObra = () => cerrarModal(mostrarModalAgregarManoObra, busquedaManoObra);
 
 const seleccionarYAgregarManoObra = async (manoObra) => {
-    if (componenteEditando.value.horas_mano_obra.find(h => h.mano_de_obra_id === manoObra.id)) {
-        return alert('Esta mano de obra ya está agregada al componente');
-    }
+    componenteEditando.value = { 
+        ...componenteEditando.value, 
+        mano_de_obra: manoObra, 
+        mano_de_obra_id: manoObra.id 
+    };
     
-    try {
-        const response = await crearHoras({
-            mano_de_obra_id: manoObra.id,
-            componente_id: componenteEditando.value.componente_id,
-            horas: 1
-        });
-        
-        componenteEditando.value.horas_mano_obra.push({
-            id: (response.data || response).id,
-            mano_de_obra_id: manoObra.id,
-            componente_id: componenteEditando.value.componente_id,
-            horas: 1,
-            mano_obra: manoObra
-        });
-        
-        await recalcularCostoComponente();
-        cerrarModalAgregarManoObra();
-    } catch (err) {
-        console.error('❌ Error al agregar mano de obra:', err);
-        alert('Error al agregar la mano de obra');
-    }
+    await recalcularCostoComponente();
+    cerrarModalAgregarManoObra();
 };
 
 const manoDeObraFiltrada = computed(() => filtrarItems(manoDeObraDisponible.value, busquedaManoObra.value));
 
-const eliminarManoDeObra = async (hora) => {
-    await eliminarItem(hora, componenteEditando.value.horas_mano_obra, eliminarHoras, 'mano de obra');
-};
-
-const aumentarHorasManoDeObra = async (hora) => {
-    await actualizarCantidadOHoras(hora, 1, actualizarHoras, 'horas');
-};
-
-const disminuirHorasManoDeObra = async (hora) => {
-    await actualizarCantidadOHoras(hora, -1, actualizarHoras, 'horas');
+const eliminarManoDeObra = async () => {
+    componenteEditando.value = { 
+        ...componenteEditando.value, 
+        mano_de_obra: null, 
+        mano_de_obra_id: null 
+    };
+    
+    await recalcularCostoComponente();
 };
 
 // ===== ACABADO =====
