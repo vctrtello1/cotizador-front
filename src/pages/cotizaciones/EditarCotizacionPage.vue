@@ -931,6 +931,13 @@ import { fetchClientes } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
 import { fetchComponentes } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
+import { fetchMateriales } from '../../http/materiales-api';
+import { crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
+import { fetchHerrajes } from '../../http/herrajes-api';
+import { crearCantidadPorHerraje, actualizarCantidadPorHerraje, eliminarCantidadPorHerraje } from '../../http/cantidad_por_herraje-api';
+import { fetchClientes as fetchManoDeObra } from '../../http/mano_de_obra-api ';
+import { crearHoras, actualizarHoras, eliminarHoras } from '../../http/horas_por_mano_de_obra_por_componente-api';
+import { fetchAcabados } from '../../http/acabado-api ';
 
 const route = useRoute();
 const router = useRouter();
@@ -1622,17 +1629,13 @@ const cerrarModalEditarComponente = () => {
 // Funciones para gestionar materiales
 const agregarMaterial = async () => {
     try {
-        // Cargar materiales disponibles
-        const { fetchMateriales } = await import('../../http/materiales-api.js');
         const response = await fetchMateriales();
         materialesDisponibles.value = Array.isArray(response) ? response : (response.data || []);
         
-        // Resetear selección
         materialSeleccionado.value = null;
         cantidadMaterial.value = 1;
         busquedaMaterial.value = '';
         
-        // Abrir modal
         mostrarModalAgregarMaterial.value = true;
         console.log('🔵 Modal de agregar material abierto');
     } catch (err) {
@@ -1649,7 +1652,6 @@ const cerrarModalAgregarMaterial = () => {
 };
 
 const seleccionarYAgregarMaterial = async (material) => {
-    // Verificar si el material ya existe
     const existe = componenteEditando.value.materiales.find(m => m.material_id === material.id);
     if (existe) {
         alert('Este material ya está agregado al componente');
@@ -1657,8 +1659,6 @@ const seleccionarYAgregarMaterial = async (material) => {
     }
     
     try {
-        // Guardar en la API
-        const { crearMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
         const datos = {
             material_id: material.id,
             componente_id: componenteEditando.value.componente_id,
@@ -1719,28 +1719,17 @@ const confirmarAgregarMaterial = () => {
     cerrarModalAgregarMaterial();
 };
 
-const materialesFiltrados = computed(() => {
-    if (!busquedaMaterial.value) return materialesDisponibles.value;
-    const busqueda = busquedaMaterial.value.toLowerCase();
-    return materialesDisponibles.value.filter(m => 
-        m.nombre?.toLowerCase().includes(busqueda) ||
-        m.descripcion?.toLowerCase().includes(busqueda)
-    );
-});
+const materialesFiltrados = computed(() => filtrarItems(materialesDisponibles.value, busquedaMaterial.value));
 
 const eliminarMaterial = async (material) => {
     try {
-        // Eliminar de la API
-        const { eliminarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
         await eliminarMaterialPorComponente(material.id);
         
-        // Eliminar de la lista local
         const index = componenteEditando.value.materiales.findIndex(m => m.id === material.id);
         if (index !== -1) {
             componenteEditando.value.materiales.splice(index, 1);
             console.log('✅ Material eliminado:', material.material?.nombre);
             
-            // Recalcular el costo del componente
             await recalcularCostoComponente();
         }
     } catch (err) {
@@ -1753,19 +1742,15 @@ const aumentarCantidadMaterial = async (material) => {
     const nuevaCantidad = (material.cantidad || 0) + 1;
     
     try {
-        // Actualizar en la API
-        const { actualizarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
         await actualizarMaterialPorComponente(material.id, {
             material_id: material.material_id,
             componente_id: material.componente_id,
             cantidad: nuevaCantidad
         });
         
-        // Actualizar localmente
         material.cantidad = nuevaCantidad;
         console.log('➕ Cantidad aumentada:', material.material?.nombre, material.cantidad);
         
-        // Recalcular el costo del componente
         await recalcularCostoComponente();
     } catch (err) {
         console.error('❌ Error al aumentar cantidad:', err);
@@ -1778,19 +1763,15 @@ const disminuirCantidadMaterial = async (material) => {
         const nuevaCantidad = material.cantidad - 1;
         
         try {
-            // Actualizar en la API
-            const { actualizarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
             await actualizarMaterialPorComponente(material.id, {
                 material_id: material.material_id,
                 componente_id: material.componente_id,
                 cantidad: nuevaCantidad
             });
             
-            // Actualizar localmente
             material.cantidad = nuevaCantidad;
             console.log('➖ Cantidad disminuida:', material.material?.nombre, material.cantidad);
             
-            // Recalcular el costo del componente
             await recalcularCostoComponente();
         } catch (err) {
             console.error('❌ Error al disminuir cantidad:', err);
@@ -1799,110 +1780,123 @@ const disminuirCantidadMaterial = async (material) => {
     }
 };
 
+// ===== FUNCIONES HELPER REUTILIZABLES =====
+const filtrarItems = (items, busqueda) => {
+    if (!busqueda) return items;
+    const busquedaLower = busqueda.toLowerCase();
+    return items.filter(item => 
+        item.nombre?.toLowerCase().includes(busquedaLower) ||
+        item.descripcion?.toLowerCase().includes(busquedaLower)
+    );
+};
+
+const abrirModalSeleccion = async (fetchFunction, disponiblesRef, busquedaRef, modalRef, errorName) => {
+    try {
+        const response = await fetchFunction();
+        disponiblesRef.value = Array.isArray(response) ? response : (response.data || []);
+        busquedaRef.value = '';
+        modalRef.value = true;
+    } catch (err) {
+        console.error(`❌ Error al cargar ${errorName}:`, err);
+        alert(`Error al cargar la lista de ${errorName}`);
+    }
+};
+
+const cerrarModal = (modalRef, busquedaRef) => {
+    modalRef.value = false;
+    busquedaRef.value = '';
+};
+
+const actualizarCantidadOHoras = async (item, delta, updateFunction, fieldName = 'cantidad') => {
+    const currentValue = item[fieldName] || 0;
+    if (delta < 0 && currentValue <= 1) return;
+    
+    const nuevoValor = currentValue + delta;
+    try {
+        await updateFunction(item.id, {
+            ...item,
+            [fieldName]: nuevoValor
+        });
+        item[fieldName] = nuevoValor;
+        await recalcularCostoComponente();
+    } catch (err) {
+        console.error(`❌ Error al actualizar ${fieldName}:`, err);
+        alert(`Error al actualizar ${fieldName === 'horas' ? 'las horas' : 'la cantidad'}`);
+    }
+};
+
+const eliminarItem = async (item, array, deleteFunction, errorName) => {
+    try {
+        await deleteFunction(item.id);
+        const index = array.findIndex(i => i.id === item.id);
+        if (index !== -1) {
+            array.splice(index, 1);
+            await recalcularCostoComponente();
+        }
+    } catch (err) {
+        console.error(`❌ Error al eliminar ${errorName}:`, err);
+        alert(`Error al eliminar ${errorName}`);
+    }
+};
+
 const recalcularCostoComponente = async () => {
     try {
-        // Calcular costo de materiales
-        const costoMateriales = (componenteEditando.value.materiales || []).reduce((sum, mat) => {
-            const precioUnitario = mat.material?.precio_unitario || 0;
-            const cantidad = mat.cantidad || 0;
-            return sum + (precioUnitario * cantidad);
-        }, 0);
+        const costoMateriales = (componenteEditando.value.materiales || []).reduce((sum, mat) => 
+            sum + ((mat.material?.precio_unitario || 0) * (mat.cantidad || 0)), 0);
         
-        // Calcular costo de herrajes
-        const costoHerrajes = (componenteEditando.value.herrajes || []).reduce((sum, her) => {
-            const costoUnitario = her.herraje?.costo_unitario || 0;
-            const cantidad = her.cantidad || 0;
-            return sum + (costoUnitario * cantidad);
-        }, 0);
+        const costoHerrajes = (componenteEditando.value.herrajes || []).reduce((sum, her) => 
+            sum + ((her.herraje?.costo_unitario || 0) * (her.cantidad || 0)), 0);
         
-        // Calcular costo de mano de obra
-        const costoManoObra = (componenteEditando.value.horas_mano_obra || []).reduce((sum, hora) => {
-            const costoHora = hora.mano_obra?.costo_hora || 0;
-            const horas = hora.horas || 0;
-            return sum + (costoHora * horas);
-        }, 0);
+        const costoManoObra = (componenteEditando.value.horas_mano_obra || []).reduce((sum, hora) => 
+            sum + ((hora.mano_obra?.costo_hora || 0) * (hora.horas || 0)), 0);
         
-        // Costo del acabado
         const costoAcabado = parseFloat(componenteEditando.value.acabado?.costo || 0);
-        
-        // Costo total del componente
         const costoTotal = costoMateriales + costoHerrajes + costoManoObra + costoAcabado;
         
-        // Actualizar el precio_unitario usando reactividad de Vue
-        componenteEditando.value = {
-            ...componenteEditando.value,
-            precio_unitario: costoTotal
-        };
+        componenteEditando.value = { ...componenteEditando.value, precio_unitario: costoTotal };
         
-        // Actualizar el componente en la lista principal (todosLosComponentes)
-        // Buscar en todos los módulos y actualizar el componente correspondiente
         cotizacion.value.modulos.forEach(modulo => {
             const componente = modulo.componentes?.find(c => c.id === componenteEditando.value.id);
-            if (componente) {
-                componente.precio_unitario = costoTotal;
-                console.log('✅ Componente actualizado en módulo:', modulo.nombre);
-            }
+            if (componente) componente.precio_unitario = costoTotal;
         });
         
-        console.log('💰 Costo recalculado:', {
-            materiales: costoMateriales,
-            herrajes: costoHerrajes,
-            manoObra: costoManoObra,
-            acabado: costoAcabado,
-            total: costoTotal
-        });
-        
+        console.log('💰 Costo recalculado:', { materiales: costoMateriales, herrajes: costoHerrajes, manoObra: costoManoObra, acabado: costoAcabado, total: costoTotal });
     } catch (err) {
         console.error('❌ Error al recalcular costo:', err);
     }
 };
 
-// ===== FUNCIONES PARA HERRAJES =====
-const agregarHerraje = async () => {
-    try {
-        const { fetchHerrajes } = await import('../../http/herrajes-api.js');
-        const response = await fetchHerrajes();
-        herrajesDisponibles.value = Array.isArray(response) ? response : (response.data || []);
-        busquedaHerraje.value = '';
-        mostrarModalAgregarHerraje.value = true;
-    } catch (err) {
-        console.error('❌ Error al cargar herrajes:', err);
-        alert('Error al cargar la lista de herrajes');
-    }
-};
+// ===== HERRAJES =====
+const agregarHerraje = () => abrirModalSeleccion(
+    fetchHerrajes,
+    herrajesDisponibles,
+    busquedaHerraje,
+    mostrarModalAgregarHerraje,
+    'herrajes'
+);
 
-const cerrarModalAgregarHerraje = () => {
-    mostrarModalAgregarHerraje.value = false;
-    busquedaHerraje.value = '';
-};
+const cerrarModalAgregarHerraje = () => cerrarModal(mostrarModalAgregarHerraje, busquedaHerraje);
 
 const seleccionarYAgregarHerraje = async (herraje) => {
-    const existe = componenteEditando.value.herrajes.find(h => h.herraje_id === herraje.id);
-    if (existe) {
-        alert('Este herraje ya está agregado al componente');
-        return;
+    if (componenteEditando.value.herrajes.find(h => h.herraje_id === herraje.id)) {
+        return alert('Este herraje ya está agregado al componente');
     }
     
     try {
-        const { crearCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
-        const datos = {
+        const response = await crearCantidadPorHerraje({
             herraje_id: herraje.id,
             componente_id: componenteEditando.value.componente_id,
             cantidad: 1
-        };
+        });
         
-        const response = await crearCantidadPorHerraje(datos);
-        const herrajeCreado = response.data || response;
-        
-        const nuevoHerraje = {
-            id: herrajeCreado.id,
+        componenteEditando.value.herrajes.push({
+            id: (response.data || response).id,
             herraje_id: herraje.id,
             componente_id: componenteEditando.value.componente_id,
             cantidad: 1,
             herraje: herraje
-        };
+        });
         
-        componenteEditando.value.herrajes.push(nuevoHerraje);
         await recalcularCostoComponente();
         cerrarModalAgregarHerraje();
     } catch (err) {
@@ -1911,117 +1905,51 @@ const seleccionarYAgregarHerraje = async (herraje) => {
     }
 };
 
-const herrajesFiltrados = computed(() => {
-    if (!busquedaHerraje.value) return herrajesDisponibles.value;
-    const busqueda = busquedaHerraje.value.toLowerCase();
-    return herrajesDisponibles.value.filter(h => 
-        h.nombre?.toLowerCase().includes(busqueda) ||
-        h.descripcion?.toLowerCase().includes(busqueda)
-    );
-});
+const herrajesFiltrados = computed(() => filtrarItems(herrajesDisponibles.value, busquedaHerraje.value));
 
 const eliminarHerraje = async (herraje) => {
-    try {
-        const { eliminarCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
-        await eliminarCantidadPorHerraje(herraje.id);
-        
-        const index = componenteEditando.value.herrajes.findIndex(h => h.id === herraje.id);
-        if (index !== -1) {
-            componenteEditando.value.herrajes.splice(index, 1);
-            await recalcularCostoComponente();
-        }
-    } catch (err) {
-        console.error('❌ Error al eliminar herraje:', err);
-        alert('Error al eliminar el herraje');
-    }
+    await eliminarItem(herraje, componenteEditando.value.herrajes, eliminarCantidadPorHerraje, 'herraje');
 };
 
 const aumentarCantidadHerraje = async (herraje) => {
-    const nuevaCantidad = (herraje.cantidad || 0) + 1;
-    
-    try {
-        const { actualizarCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
-        await actualizarCantidadPorHerraje(herraje.id, {
-            herraje_id: herraje.herraje_id,
-            componente_id: herraje.componente_id,
-            cantidad: nuevaCantidad
-        });
-        
-        herraje.cantidad = nuevaCantidad;
-        await recalcularCostoComponente();
-    } catch (err) {
-        console.error('❌ Error al aumentar cantidad:', err);
-        alert('Error al actualizar la cantidad');
-    }
+    await actualizarCantidadOHoras(herraje, 1, actualizarCantidadPorHerraje);
 };
 
 const disminuirCantidadHerraje = async (herraje) => {
-    if (herraje.cantidad > 1) {
-        const nuevaCantidad = herraje.cantidad - 1;
-        
-        try {
-            const { actualizarCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
-            await actualizarCantidadPorHerraje(herraje.id, {
-                herraje_id: herraje.herraje_id,
-                componente_id: herraje.componente_id,
-                cantidad: nuevaCantidad
-            });
-            
-            herraje.cantidad = nuevaCantidad;
-            await recalcularCostoComponente();
-        } catch (err) {
-            console.error('❌ Error al disminuir cantidad:', err);
-            alert('Error al actualizar la cantidad');
-        }
-    }
+    await actualizarCantidadOHoras(herraje, -1, actualizarCantidadPorHerraje);
 };
 
-// ===== FUNCIONES PARA MANO DE OBRA =====
-const agregarManoDeObra = async () => {
-    try {
-        const { fetchClientes: fetchManoDeObra } = await import('../../http/mano_de_obra-api .js');
-        const response = await fetchManoDeObra();
-        manoDeObraDisponible.value = Array.isArray(response) ? response : (response.data || []);
-        busquedaManoObra.value = '';
-        mostrarModalAgregarManoObra.value = true;
-    } catch (err) {
-        console.error('❌ Error al cargar mano de obra:', err);
-        alert('Error al cargar la lista de mano de obra');
-    }
-};
+// ===== MANO DE OBRA =====
+const agregarManoDeObra = () => abrirModalSeleccion(
+    fetchManoDeObra,
+    manoDeObraDisponible,
+    busquedaManoObra,
+    mostrarModalAgregarManoObra,
+    'mano de obra'
+);
 
-const cerrarModalAgregarManoObra = () => {
-    mostrarModalAgregarManoObra.value = false;
-    busquedaManoObra.value = '';
-};
+const cerrarModalAgregarManoObra = () => cerrarModal(mostrarModalAgregarManoObra, busquedaManoObra);
 
 const seleccionarYAgregarManoObra = async (manoObra) => {
-    const existe = componenteEditando.value.horas_mano_obra.find(h => h.mano_de_obra_id === manoObra.id);
-    if (existe) {
-        alert('Esta mano de obra ya está agregada al componente');
-        return;
+    if (componenteEditando.value.horas_mano_obra.find(h => h.mano_de_obra_id === manoObra.id)) {
+        return alert('Esta mano de obra ya está agregada al componente');
     }
     
     try {
-        const { crearHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
-        const datos = {
+        const response = await crearHoras({
             mano_de_obra_id: manoObra.id,
             componente_id: componenteEditando.value.componente_id,
             horas: 1
-        };
+        });
         
-        const response = await crearHorasDeManoDeObraPorComponente(datos);
-        const horaCreada = response.data || response;
-        
-        const nuevaHora = {
-            id: horaCreada.id,
+        componenteEditando.value.horas_mano_obra.push({
+            id: (response.data || response).id,
             mano_de_obra_id: manoObra.id,
             componente_id: componenteEditando.value.componente_id,
             horas: 1,
             mano_obra: manoObra
-        };
+        });
         
-        componenteEditando.value.horas_mano_obra.push(nuevaHora);
         await recalcularCostoComponente();
         cerrarModalAgregarManoObra();
     } catch (err) {
@@ -2030,121 +1958,42 @@ const seleccionarYAgregarManoObra = async (manoObra) => {
     }
 };
 
-const manoDeObraFiltrada = computed(() => {
-    if (!busquedaManoObra.value) return manoDeObraDisponible.value;
-    const busqueda = busquedaManoObra.value.toLowerCase();
-    return manoDeObraDisponible.value.filter(m => 
-        m.nombre?.toLowerCase().includes(busqueda) ||
-        m.descripcion?.toLowerCase().includes(busqueda)
-    );
-});
+const manoDeObraFiltrada = computed(() => filtrarItems(manoDeObraDisponible.value, busquedaManoObra.value));
 
 const eliminarManoDeObra = async (hora) => {
-    try {
-        const { eliminarHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
-        await eliminarHorasDeManoDeObraPorComponente(hora.id);
-        
-        const index = componenteEditando.value.horas_mano_obra.findIndex(h => h.id === hora.id);
-        if (index !== -1) {
-            componenteEditando.value.horas_mano_obra.splice(index, 1);
-            await recalcularCostoComponente();
-        }
-    } catch (err) {
-        console.error('❌ Error al eliminar mano de obra:', err);
-        alert('Error al eliminar la mano de obra');
-    }
+    await eliminarItem(hora, componenteEditando.value.horas_mano_obra, eliminarHoras, 'mano de obra');
 };
 
 const aumentarHorasManoDeObra = async (hora) => {
-    const nuevasHoras = (hora.horas || 0) + 1;
-    
-    try {
-        const { actualizarHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
-        await actualizarHorasDeManoDeObraPorComponente(hora.id, {
-            mano_de_obra_id: hora.mano_de_obra_id,
-            componente_id: hora.componente_id,
-            horas: nuevasHoras
-        });
-        
-        hora.horas = nuevasHoras;
-        await recalcularCostoComponente();
-    } catch (err) {
-        console.error('❌ Error al aumentar horas:', err);
-        alert('Error al actualizar las horas');
-    }
+    await actualizarCantidadOHoras(hora, 1, actualizarHoras, 'horas');
 };
 
 const disminuirHorasManoDeObra = async (hora) => {
-    if (hora.horas > 1) {
-        const nuevasHoras = hora.horas - 1;
-        
-        try {
-            const { actualizarHorasDeManoDeObraPorComponente } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
-            await actualizarHorasDeManoDeObraPorComponente(hora.id, {
-                mano_de_obra_id: hora.mano_de_obra_id,
-                componente_id: hora.componente_id,
-                horas: nuevasHoras
-            });
-            
-            hora.horas = nuevasHoras;
-            await recalcularCostoComponente();
-        } catch (err) {
-            console.error('❌ Error al disminuir horas:', err);
-            alert('Error al actualizar las horas');
-        }
-    }
+    await actualizarCantidadOHoras(hora, -1, actualizarHoras, 'horas');
 };
 
-// ===== FUNCIONES PARA ACABADO =====
-const agregarAcabado = async () => {
-    try {
-        const { fetchAcabados } = await import('../../http/acabado-api .js');
-        const response = await fetchAcabados();
-        acabadosDisponibles.value = Array.isArray(response) ? response : (response.data || []);
-        busquedaAcabado.value = '';
-        mostrarModalSeleccionarAcabado.value = true;
-    } catch (err) {
-        console.error('❌ Error al cargar acabados:', err);
-        alert('Error al cargar la lista de acabados');
-    }
-};
+// ===== ACABADO =====
+const agregarAcabado = () => abrirModalSeleccion(
+    fetchAcabados,
+    acabadosDisponibles,
+    busquedaAcabado,
+    mostrarModalSeleccionarAcabado,
+    'acabados'
+);
 
 const cambiarAcabado = agregarAcabado;
-
-const cerrarModalSeleccionarAcabado = () => {
-    mostrarModalSeleccionarAcabado.value = false;
-    busquedaAcabado.value = '';
-};
+const cerrarModalSeleccionarAcabado = () => cerrarModal(mostrarModalSeleccionarAcabado, busquedaAcabado);
 
 const seleccionarAcabado = async (acabado) => {
-    // Aquí necesitarías una API para actualizar el acabado del componente
-    // Por ahora solo actualizo localmente
-    componenteEditando.value = {
-        ...componenteEditando.value,
-        acabado: acabado,
-        acabado_id: acabado.id
-    };
-    
+    componenteEditando.value = { ...componenteEditando.value, acabado, acabado_id: acabado.id };
     await recalcularCostoComponente();
     cerrarModalSeleccionarAcabado();
 };
 
-const acabadosFiltrados = computed(() => {
-    if (!busquedaAcabado.value) return acabadosDisponibles.value;
-    const busqueda = busquedaAcabado.value.toLowerCase();
-    return acabadosDisponibles.value.filter(a => 
-        a.nombre?.toLowerCase().includes(busqueda) ||
-        a.descripcion?.toLowerCase().includes(busqueda)
-    );
-});
+const acabadosFiltrados = computed(() => filtrarItems(acabadosDisponibles.value, busquedaAcabado.value));
 
 const eliminarAcabado = async () => {
-    componenteEditando.value = {
-        ...componenteEditando.value,
-        acabado: null,
-        acabado_id: null
-    };
-    
+    componenteEditando.value = { ...componenteEditando.value, acabado: null, acabado_id: null };
     await recalcularCostoComponente();
 };
 
