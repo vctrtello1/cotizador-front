@@ -2825,7 +2825,20 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.8rem;
+    margin: 1rem 0;
+}
+
+.cantidad-control label {
+    font-weight: 600;
+    color: #5a4037;
+    margin-right: 0.5rem;
+}
+
+.cantidad-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
 }
 
 .btn-cantidad-control {
@@ -3003,37 +3016,67 @@ onMounted(() => {
 
 .btn-cantidad-minus,
 .btn-cantidad-plus {
-    padding: 8px 12px;
-    background: #d4a574;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 1rem;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-size: 1.2rem;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
 .btn-cantidad-minus:hover,
 .btn-cantidad-plus:hover {
-    background: #c89564;
-    transform: scale(1.05);
+    background: linear-gradient(135deg, #c89564 0%, #b88554 100%);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.4);
 }
 
 .input-cantidad-modal {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #d4a574;
-    border-radius: 6px;
+    width: 60px;
+    padding: 8px;
+    border: 2px solid #d4a574;
+    border-radius: 8px;
     text-align: center;
-    font-weight: 600;
-    font-size: 1rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #5a4037;
 }
 
 .input-cantidad-modal:focus {
     outline: none;
     border-color: #c89564;
     box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.1);
+}
+
+.subtotal-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem;
+    background: linear-gradient(135deg, #6B4423 0%, #8B5A3C 100%);
+    color: white;
+    border-radius: 12px;
+    margin-top: 1.5rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(107, 68, 35, 0.2);
+}
+
+.subtotal-display .label {
+    font-size: 1rem;
+}
+
+.subtotal-display .value {
+    font-size: 1.4rem;
+    font-weight: 700;
 }
 
 .cantidad-unit {
@@ -3729,13 +3772,16 @@ onMounted(() => {
 
 .cantidad-info {
     margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: #faf8f5;
-    border-radius: 8px;
+    padding: 1.2rem;
+    background: linear-gradient(135deg, #faf8f5 0%, #f5f3f0 100%);
+    border-radius: 12px;
+    border: 1px solid #e8ddd7;
 }
 
 .cantidad-info p {
     margin: 0.5rem 0;
+    color: #5a4037;
+    line-height: 1.6;
 }
 
 .modal-footer-cantidad {
