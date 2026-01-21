@@ -1510,7 +1510,7 @@ const cerrarModalAgregarMaterial = () => {
     busquedaMaterial.value = '';
 };
 
-const seleccionarYAgregarMaterial = (material) => {
+const seleccionarYAgregarMaterial = async (material) => {
     // Verificar si el material ya existe
     const existe = componenteEditando.value.materiales.find(m => m.material_id === material.id);
     if (existe) {
@@ -1518,20 +1518,36 @@ const seleccionarYAgregarMaterial = (material) => {
         return;
     }
     
-    // Agregar el material con cantidad por defecto de 1
-    const nuevoMaterial = {
-        id: Date.now(), // ID temporal
-        material_id: material.id,
-        componente_id: componenteEditando.value.componente_id,
-        cantidad: 1,
-        material: material
-    };
-    
-    componenteEditando.value.materiales.push(nuevoMaterial);
-    console.log('✅ Material agregado:', material.nombre);
-    
-    // Cerrar el modal automáticamente
-    cerrarModalAgregarMaterial();
+    try {
+        // Guardar en la API
+        const { crearMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
+        const datos = {
+            material_id: material.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1
+        };
+        
+        const response = await crearMaterialPorComponente(datos);
+        const materialCreado = response.data || response;
+        
+        // Agregar el material a la lista local con todos los datos
+        const nuevoMaterial = {
+            id: materialCreado.id,
+            material_id: material.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1,
+            material: material
+        };
+        
+        componenteEditando.value.materiales.push(nuevoMaterial);
+        console.log('✅ Material agregado:', material.nombre);
+        
+        // Cerrar el modal automáticamente
+        cerrarModalAgregarMaterial();
+    } catch (err) {
+        console.error('❌ Error al agregar material:', err);
+        alert('Error al agregar el material');
+    }
 };
 
 const confirmarAgregarMaterial = () => {
@@ -1571,25 +1587,67 @@ const materialesFiltrados = computed(() => {
     );
 });
 
-const eliminarMaterial = (material) => {
+const eliminarMaterial = async (material) => {
     if (confirm(`¿Estás seguro de eliminar el material "${material.material?.nombre || 'Sin nombre'}"?`)) {
-        const index = componenteEditando.value.materiales.findIndex(m => m.id === material.id);
-        if (index !== -1) {
-            componenteEditando.value.materiales.splice(index, 1);
-            console.log('✅ Material eliminado:', material.material?.nombre);
+        try {
+            // Eliminar de la API
+            const { eliminarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
+            await eliminarMaterialPorComponente(material.id);
+            
+            // Eliminar de la lista local
+            const index = componenteEditando.value.materiales.findIndex(m => m.id === material.id);
+            if (index !== -1) {
+                componenteEditando.value.materiales.splice(index, 1);
+                console.log('✅ Material eliminado:', material.material?.nombre);
+            }
+        } catch (err) {
+            console.error('❌ Error al eliminar material:', err);
+            alert('Error al eliminar el material');
         }
     }
 };
 
-const aumentarCantidadMaterial = (material) => {
-    material.cantidad = (material.cantidad || 0) + 1;
-    console.log('➕ Cantidad aumentada:', material.material?.nombre, material.cantidad);
+const aumentarCantidadMaterial = async (material) => {
+    const nuevaCantidad = (material.cantidad || 0) + 1;
+    
+    try {
+        // Actualizar en la API
+        const { actualizarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
+        await actualizarMaterialPorComponente(material.id, {
+            material_id: material.material_id,
+            componente_id: material.componente_id,
+            cantidad: nuevaCantidad
+        });
+        
+        // Actualizar localmente
+        material.cantidad = nuevaCantidad;
+        console.log('➕ Cantidad aumentada:', material.material?.nombre, material.cantidad);
+    } catch (err) {
+        console.error('❌ Error al aumentar cantidad:', err);
+        alert('Error al actualizar la cantidad');
+    }
 };
 
-const disminuirCantidadMaterial = (material) => {
+const disminuirCantidadMaterial = async (material) => {
     if (material.cantidad > 1) {
-        material.cantidad -= 1;
-        console.log('➖ Cantidad disminuida:', material.material?.nombre, material.cantidad);
+        const nuevaCantidad = material.cantidad - 1;
+        
+        try {
+            // Actualizar en la API
+            const { actualizarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
+            await actualizarMaterialPorComponente(material.id, {
+                material_id: material.material_id,
+                componente_id: material.componente_id,
+                cantidad: nuevaCantidad
+            });
+            
+            // Actualizar localmente
+            material.cantidad = nuevaCantidad;
+            console.log('➖ Cantidad disminuida:', material.material?.nombre, material.cantidad);
+        } catch (err) {
+            console.error('❌ Error al disminuir cantidad:', err);
+            alert('Error al actualizar la cantidad');
+        }
     }
 };
 
