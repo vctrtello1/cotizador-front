@@ -561,11 +561,11 @@
                                                     </div>
                                                     <div class="item-detail-row">
                                                         <span class="detail-label">Costo unitario:</span>
-                                                        <span class="detail-value">${{ formatCurrency(mat.material?.costo_unitario || 0) }}</span>
+                                                        <span class="detail-value">${{ formatCurrency(mat.material?.precio_unitario || 0) }}</span>
                                                     </div>
                                                     <div class="item-detail-row subtotal">
                                                         <span class="detail-label">Subtotal:</span>
-                                                        <span class="detail-value">${{ formatCurrency((mat.material?.costo_unitario || 0) * (mat.cantidad || 0)) }}</span>
+                                                        <span class="detail-value">${{ formatCurrency((mat.material?.precio_unitario || 0) * (mat.cantidad || 0)) }}</span>
                                                     </div>
                                                 </div>
                                             </div>
