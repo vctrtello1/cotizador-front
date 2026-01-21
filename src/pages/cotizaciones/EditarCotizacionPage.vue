@@ -1588,22 +1588,20 @@ const materialesFiltrados = computed(() => {
 });
 
 const eliminarMaterial = async (material) => {
-    if (confirm(`¿Estás seguro de eliminar el material "${material.material?.nombre || 'Sin nombre'}"?`)) {
-        try {
-            // Eliminar de la API
-            const { eliminarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
-            await eliminarMaterialPorComponente(material.id);
-            
-            // Eliminar de la lista local
-            const index = componenteEditando.value.materiales.findIndex(m => m.id === material.id);
-            if (index !== -1) {
-                componenteEditando.value.materiales.splice(index, 1);
-                console.log('✅ Material eliminado:', material.material?.nombre);
-            }
-        } catch (err) {
-            console.error('❌ Error al eliminar material:', err);
-            alert('Error al eliminar el material');
+    try {
+        // Eliminar de la API
+        const { eliminarMaterialPorComponente } = await import('../../http/materiales_por_componente-api.js');
+        await eliminarMaterialPorComponente(material.id);
+        
+        // Eliminar de la lista local
+        const index = componenteEditando.value.materiales.findIndex(m => m.id === material.id);
+        if (index !== -1) {
+            componenteEditando.value.materiales.splice(index, 1);
+            console.log('✅ Material eliminado:', material.material?.nombre);
         }
+    } catch (err) {
+        console.error('❌ Error al eliminar material:', err);
+        alert('Error al eliminar el material');
     }
 };
 
