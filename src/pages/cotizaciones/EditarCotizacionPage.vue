@@ -1943,20 +1943,23 @@ const cerrarModalAgregarManoObra = () => cerrarModal(mostrarModalAgregarManoObra
 
 const seleccionarYAgregarManoObra = async (manoObra) => {
     try {
+        // Siempre resetear a 1 hora cuando se cambia la mano de obra
+        const horasIniciales = 1;
+        
         // Si ya existe un registro, actualizarlo; si no, crear uno nuevo
         if (componenteEditando.value.horas_mano_obra_id) {
             // Actualizar registro existente
             await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
                 mano_de_obra_id: manoObra.id,
                 componente_id: componenteEditando.value.componente_id,
-                horas: componenteEditando.value.horas_mano_obra || 1
+                horas: horasIniciales
             });
         } else {
             // Crear nuevo registro
             const response = await crearHoras({
                 mano_de_obra_id: manoObra.id,
                 componente_id: componenteEditando.value.componente_id,
-                horas: 1
+                horas: horasIniciales
             });
             
             // Guardar el ID del nuevo registro
@@ -1967,7 +1970,7 @@ const seleccionarYAgregarManoObra = async (manoObra) => {
             ...componenteEditando.value, 
             mano_de_obra: manoObra, 
             mano_de_obra_id: manoObra.id,
-            horas_mano_obra: componenteEditando.value.horas_mano_obra || 1
+            horas_mano_obra: horasIniciales
         };
         
         await recalcularCostoComponente();
@@ -2007,8 +2010,13 @@ const aumentarHorasManoDeObra = async () => {
     
     try {
         if (componenteEditando.value.horas_mano_obra_id) {
+            // Extraer el ID numérico de mano_de_obra
+            const manoDeObraId = typeof componenteEditando.value.mano_de_obra_id === 'object' 
+                ? componenteEditando.value.mano_de_obra_id.id 
+                : componenteEditando.value.mano_de_obra_id;
+            
             await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
-                mano_de_obra_id: componenteEditando.value.mano_de_obra_id,
+                mano_de_obra_id: manoDeObraId,
                 componente_id: componenteEditando.value.componente_id,
                 horas: nuevasHoras
             });
@@ -2032,8 +2040,13 @@ const disminuirHorasManoDeObra = async () => {
         
         try {
             if (componenteEditando.value.horas_mano_obra_id) {
+                // Extraer el ID numérico de mano_de_obra
+                const manoDeObraId = typeof componenteEditando.value.mano_de_obra_id === 'object' 
+                    ? componenteEditando.value.mano_de_obra_id.id 
+                    : componenteEditando.value.mano_de_obra_id;
+                
                 await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
-                    mano_de_obra_id: componenteEditando.value.mano_de_obra_id,
+                    mano_de_obra_id: manoDeObraId,
                     componente_id: componenteEditando.value.componente_id,
                     horas: nuevasHoras
                 });
