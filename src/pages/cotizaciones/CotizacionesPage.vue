@@ -17,23 +17,40 @@
             >
                 <div class="card-header">
                     <span class="cotizacion-id">#{{ cotizacion.id }}</span>
-                    <span class="cotizacion-date">{{ new Date(cotizacion.fecha).toLocaleDateString() }}</span>
+                    <span class="cotizacion-date">{{ formatDate(cotizacion.fecha) }}</span>
                 </div>
                 <div class="card-body">
-                    <h3 class="client-name">
-                        {{ cotizacion.cliente?.nombre || 'Sin Cliente' }}
-                    </h3>
-                    <p class="description">{{ cotizacion.modulos && cotizacion.modulos.length > 0 ? cotizacion.modulos.map(m => m.nombre).join(', ') : 'Sin módulos' }}</p>
+                    <div class="client-section">
+                        <h3 class="client-name">
+                            {{ cotizacion.cliente?.nombre || 'Sin Cliente' }}
+                        </h3>
+                        <span class="estado-badge" :class="`estado-${cotizacion.estado}`">
+                            {{ getEstadoLabel(cotizacion.estado) }}
+                        </span>
+                    </div>
+                    <div class="componentes-info">
+                        <span class="componentes-count">
+                            {{ getComponentesCount(cotizacion) }} componente{{ getComponentesCount(cotizacion) !== 1 ? 's' : '' }}
+                        </span>
+                        <p class="description" v-if="getComponentesNames(cotizacion).length > 0">
+                            {{ getComponentesNames(cotizacion) }}
+                        </p>
+                        <p class="description no-componentes" v-else>
+                            Sin componentes asignados
+                        </p>
+                    </div>
                 </div>
                 <div class="card-footer">
                     <span class="label">Total:</span>
-                    <span class="amount">${{ typeof cotizacion.total === 'number' ? cotizacion.total.toFixed(2) : cotizacion.total }}</span>
+                    <span class="amount">{{ formatCurrency(cotizacion.total) }}</span>
                 </div>
             </div>
         </div>
         
         <div v-else class="empty-state">
-            <p>No hay cotizaciones disponibles.</p>
+            <div class="empty-icon">📋</div>
+            <p class="empty-title">No hay cotizaciones disponibles</p>
+            <p class="empty-subtitle">Crea tu primera cotización haciendo clic en el botón de arriba</p>
         </div>
     </div>
 </template>
@@ -55,6 +72,62 @@
 
     const goToCotizacionDetallada = (id) => {
         router.push({ name: 'CotizacionDetallada', params: { id } });
+    };
+
+    const formatDate = (fecha) => {
+        if (!fecha) return '';
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-MX', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    };
+
+    const formatCurrency = (value) => {
+        if (typeof value !== 'number') return '$0.00';
+        return new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN'
+        }).format(value);
+    };
+
+    const getEstadoLabel = (estado) => {
+        const estados = {
+            'pendiente': 'Pendiente',
+            'aprobada': 'Aprobada',
+            'rechazada': 'Rechazada',
+            'completada': 'Completada',
+            'cancelada': 'Cancelada'
+        };
+        return estados[estado] || estado;
+    };
+
+    const getComponentesCount = (cotizacion) => {
+        if (!cotizacion.modulos || cotizacion.modulos.length === 0) return 0;
+        let count = 0;
+        cotizacion.modulos.forEach(modulo => {
+            if (modulo.componentes && Array.isArray(modulo.componentes)) {
+                count += modulo.componentes.length;
+            }
+        });
+        return count;
+    };
+
+    const getComponentesNames = (cotizacion) => {
+        if (!cotizacion.modulos || cotizacion.modulos.length === 0) return '';
+        const componentes = [];
+        cotizacion.modulos.forEach(modulo => {
+            if (modulo.componentes && Array.isArray(modulo.componentes)) {
+                modulo.componentes.forEach(comp => {
+                    if (comp.nombre) {
+                        const cantidad = comp.cantidad ? ` (${comp.cantidad})` : '';
+                        componentes.push(`${comp.nombre}${cantidad}`);
+                    }
+                });
+            }
+        });
+        return componentes.join(', ');
     };
 
     const crearNuevaCotizacion = async () => {
@@ -113,9 +186,9 @@
     width: 100%;
     margin: 0;
     padding: 40px 32px;
-    font-family: 'Georgia', 'Garamond', serif;
-    color: var(--color-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 .page-header {
@@ -123,60 +196,66 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 48px;
-    border-bottom: 3px solid var(--color-border);
-    padding-bottom: 20px;
-    max-width: 100%;
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .page-header h1 {
     font-size: 2.5rem;
-    color: var(--color-heading);
     font-weight: 700;
     margin: 0;
-    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--wood-medium) 0%, var(--wood-light) 100%);
-    color: var(--cream);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
     border: none;
     padding: 14px 28px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     letter-spacing: 0.5px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px var(--shadow-light);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.3);
+    font-size: 1rem;
 }
 
-.btn-primary:hover {
-    background: linear-gradient(135deg, var(--wood-light) 0%, var(--wood-lighter) 100%);
-    box-shadow: 0 6px 16px var(--shadow-medium);
+.btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .warning-banner {
-    background-color: var(--cream);
-    color: var(--wood-dark);
-    padding: 15px 20px;
-    border: 2px solid var(--accent-gold);
-    border-radius: 8px;
+    background: white;
+    color: #856404;
+    padding: 16px 24px;
+    border-left: 4px solid #ffc107;
+    border-radius: 12px;
     margin-bottom: 32px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    box-shadow: 0 4px 8px var(--shadow-light);
+    gap: 12px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Grid de galería con 3 columnas */
 .cotizaciones-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
     padding: 0;
-    align-items: start;
-    width: 100%;
 }
 
 /* Mobile - 1 columna */
@@ -188,6 +267,21 @@
     
     .cotizaciones-container {
         padding: 24px 16px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+        padding: 24px;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .btn-primary {
+        width: 100%;
     }
 }
 
@@ -207,14 +301,14 @@
 @media (min-width: 1024px) {
     .cotizaciones-grid {
         grid-template-columns: repeat(3, 1fr);
-        gap: 32px;
     }
 }
 
-/* Pantallas muy grandes - mantener 3 columnas con mayor gap */
+/* Pantallas muy grandes - 4 columnas */
 @media (min-width: 1920px) {
     .cotizaciones-grid {
-        gap: 40px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 32px;
     }
     
     .cotizaciones-container {
@@ -223,12 +317,12 @@
 }
 
 .cotizacion-card {
-    background: var(--color-background-soft);
-    border: 2px solid var(--color-border);
-    border-radius: 12px;
+    background: white;
+    border: none;
+    border-radius: 16px;
     cursor: pointer;
-    box-shadow: 0 6px 20px var(--shadow-light);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -242,15 +336,14 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--accent-gold), var(--accent-bronze));
+    background: linear-gradient(90deg, #d4a574, #c89564);
     opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.3s ease;
 }
 
 .cotizacion-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 12px 32px var(--shadow-medium);
-    border-color: var(--accent-gold);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
 }
 
 .cotizacion-card:hover::before {
@@ -258,9 +351,9 @@
 }
 
 .card-header {
-    padding: 16px 20px;
-    background: linear-gradient(135deg, var(--wood-medium), var(--wood-light));
-    color: var(--cream);
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -268,53 +361,128 @@
 }
 
 .cotizacion-id {
-    font-family: 'Courier New', monospace;
-    font-size: 1.1rem;
+    font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+    font-size: 1.2rem;
     font-weight: 700;
+    letter-spacing: -0.5px;
 }
 
 .cotizacion-date {
     font-size: 0.9rem;
     opacity: 0.95;
+    font-weight: 500;
 }
 
 .card-body {
     padding: 24px;
     flex-grow: 1;
-    background: var(--warm-white, #FAF8F3);
+    background: white;
     min-height: 120px;
 }
 
+.client-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
 .client-name {
-    margin: 0 0 12px 0;
+    margin: 0;
     font-size: 1.5rem;
-    color: #2C1810 !important;
+    color: #2c3e50;
     font-weight: 700;
     line-height: 1.3;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+    flex: 1;
+}
+
+.estado-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.estado-pendiente {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.estado-aprobada {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.estado-rechazada {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.estado-completada {
+    background: #d4edda;
+    color: #155724;
+}
+
+.estado-cancelada {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.componentes-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.componentes-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #d4a574;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.componentes-count::before {
+    content: '📦';
+    font-size: 1rem;
 }
 
 .description {
     margin: 0;
-    color: #6B4423 !important;
+    color: #6c757d;
     font-size: 0.95rem;
     line-height: 1.6;
-    display: block !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.description.no-componentes {
+    font-style: italic;
+    color: #adb5bd;
 }
 
 .card-footer {
-    padding: 16px 24px;
-    border-top: 2px solid var(--color-border);
+    padding: 20px 24px;
+    border-top: 1px solid #e9ecef;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--cream-soft);
+    background: #f8f9fa;
 }
 
 .label {
-    color: var(--wood-medium);
+    color: #6c757d;
     text-transform: uppercase;
     font-weight: 700;
     font-size: 0.85rem;
@@ -322,19 +490,41 @@
 }
 
 .amount {
-    font-size: 1.6rem;
+    font-size: 1.75rem;
     font-weight: 800;
-    color: var(--accent-gold);
-    text-shadow: 1px 1px 2px var(--shadow-light);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .empty-state {
     text-align: center;
-    padding: 60px 40px;
-    color: var(--color-text-muted);
-    border: 2px dashed var(--color-border);
-    border-radius: 12px;
-    font-weight: 600;
-    background: var(--color-background-soft);
+    padding: 80px 40px;
+    color: #6c757d;
+    border: 2px dashed #dee2e6;
+    border-radius: 16px;
+    font-weight: 500;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-title {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #495057;
+}
+
+.empty-subtitle {
+    margin: 0;
+    font-size: 1rem;
+    color: #6c757d;
 }
 </style>
