@@ -543,10 +543,16 @@
                                         <div class="tab-panel-header">
                                             <h5>Materiales del Componente</h5>
                                             <p class="tab-description">Visualiza los materiales asociados a este componente</p>
-                                            <button class="btn-add-item" @click="agregarMaterial">
-                                                <span class="btn-icon">➕</span>
-                                                Agregar Material
-                                            </button>
+                                            <div class="tab-header-actions">
+                                                <button class="btn-add-item btn-secondary" @click="abrirModalCrearMaterial">
+                                                    <span class="btn-icon">✨</span>
+                                                    Crear Nuevo Material
+                                                </button>
+                                                <button class="btn-add-item" @click="agregarMaterial">
+                                                    <span class="btn-icon">➕</span>
+                                                    Agregar Material
+                                                </button>
+                                            </div>
                                         </div>
                                         <div v-if="componenteEditando.materiales && componenteEditando.materiales.length > 0" class="items-list">
                                             <div v-for="mat in componenteEditando.materiales" :key="mat.id" class="item-card">
@@ -593,10 +599,16 @@
                                         <div class="tab-panel-header">
                                             <h5>Herrajes del Componente</h5>
                                             <p class="tab-description">Visualiza los herrajes asociados a este componente</p>
-                                            <button class="btn-add-item" @click="agregarHerraje">
-                                                <span class="btn-icon">➕</span>
-                                                Agregar Herraje
-                                            </button>
+                                            <div class="tab-header-actions">
+                                                <button class="btn-add-item btn-secondary" @click="abrirModalCrearHerraje">
+                                                    <span class="btn-icon">✨</span>
+                                                    Crear Nuevo Herraje
+                                                </button>
+                                                <button class="btn-add-item" @click="agregarHerraje">
+                                                    <span class="btn-icon">➕</span>
+                                                    Agregar Herraje
+                                                </button>
+                                            </div>
                                         </div>
                                         <div v-if="componenteEditando.herrajes && componenteEditando.herrajes.length > 0" class="items-list">
                                             <div v-for="her in componenteEditando.herrajes" :key="her.id" class="item-card">
@@ -638,14 +650,20 @@
                                         <div class="tab-panel-header">
                                             <h5>Mano de Obra del Componente</h5>
                                             <p class="tab-description">Visualiza la mano de obra asociada a este componente</p>
-                                            <button v-if="!componenteEditando.mano_de_obra" class="btn-add-item" @click="agregarManoDeObra">
-                                                <span class="btn-icon">➕</span>
-                                                Seleccionar Mano de Obra
-                                            </button>
-                                            <button v-else class="btn-add-item" @click="cambiarManoDeObra" style="background: linear-gradient(135deg, #FF8C00 0%, #FF6B00 100%);">
-                                                <span class="btn-icon">🔄</span>
-                                                Cambiar Mano de Obra
-                                            </button>
+                                            <div class="tab-header-actions">
+                                                <button class="btn-add-item btn-secondary" @click="abrirModalCrearManoDeObra">
+                                                    <span class="btn-icon">✨</span>
+                                                    Crear Nueva Mano de Obra
+                                                </button>
+                                                <button v-if="!componenteEditando.mano_de_obra" class="btn-add-item" @click="agregarManoDeObra">
+                                                    <span class="btn-icon">➕</span>
+                                                    Seleccionar Mano de Obra
+                                                </button>
+                                                <button v-else class="btn-add-item" @click="cambiarManoDeObra" style="background: linear-gradient(135deg, #FF8C00 0%, #FF6B00 100%);">
+                                                    <span class="btn-icon">🔄</span>
+                                                    Cambiar Mano de Obra
+                                                </button>
+                                            </div>
                                         </div>
                                         <div v-if="componenteEditando.mano_de_obra" class="items-list">
                                             <div class="item-card">
@@ -691,14 +709,20 @@
                                         <div class="tab-panel-header">
                                             <h5>Acabado del Componente</h5>
                                             <p class="tab-description">Visualiza el acabado asociado a este componente</p>
-                                            <button v-if="!componenteEditando.acabado" class="btn-add-item" @click="agregarAcabado">
-                                                <span class="btn-icon">➕</span>
-                                                Seleccionar Acabado
-                                            </button>
-                                            <button v-else class="btn-add-item" @click="cambiarAcabado" style="background: linear-gradient(135deg, #8B5A3C 0%, #6B4423 100%);">
-                                                <span class="btn-icon">🔄</span>
-                                                Cambiar Acabado
-                                            </button>
+                                            <div class="tab-header-actions">
+                                                <button class="btn-add-item btn-secondary" @click="abrirModalCrearAcabado">
+                                                    <span class="btn-icon">✨</span>
+                                                    Crear Nuevo Acabado
+                                                </button>
+                                                <button v-if="!componenteEditando.acabado" class="btn-add-item" @click="agregarAcabado">
+                                                    <span class="btn-icon">➕</span>
+                                                    Seleccionar Acabado
+                                                </button>
+                                                <button v-else class="btn-add-item" @click="cambiarAcabado" style="background: linear-gradient(135deg, #8B5A3C 0%, #6B4423 100%);">
+                                                    <span class="btn-icon">🔄</span>
+                                                    Cambiar Acabado
+                                                </button>
+                                            </div>
                                         </div>
                                         <div v-if="componenteEditando.acabado" class="items-list">
                                             <div class="item-card">
@@ -974,6 +998,149 @@
                     </div>
                 </Transition>
 
+                <!-- Modal para crear nuevo material -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalCrearMaterial" class="modal-overlay" @click="cerrarModalCrearMaterial">
+                        <div class="modal-content modal-form" @click.stop>
+                            <div class="modal-header">
+                                <h3>✨ Crear Nuevo Material</h3>
+                                <button class="btn-close" @click="cerrarModalCrearMaterial">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Nombre*</label>
+                                    <input v-model="nuevoMaterial.nombre" type="text" class="input-text" placeholder="Nombre del material" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Tipo de Material*</label>
+                                    <select v-model="nuevoMaterial.tipo_de_material_id" class="input-text">
+                                        <option :value="null">Seleccionar tipo</option>
+                                        <option v-for="tipo in tiposDeMaterial" :key="tipo.id" :value="tipo.id">
+                                            {{ tipo.nombre }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Unidad de Medida</label>
+                                    <input v-model="nuevoMaterial.unidad_medida" type="text" class="input-text" placeholder="Ej: m, kg, pza" />
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Alto</label>
+                                        <input v-model="nuevoMaterial.alto" type="number" step="0.01" class="input-text" placeholder="0.00" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ancho</label>
+                                        <input v-model="nuevoMaterial.ancho" type="number" step="0.01" class="input-text" placeholder="0.00" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Largo</label>
+                                        <input v-model="nuevoMaterial.largo" type="number" step="0.01" class="input-text" placeholder="0.00" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Precio Unitario</label>
+                                    <input v-model="nuevoMaterial.precio_unitario" type="number" step="0.01" class="input-text" placeholder="0.00" />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn-cancel" @click="cerrarModalCrearMaterial">Cancelar</button>
+                                <button class="btn-primary" @click="guardarNuevoMaterial">Crear Material</button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para crear nuevo herraje -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalCrearHerraje" class="modal-overlay" @click="cerrarModalCrearHerraje">
+                        <div class="modal-content modal-form" @click.stop>
+                            <div class="modal-header">
+                                <h3>✨ Crear Nuevo Herraje</h3>
+                                <button class="btn-close" @click="cerrarModalCrearHerraje">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Nombre*</label>
+                                    <input v-model="nuevoHerraje.nombre" type="text" class="input-text" placeholder="Nombre del herraje" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Descripción</label>
+                                    <textarea v-model="nuevoHerraje.descripcion" class="input-textarea" rows="3" placeholder="Descripción del herraje"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Precio Unitario</label>
+                                    <input v-model="nuevoHerraje.precio_unitario" type="number" step="0.01" class="input-text" placeholder="0.00" />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn-cancel" @click="cerrarModalCrearHerraje">Cancelar</button>
+                                <button class="btn-primary" @click="guardarNuevoHerraje">Crear Herraje</button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para crear nueva mano de obra -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalCrearManoDeObra" class="modal-overlay" @click="cerrarModalCrearManoDeObra">
+                        <div class="modal-content modal-form" @click.stop>
+                            <div class="modal-header">
+                                <h3>✨ Crear Nueva Mano de Obra</h3>
+                                <button class="btn-close" @click="cerrarModalCrearManoDeObra">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Nombre*</label>
+                                    <input v-model="nuevaManoDeObra.nombre" type="text" class="input-text" placeholder="Nombre de la mano de obra" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Descripción</label>
+                                    <textarea v-model="nuevaManoDeObra.descripcion" class="input-textarea" rows="3" placeholder="Descripción de la mano de obra"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Costo por Hora</label>
+                                    <input v-model="nuevaManoDeObra.costo_hora" type="number" step="0.01" class="input-text" placeholder="0.00" />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn-cancel" @click="cerrarModalCrearManoDeObra">Cancelar</button>
+                                <button class="btn-primary" @click="guardarNuevaManoDeObra">Crear Mano de Obra</button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para crear nuevo acabado -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalCrearAcabado" class="modal-overlay" @click="cerrarModalCrearAcabado">
+                        <div class="modal-content modal-form" @click.stop>
+                            <div class="modal-header">
+                                <h3>✨ Crear Nuevo Acabado</h3>
+                                <button class="btn-close" @click="cerrarModalCrearAcabado">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Nombre*</label>
+                                    <input v-model="nuevoAcabado.nombre" type="text" class="input-text" placeholder="Nombre del acabado" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Descripción</label>
+                                    <textarea v-model="nuevoAcabado.descripcion" class="input-textarea" rows="3" placeholder="Descripción del acabado"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Costo</label>
+                                    <input v-model="nuevoAcabado.costo" type="number" step="0.01" class="input-text" placeholder="0.00" />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn-cancel" @click="cerrarModalCrearAcabado">Cancelar</button>
+                                <button class="btn-primary" @click="guardarNuevoAcabado">Crear Acabado</button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
                 <!-- Resumen de totales -->
                 <div class="form-section resumen-section">
                     <h2 class="section-title">💰 Resumen Financiero</h2>
@@ -1036,13 +1203,14 @@ import { fetchClientes } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
 import { fetchComponentes } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
-import { fetchMateriales } from '../../http/materiales-api';
+import { fetchMateriales, crearMaterial, actualizarMaterial } from '../../http/materiales-api';
 import { crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
-import { fetchHerrajes } from '../../http/herrajes-api';
+import { fetchHerrajes, crearHerraje } from '../../http/herrajes-api';
 import { crearCantidadPorHerraje, actualizarCantidadPorHerraje, eliminarCantidadPorHerraje } from '../../http/cantidad_por_herraje-api';
-import { fetchClientes as fetchManoDeObra } from '../../http/mano_de_obra-api ';
+import { fetchClientes as fetchManoDeObra, crearCliente as crearManoDeObra } from '../../http/mano_de_obra-api ';
 import { crearHoras, actualizarHoras, eliminarHoras } from '../../http/horas_por_mano_de_obra_por_componente-api';
-import { fetchAcabados } from '../../http/acabado-api ';
+import { fetchAcabados, crearAcabado } from '../../http/acabado-api ';
+import { fetchTiposDeMaterial } from '../../http/tipo_de_material-api';
 
 const route = useRoute();
 const router = useRouter();
@@ -1093,6 +1261,40 @@ const manoDeObraDisponible = ref([]);
 const mostrarModalSeleccionarAcabado = ref(false);
 const busquedaAcabado = ref('');
 const acabadosDisponibles = ref([]);
+
+// Variables para modales de crear nuevos elementos
+const mostrarModalCrearMaterial = ref(false);
+const nuevoMaterial = ref({
+    nombre: '',
+    unidad_medida: '',
+    alto: '',
+    ancho: '',
+    largo: '',
+    precio_unitario: '',
+    tipo_de_material_id: null
+});
+const tiposDeMaterial = ref([]);
+
+const mostrarModalCrearHerraje = ref(false);
+const nuevoHerraje = ref({
+    nombre: '',
+    descripcion: '',
+    precio_unitario: ''
+});
+
+const mostrarModalCrearManoDeObra = ref(false);
+const nuevaManoDeObra = ref({
+    nombre: '',
+    descripcion: '',
+    costo_hora: ''
+});
+
+const mostrarModalCrearAcabado = ref(false);
+const nuevoAcabado = ref({
+    nombre: '',
+    descripcion: '',
+    costo: ''
+});
 
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
@@ -1812,6 +2014,94 @@ const cerrarModalAgregarMaterial = () => {
     busquedaMaterial.value = '';
 };
 
+// Funciones para crear nuevo material
+const abrirModalCrearMaterial = async () => {
+    try {
+        const response = await fetchTiposDeMaterial();
+        tiposDeMaterial.value = Array.isArray(response) ? response : (response.data || []);
+        
+        nuevoMaterial.value = {
+            nombre: '',
+            unidad_medida: '',
+            alto: '',
+            ancho: '',
+            largo: '',
+            precio_unitario: '',
+            tipo_de_material_id: null
+        };
+        
+        mostrarModalCrearMaterial.value = true;
+    } catch (err) {
+        console.error('❌ Error al cargar tipos de material:', err);
+        alert('Error al cargar tipos de material');
+    }
+};
+
+const cerrarModalCrearMaterial = () => {
+    mostrarModalCrearMaterial.value = false;
+    nuevoMaterial.value = {
+        nombre: '',
+        unidad_medida: '',
+        alto: '',
+        ancho: '',
+        largo: '',
+        precio_unitario: '',
+        tipo_de_material_id: null
+    };
+};
+
+const guardarNuevoMaterial = async () => {
+    try {
+        if (!nuevoMaterial.value.nombre || !nuevoMaterial.value.tipo_de_material_id) {
+            alert('Por favor completa los campos obligatorios (nombre y tipo de material)');
+            return;
+        }
+
+        const datos = {
+            nombre: nuevoMaterial.value.nombre,
+            unidad_medida: nuevoMaterial.value.unidad_medida || '',
+            alto: parseFloat(nuevoMaterial.value.alto) || 0,
+            ancho: parseFloat(nuevoMaterial.value.ancho) || 0,
+            largo: parseFloat(nuevoMaterial.value.largo) || 0,
+            precio_unitario: parseFloat(nuevoMaterial.value.precio_unitario) || 0,
+            tipo_de_material_id: nuevoMaterial.value.tipo_de_material_id
+        };
+
+        const response = await crearMaterial(datos);
+        const materialCreado = response.data || response;
+
+        // Agregar automáticamente el material creado al componente
+        const datosRelacion = {
+            material_id: materialCreado.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1
+        };
+
+        const responseRelacion = await crearMaterialPorComponente(datosRelacion);
+        const relacionCreada = responseRelacion.data || responseRelacion;
+
+        // Agregar el material a la lista local
+        const nuevoMaterialConRelacion = {
+            id: relacionCreada.id,
+            material_id: materialCreado.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1,
+            material: materialCreado
+        };
+
+        componenteEditando.value.materiales.push(nuevoMaterialConRelacion);
+
+        // Recalcular el costo del componente
+        await recalcularCostoComponente();
+
+        cerrarModalCrearMaterial();
+        alert('Material creado y agregado exitosamente');
+    } catch (err) {
+        console.error('❌ Error al crear material:', err);
+        alert('Error al crear el material');
+    }
+};
+
 const seleccionarYAgregarMaterial = async (material) => {
     const existe = componenteEditando.value.materiales.find(m => m.material_id === material.id);
     if (existe) {
@@ -2093,6 +2383,71 @@ const agregarHerraje = () => abrirModalSeleccion(
 
 const cerrarModalAgregarHerraje = () => cerrarModal(mostrarModalAgregarHerraje, busquedaHerraje);
 
+// Funciones para crear nuevo herraje
+const abrirModalCrearHerraje = () => {
+    nuevoHerraje.value = {
+        nombre: '',
+        descripcion: '',
+        precio_unitario: ''
+    };
+    mostrarModalCrearHerraje.value = true;
+};
+
+const cerrarModalCrearHerraje = () => {
+    mostrarModalCrearHerraje.value = false;
+    nuevoHerraje.value = {
+        nombre: '',
+        descripcion: '',
+        precio_unitario: ''
+    };
+};
+
+const guardarNuevoHerraje = async () => {
+    try {
+        if (!nuevoHerraje.value.nombre) {
+            alert('Por favor ingresa el nombre del herraje');
+            return;
+        }
+
+        const datos = {
+            nombre: nuevoHerraje.value.nombre,
+            descripcion: nuevoHerraje.value.descripcion || '',
+            precio_unitario: parseFloat(nuevoHerraje.value.precio_unitario) || 0
+        };
+
+        const response = await crearHerraje(datos);
+        const herrajeCreado = response.data || response;
+
+        // Agregar automáticamente el herraje creado al componente
+        const datosRelacion = {
+            herraje_id: herrajeCreado.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1
+        };
+
+        const responseRelacion = await crearCantidadPorHerraje(datosRelacion);
+        const relacionCreada = responseRelacion.data || responseRelacion;
+
+        // Agregar el herraje a la lista local
+        componenteEditando.value.herrajes.push({
+            id: relacionCreada.id,
+            herraje_id: herrajeCreado.id,
+            componente_id: componenteEditando.value.componente_id,
+            cantidad: 1,
+            herraje: herrajeCreado
+        });
+
+        // Recalcular el costo del componente
+        await recalcularCostoComponente();
+
+        cerrarModalCrearHerraje();
+        alert('Herraje creado y agregado exitosamente');
+    } catch (err) {
+        console.error('❌ Error al crear herraje:', err);
+        alert('Error al crear el herraje');
+    }
+};
+
 const seleccionarYAgregarHerraje = async (herraje) => {
     // Verificar si el herraje ya está agregado (sin mostrar mensaje)
     if (componenteEditando.value.herrajes.find(h => h.herraje_id === herraje.id)) {
@@ -2191,6 +2546,74 @@ const seleccionarYAgregarManoObra = async (manoObra) => {
 };
 
 const manoDeObraFiltrada = computed(() => filtrarItems(manoDeObraDisponible.value, busquedaManoObra.value));
+
+// Funciones para crear nueva mano de obra
+const abrirModalCrearManoDeObra = () => {
+    nuevaManoDeObra.value = {
+        nombre: '',
+        descripcion: '',
+        costo_hora: ''
+    };
+    mostrarModalCrearManoDeObra.value = true;
+};
+
+const cerrarModalCrearManoDeObra = () => {
+    mostrarModalCrearManoDeObra.value = false;
+    nuevaManoDeObra.value = {
+        nombre: '',
+        descripcion: '',
+        costo_hora: ''
+    };
+};
+
+const guardarNuevaManoDeObra = async () => {
+    try {
+        if (!nuevaManoDeObra.value.nombre) {
+            alert('Por favor ingresa el nombre de la mano de obra');
+            return;
+        }
+
+        const datos = {
+            nombre: nuevaManoDeObra.value.nombre,
+            descripcion: nuevaManoDeObra.value.descripcion || '',
+            costo_hora: parseFloat(nuevaManoDeObra.value.costo_hora) || 0
+        };
+
+        const response = await crearManoDeObra(datos);
+        const manoDeObraCreada = response.data || response;
+
+        // Eliminar la mano de obra anterior si existe
+        if (componenteEditando.value.horas_mano_obra_id) {
+            await eliminarHoras(componenteEditando.value.horas_mano_obra_id);
+        }
+
+        // Crear la relación con el componente
+        const horasIniciales = 1;
+        const responseRelacion = await crearHoras({
+            mano_de_obra_id: manoDeObraCreada.id,
+            componente_id: componenteEditando.value.componente_id,
+            horas: horasIniciales
+        });
+
+        // Asignar la mano de obra al componente
+        componenteEditando.value = {
+            ...componenteEditando.value,
+            mano_de_obra: manoDeObraCreada,
+            mano_de_obra_id: manoDeObraCreada.id,
+            horas_mano_obra: horasIniciales,
+            horas_mano_obra_id: (responseRelacion.data || responseRelacion).id
+        };
+
+        // Recalcular el costo del componente
+        await recalcularCostoComponente();
+
+        cerrarModalCrearManoDeObra();
+        alert('Mano de obra creada y asignada exitosamente');
+    } catch (err) {
+        console.error('❌ Error al crear mano de obra:', err);
+        alert('Error al crear la mano de obra');
+    }
+};
 
 const eliminarManoDeObra = async () => {
     try {
@@ -2292,6 +2715,59 @@ const seleccionarAcabado = async (acabado) => {
 };
 
 const acabadosFiltrados = computed(() => filtrarItems(acabadosDisponibles.value, busquedaAcabado.value));
+
+// Funciones para crear nuevo acabado
+const abrirModalCrearAcabado = () => {
+    nuevoAcabado.value = {
+        nombre: '',
+        descripcion: '',
+        costo: ''
+    };
+    mostrarModalCrearAcabado.value = true;
+};
+
+const cerrarModalCrearAcabado = () => {
+    mostrarModalCrearAcabado.value = false;
+    nuevoAcabado.value = {
+        nombre: '',
+        descripcion: '',
+        costo: ''
+    };
+};
+
+const guardarNuevoAcabado = async () => {
+    try {
+        if (!nuevoAcabado.value.nombre) {
+            alert('Por favor ingresa el nombre del acabado');
+            return;
+        }
+
+        const datos = {
+            nombre: nuevoAcabado.value.nombre,
+            descripcion: nuevoAcabado.value.descripcion || '',
+            costo: parseFloat(nuevoAcabado.value.costo) || 0
+        };
+
+        const response = await crearAcabado(datos);
+        const acabadoCreado = response.data || response;
+
+        // Asignar el acabado creado al componente
+        componenteEditando.value = {
+            ...componenteEditando.value,
+            acabado: acabadoCreado,
+            acabado_id: acabadoCreado.id
+        };
+
+        // Recalcular el costo del componente
+        await recalcularCostoComponente();
+
+        cerrarModalCrearAcabado();
+        alert('Acabado creado y asignado exitosamente');
+    } catch (err) {
+        console.error('❌ Error al crear acabado:', err);
+        alert('Error al crear el acabado');
+    }
+};
 
 const eliminarAcabado = async () => {
     componenteEditando.value = { ...componenteEditando.value, acabado: null, acabado_id: null };
@@ -3601,6 +4077,64 @@ onMounted(() => {
     max-width: 600px;
 }
 
+.modal-form {
+    max-width: 600px;
+}
+
+.modal-form .modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e8ddd7;
+    background: linear-gradient(135deg, #f9f7f4, #ffffff);
+}
+
+.modal-footer .btn-cancel,
+.modal-footer .btn-primary {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-footer .btn-cancel {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    color: #666;
+}
+
+.modal-footer .btn-cancel:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-footer .btn-primary {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.3);
+}
+
+.modal-footer .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.45);
+    background: linear-gradient(135deg, #e0b585 0%, #d4a574 100%);
+}
+
 .selector-list {
     max-height: 400px;
     overflow-y: auto;
@@ -4514,6 +5048,12 @@ onMounted(() => {
     font-size: 0.95rem;
 }
 
+.tab-header-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .btn-add-item {
     align-self: flex-start;
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
@@ -4529,6 +5069,17 @@ onMounted(() => {
     gap: 0.6rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 16px rgba(212, 165, 116, 0.3);
+}
+
+.btn-add-item.btn-secondary {
+    background: linear-gradient(135deg, #8B5A3C 0%, #6B4423 100%);
+    box-shadow: 0 4px 16px rgba(139, 90, 60, 0.3);
+}
+
+.btn-add-item.btn-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(139, 90, 60, 0.45);
+    background: linear-gradient(135deg, #A66A4A 0%, #8B5A3C 100%);
 }
 
 .btn-add-item:hover {
