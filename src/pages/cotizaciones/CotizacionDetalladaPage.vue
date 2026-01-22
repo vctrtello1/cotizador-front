@@ -519,22 +519,25 @@ const sincronizarComponentes = async () => {
 
 <style scoped>
 .cotizacion-detallada-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 40px 32px;
-    font-family: 'Georgia', 'Garamond', serif;
-    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    min-height: 100vh;
 }
 
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 2px solid #d4a574;
+    margin-bottom: 2.5rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 1.5rem;
 }
 
 .header-content {
@@ -552,37 +555,42 @@ const sincronizarComponentes = async () => {
 }
 
 .btn-back {
-    padding: 8px 16px;
-    background: #e8ddd7;
-    color: #5a4037;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 .btn-back:hover {
-    background: #d4a574;
-    color: white;
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
 }
 
 .page-title {
     font-size: 2.5rem;
-    color: #2C1810;
+    color: #1a202c;
     margin: 0;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1.2;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .estado-badge {
-    background: #d4f1d4;
-    color: #2d7a2d;
-    padding: 6px 12px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .header-actions {
@@ -591,21 +599,24 @@ const sincronizarComponentes = async () => {
 }
 
 .btn-action {
-    padding: 10px 12px;
+    padding: 12px 14px;
     background: white;
-    border: 2px solid #d4a574;
-    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 1.2rem;
-    transition: all 0.2s;
+    font-size: 1.3rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .btn-action:hover {
-    background: #d4a574;
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    border-color: transparent;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(212, 165, 116, 0.3);
 }
 
 .stats-container {
@@ -617,46 +628,65 @@ const sincronizarComponentes = async () => {
 
 .stat-card {
     background: white;
-    border: 2px solid #d4a574;
-    border-radius: 10px;
-    padding: 1.5rem;
+    border: none;
+    border-radius: 16px;
+    padding: 2rem;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
-    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #d4a574 0%, #c89564 100%);
 }
 
 .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(212, 165, 116, 0.2);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px rgba(212, 165, 116, 0.2);
 }
 
 .stat-icon {
-    font-size: 2rem;
+    font-size: 2.5rem;
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .stat-label {
-    color: #999;
+    color: #64748b;
     font-size: 0.9rem;
     display: block;
     margin-bottom: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .stat-value {
-    color: #d4a574;
-    font-size: 1.5rem;
-    font-weight: 700;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2rem;
+    font-weight: 800;
     display: block;
 }
 
 .info-card {
     background: white;
-    border: 2px solid #e8ddd7;
-    border-radius: 10px;
+    border: none;
+    border-radius: 16px;
     padding: 2rem;
     margin-bottom: 2rem;
-    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .cliente-header {
@@ -665,7 +695,7 @@ const sincronizarComponentes = async () => {
     align-items: center;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid #d4a574;
+    border-bottom: 2px solid #f1f5f9;
 }
 
 .cliente-header .section-title {
@@ -675,29 +705,30 @@ const sincronizarComponentes = async () => {
 }
 
 .btn-cambiar-cliente {
-    padding: 8px 16px;
-    background: #d4a574;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 .btn-cambiar-cliente:hover {
-    background: #c9995c;
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
 }
 
 .section-title {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: #5a4037;
+    color: #1a202c;
     margin: 0 0 1.5rem 0;
     padding-bottom: 1rem;
-    border-bottom: 2px solid #d4a574;
+    border-bottom: 2px solid #f1f5f9;
     line-height: 1.2;
 }
 
@@ -720,8 +751,8 @@ const sincronizarComponentes = async () => {
 }
 
 .info-label {
-    font-size: 0.9rem;
-    color: var(--wood-medium, #6B4423);
+    font-size: 0.85rem;
+    color: #64748b;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -729,8 +760,8 @@ const sincronizarComponentes = async () => {
 
 .info-value {
     font-size: 1.1rem;
-    color: var(--wood-darkest, #2C1810);
-    font-weight: 500;
+    color: #1a202c;
+    font-weight: 600;
 }
 
 .modulos-section {
@@ -743,17 +774,19 @@ const sincronizarComponentes = async () => {
     align-items: center;
     margin-bottom: 24px;
     padding: 24px 32px;
-    background: linear-gradient(135deg, #F5F1E8 0%, #FAF8F3 100%);
-    border-radius: 12px;
-    border-left: 4px solid #C9A961;
-    box-shadow: 0 2px 8px rgba(44, 24, 16, 0.08);
+    background: white;
+    border-radius: 16px;
+    border-left: 4px solid #d4a574;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .modulos-header .section-title {
     margin: 0;
     flex: 1;
     font-size: 1.75rem;
-    color: #2C1810;
+    color: #1a202c;
+    border: none;
+    padding: 0;
 }
 
 .modulos-stats {
@@ -783,28 +816,49 @@ const sincronizarComponentes = async () => {
 
 .modulos-section>.section-title {
     font-size: 1.75rem;
-    color: #2C1810;
+    color: #1a202c;
     margin: 0 0 24px 0;
     font-weight: 700;
     padding: 20px 24px;
-    background: #F5F1E8;
-    border-radius: 8px;
-    border-left: 4px solid #C9A961;
+    background: white;
+    border-radius: 16px;
+    border-left: 4px solid #d4a574;
     line-height: 1.2;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.empty-state {
+    background: white;
+    border-radius: 16px;
+    padding: 4rem 2rem;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.empty-state p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin: 0;
 }
 
 .modulo-card {
-    background: var(--warm-white, #FAF8F3);
-    border: 2px solid var(--color-border, #E5DFD0);
-    border-radius: 12px;
+    background: white;
+    border: none;
+    border-radius: 16px;
     margin-bottom: 24px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modulo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(212, 165, 116, 0.15);
 }
 
 .modulo-header {
-    background: linear-gradient(135deg, var(--wood-medium, #6B4423), var(--wood-light, #8B5A3C));
-    color: var(--cream, #F5F1E8);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
     padding: 24px 32px;
 }
 
@@ -824,9 +878,9 @@ const sincronizarComponentes = async () => {
 }
 
 .modulo-cantidad-badge {
-    background: rgba(245, 241, 232, 0.2);
-    border: 1px solid rgba(245, 241, 232, 0.4);
-    color: #F5F1E8;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 0.85rem;
@@ -859,13 +913,12 @@ const sincronizarComponentes = async () => {
     grid-template-columns: 2fr 0.8fr 1fr 1fr;
     gap: 16px;
     padding: 20px 24px;
-    background: linear-gradient(135deg, #8B6F47 0%, #A88860 100%);
-    color: #F5F1E8;
+    background: #f8fafc;
+    color: #475569;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 1px;
-    border-radius: 8px 8px 0 0;
     word-wrap: break-word;
 }
 
@@ -874,20 +927,24 @@ const sincronizarComponentes = async () => {
     grid-template-columns: 2fr 0.8fr 1fr 1fr;
     gap: 16px;
     padding: 18px 24px;
-    border-bottom: 1px solid var(--color-border, #E5DFD0);
+    border-bottom: 1px solid #f1f5f9;
     transition: all 0.2s ease;
     align-items: center;
-    background: var(--warm-white, #FAF8F3);
+    background: white;
     word-wrap: break-word;
 }
 
 .table-row:hover {
-    background: #F5F1E8;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+    background: #f8fafc;
+    transform: translateX(4px);
+}
+
+.table-row:last-child {
+    border-bottom: none;
 }
 
 .col-descripcion {
-    color: var(--wood-darkest, #2C1810);
+    color: #475569;
     font-size: 0.9rem;
     line-height: 1.4;
 }
@@ -900,24 +957,25 @@ const sincronizarComponentes = async () => {
 .col-subtotal,
 .col-acabado,
 .col-mano-obra {
-    color: var(--wood-dark, #4A3020);
+    color: #334155;
 }
 
 .col-nombre {
     font-weight: 700;
     font-size: 1rem;
-    color: var(--wood-darkest, #2C1810);
+    color: #1a202c;
 }
 
 .col-codigo {
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
-    color: #6B4423;
+    color: #64748b;
 }
 
 .col-cantidad {
     text-align: center;
     font-weight: 600;
+    color: #475569;
 }
 
 .col-precio,
@@ -927,7 +985,10 @@ const sincronizarComponentes = async () => {
 
 .col-subtotal {
     font-weight: 700;
-    color: var(--accent-gold, #C9A961);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-size: 1.05rem;
 }
 
@@ -971,10 +1032,10 @@ const sincronizarComponentes = async () => {
 }
 
 .total-card {
-    background: linear-gradient(135deg, var(--wood-dark, #4A3020), var(--wood-medium, #6B4423));
-    border-radius: 12px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    border-radius: 16px;
     padding: 32px;
-    box-shadow: 0 8px 24px rgba(44, 24, 16, 0.2);
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.3);
 }
 
 .total-content {
@@ -985,7 +1046,7 @@ const sincronizarComponentes = async () => {
 
 .total-label {
     font-size: 1.5rem;
-    color: var(--cream, #F5F1E8);
+    color: white;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -993,9 +1054,9 @@ const sincronizarComponentes = async () => {
 
 .total-amount {
     font-size: 2.5rem;
-    color: var(--accent-gold, #C9A961);
+    color: white;
     font-weight: 800;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .loading-state {
