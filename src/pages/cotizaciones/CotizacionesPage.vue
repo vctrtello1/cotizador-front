@@ -42,7 +42,7 @@
                 </div>
                 <div class="card-footer">
                     <span class="label">Total:</span>
-                    <span class="amount">{{ formatCurrency(cotizacion.total) }}</span>
+                    <span class="amount">{{ formatCurrency(calcularTotalReal(cotizacion)) }}</span>
                 </div>
             </div>
         </div>
@@ -99,6 +99,25 @@
             style: 'currency',
             currency: 'MXN'
         }).format(value);
+    };
+
+    const calcularTotalReal = (cotizacion) => {
+        if (!cotizacion.modulos || cotizacion.modulos.length === 0) {
+            return cotizacion.total || 0;
+        }
+        
+        let total = 0;
+        cotizacion.modulos.forEach(modulo => {
+            if (modulo.componentes && Array.isArray(modulo.componentes)) {
+                modulo.componentes.forEach(comp => {
+                    const precioUnitario = comp.precio_unitario || comp.costo_total || 0;
+                    const cantidad = comp.cantidad || 1;
+                    total += precioUnitario * cantidad;
+                });
+            }
+        });
+        
+        return total > 0 ? total : (cotizacion.total || 0);
     };
 
     const getEstadoLabel = (estado) => {
