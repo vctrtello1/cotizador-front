@@ -40,10 +40,10 @@
                                 <div class="meta-separator">•</div>
                                 <div class="meta-item">
                                     <span :class="['meta-status', `status-${cotizacion.estado}`]">
-                                        <span v-if="cotizacion.estado === 'activa'">🔄</span>
-                                        <span v-else-if="cotizacion.estado === 'completada'">✅</span>
-                                        <span v-else-if="cotizacion.estado === 'cancelada'">❌</span>
-                                        {{ cotizacion.estado.charAt(0).toUpperCase() + cotizacion.estado.slice(1) }}
+                                        <span v-if="cotizacion.estado === 'activa' || cotizacion.estado === 'active'">🔄</span>
+                                        <span v-else-if="cotizacion.estado === 'completada' || cotizacion.estado === 'completed'">✅</span>
+                                        <span v-else-if="cotizacion.estado === 'cancelada' || cotizacion.estado === 'cancelled'">❌</span>
+                                        {{ getEstadoLabel(cotizacion.estado) }}
                                     </span>
                                 </div>
                             </div>
@@ -57,13 +57,7 @@
                                     <span class="summary-label">Componentes</span>
                                 </div>
                             </div>
-                            <div class="summary-card">
-                                <div class="summary-icon">🧩</div>
-                                <div class="summary-content">
-                                    <span class="summary-value">{{ modulosAsignados.length }}</span>
-                                    <span class="summary-label">Módulos</span>
-                                </div>
-                            </div>
+
                             <div class="summary-card highlight">
                                 <div class="summary-icon">💰</div>
                                 <div class="summary-content">
@@ -113,10 +107,10 @@
                             <label for="estado">Estado</label>
                             <button class="btn-selector estado-selector-btn" @click="abrirModalSeleccionarEstado" type="button" :class="`estado-${cotizacion.estado}`">
                                 <span class="selector-value">
-                                    <span v-if="cotizacion.estado === 'activa'" class="estado-icon">🔄</span>
-                                    <span v-else-if="cotizacion.estado === 'completada'" class="estado-icon">✅</span>
-                                    <span v-else-if="cotizacion.estado === 'cancelada'" class="estado-icon">❌</span>
-                                    {{ cotizacion.estado.charAt(0).toUpperCase() + cotizacion.estado.slice(1) }}
+                                    <span v-if="cotizacion.estado === 'activa' || cotizacion.estado === 'active'" class="estado-icon">🔄</span>
+                                    <span v-else-if="cotizacion.estado === 'completada' || cotizacion.estado === 'completed'" class="estado-icon">✅</span>
+                                    <span v-else-if="cotizacion.estado === 'cancelada' || cotizacion.estado === 'cancelled'" class="estado-icon">❌</span>
+                                    {{ getEstadoLabel(cotizacion.estado) }}
                                 </span>
                                 <span class="selector-arrow">▼</span>
                             </button>
@@ -1237,7 +1231,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'completada' }" @click="seleccionarEstado('completada')">
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'completada' || cotizacion.estado === 'completed' }" @click="seleccionarEstado('completada')">
                                         <div class="estado-item-content">
                                             <span class="estado-icon-large">✅</span>
                                             <div class="estado-info">
@@ -1246,50 +1240,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'cancelada' }" @click="seleccionarEstado('cancelada')">
-                                        <div class="estado-item-content">
-                                            <span class="estado-icon-large">❌</span>
-                                            <div class="estado-info">
-                                                <span class="estado-name">Cancelada</span>
-                                                <span class="estado-description">La cotización ha sido cancelada</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </Transition>
-
-                <!-- Modal para seleccionar estado -->
-                <Transition name="modal">
-                    <div v-if="mostrarModalSeleccionarEstado" class="modal-overlay" @click="cerrarModalSeleccionarEstado">
-                        <div class="modal-content modal-selector modal-estado" @click.stop>
-                            <div class="modal-header">
-                                <h3>📋 Cambiar Estado de la Cotización</h3>
-                                <button class="btn-close" @click="cerrarModalSeleccionarEstado">✕</button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="estados-list">
-                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'activa' }" @click="seleccionarEstado('activa')">
-                                        <div class="estado-item-content">
-                                            <span class="estado-icon-large">🔄</span>
-                                            <div class="estado-info">
-                                                <span class="estado-name">Activa</span>
-                                                <span class="estado-description">La cotización está en proceso</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'completada' }" @click="seleccionarEstado('completada')">
-                                        <div class="estado-item-content">
-                                            <span class="estado-icon-large">✅</span>
-                                            <div class="estado-info">
-                                                <span class="estado-name">Completada</span>
-                                                <span class="estado-description">La cotización ha sido finalizada</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'cancelada' }" @click="seleccionarEstado('cancelada')">
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'cancelada' || cotizacion.estado === 'cancelled' }" @click="seleccionarEstado('cancelada')">
                                         <div class="estado-item-content">
                                             <span class="estado-icon-large">❌</span>
                                             <div class="estado-info">
@@ -1622,14 +1573,33 @@ const formatCurrency = (value) => {
     });
 };
 
+// Helper function to format dates in Spanish locale
 const formatFecha = (fecha) => {
     if (!fecha) return 'Sin fecha';
-    const date = new Date(fecha + 'T00:00:00');
-    return date.toLocaleDateString('es-MX', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-    });
+    try {
+        const date = new Date(fecha + 'T00:00:00');
+        if (isNaN(date.getTime())) return fecha;
+        return date.toLocaleDateString('es-MX', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    } catch (e) {
+        return fecha;
+    }
+};
+
+// Helper function to get estado display label (bilingual support)
+const getEstadoLabel = (estado) => {
+    const labels = {
+        'activa': 'Activa',
+        'active': 'Activa',
+        'completada': 'Completada',
+        'completed': 'Completada',
+        'cancelada': 'Cancelada',
+        'cancelled': 'Cancelada'
+    };
+    return labels[estado] || estado.charAt(0).toUpperCase() + estado.slice(1);
 };
 
 const normalizarCostoTotal = (modulo) => {
@@ -3920,12 +3890,14 @@ onMounted(() => {
     border: 1px solid rgba(76, 175, 80, 0.5);
 }
 
-.status-completada {
+.status-completada,
+.status-completed {
     background: rgba(33, 150, 243, 0.3);
     border: 1px solid rgba(33, 150, 243, 0.5);
 }
 
-.status-cancelada {
+.status-cancelada,
+.status-cancelled {
     background: rgba(244, 67, 54, 0.3);
     border: 1px solid rgba(244, 67, 54, 0.5);
 }
