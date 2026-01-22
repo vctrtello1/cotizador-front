@@ -1,5 +1,17 @@
 <script setup>
+import { useRouter } from 'vue-router';
 import Navbar from '@/components/Navbar.vue';
+
+const router = useRouter();
+
+const getTransitionName = (route) => {
+  // Si es una página de detalle o edición, usa slide
+  if (route.path.includes('/editar-') || route.path.includes('/nuevo-') || /\/\d+$/.test(route.path)) {
+    return 'slide-left';
+  }
+  // Para navegación entre páginas principales, usa fade
+  return 'fade-slide';
+};
 </script>
 
 <template>
@@ -7,7 +19,11 @@ import Navbar from '@/components/Navbar.vue';
     <Navbar />
 
     <main class="app-main">
-      <router-view />
+      <router-view v-slot="{ Component, route }">
+        <transition :name="getTransitionName(route)" mode="out-in">
+          <component :is="Component" :key="route.path" />
+        </transition>
+      </router-view>
     </main>
 
     <footer class="app-footer">
@@ -64,5 +80,81 @@ html, body {
 .app-footer p {
   margin: 0;
   font-weight: 500;
+}
+
+/* ============================================
+   TRANSICIONES DE NAVEGACIÓN
+   ============================================ */
+
+/* Fade slide para navegación principal */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.fade-slide-enter-to {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* Slide para páginas de detalle/edición */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(40px);
+}
+
+.slide-left-enter-to {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slide-left-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+/* Asegurar que las transiciones no afecten el layout */
+.app-main {
+  position: relative;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active,
+.slide-left-enter-active,
+.slide-left-leave-active {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+.fade-slide-enter-to,
+.slide-left-enter-to {
+  position: relative;
 }
 </style>

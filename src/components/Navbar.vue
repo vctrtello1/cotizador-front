@@ -146,24 +146,35 @@ const isActive = (path) => {
   font-weight: 500;
   font-size: 14px;
   border-radius: 8px;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   position: relative;
+  overflow: hidden;
 }
 
 .nav-icon {
   font-size: 18px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link:hover .nav-icon {
+  transform: scale(1.1) translateY(-2px);
 }
 
 .nav-link:hover {
   color: #d4a574;
   background: rgba(212, 165, 116, 0.1);
+  transform: translateY(-2px);
 }
 
 .nav-link.active {
   color: #d4a574;
   background: rgba(212, 165, 116, 0.15);
   font-weight: 600;
+}
+
+.nav-link.active .nav-icon {
+  transform: scale(1.15);
 }
 
 .nav-link.active::after {
@@ -175,6 +186,36 @@ const isActive = (path) => {
   height: 3px;
   background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
   border-radius: 2px 2px 0 0;
+  animation: slideInBottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link.active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(200, 149, 100, 0.1) 100%);
+  opacity: 0;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideInBottom {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {
