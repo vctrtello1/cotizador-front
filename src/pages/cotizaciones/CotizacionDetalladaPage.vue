@@ -89,11 +89,6 @@
         <!-- Estadísticas rápidas -->
         <div class="stats-container">
             <div class="stat-card">
-                <span class="stat-icon">📦</span>
-                <span class="stat-label">Módulos</span>
-                <span class="stat-value">{{ totalModulosOrdenados }}</span>
-            </div>
-            <div class="stat-card">
                 <span class="stat-icon">🔧</span>
                 <span class="stat-label">Componentes</span>
                 <span class="stat-value">{{ totalComponentes }}</span>
@@ -105,34 +100,31 @@
             </div>
         </div>
 
-        <!-- Módulos y detalles -->
-        <div v-if="detalles.length" class="modulos-section">
+        <!-- Componentes -->
+        <div class="modulos-section">
             <div class="modulos-header">
-                <h2 class="section-title">🧩 Detalles de la Cotización</h2>
+                <h2 class="section-title">🧩 Componentes de la Cotización</h2>
             </div>
 
-            <div v-for="(modulo, index) in detalles" :key="index" class="modulo-card">
-                <div class="modulo-header">
-                    <div class="modulo-info">
-                        <h3 class="modulo-nombre">{{ modulo.nombre }}</h3>
-                        <span class="modulo-cantidad-badge">{{ modulo.cantidad }} unidad{{ modulo.cantidad !== 1 ? 'es' : '' }}</span>
-                    </div>
-                    <p class="modulo-codigo">{{ modulo.codigo }}</p>
-                    <p class="modulo-descripcion">{{ modulo.descripcion }}</p>
-                </div>
+            <div v-if="detalles.length === 0" class="empty-state">
+                <p>No hay componentes asignados a esta cotización</p>
+            </div>
 
-                <div class="articulos-table">
-                    <div class="table-header">
-                        <div class="col-nombre">Componente</div>
-                        <div class="col-cantidad">Cantidad</div>
-                        <div class="col-precio">Precio Unit.</div>
-                        <div class="col-subtotal">Subtotal</div>
-                    </div>
-                    <div v-for="componente in modulo.componentes" :key="componente.id" class="table-row">
-                        <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
-                        <div class="col-cantidad">{{ componente.cantidad }}</div>
-                        <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
-                        <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
+            <div v-else>
+                <div v-for="(modulo, index) in detalles" :key="`modulo-${modulo.id}-${index}`" class="modulo-card">
+                    <div class="articulos-table">
+                        <div class="table-header">
+                            <div class="col-nombre">Componente</div>
+                            <div class="col-cantidad">Cantidad</div>
+                            <div class="col-precio">Precio Unit.</div>
+                            <div class="col-subtotal">Subtotal</div>
+                        </div>
+                        <div v-for="componente in modulo.componentes" :key="`comp-${componente.id}`" class="table-row">
+                            <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
+                            <div class="col-cantidad">{{ componente.cantidad }}</div>
+                            <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
+                            <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -159,11 +151,17 @@ import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCotizacionesStore } from '@/stores/cotizaciones';
 import { useClientesStore } from '@/stores/clientes';
+import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
+import { useModulosStore } from '@/stores/modulos';
+import { useComponentesStore } from '@/stores/componentes';
 
 const route = useRoute();
 const router = useRouter();
 const store = useCotizacionesStore();
 const clientesStore = useClientesStore();
+const storeComponentesPorCotizacion = useComponentesPorCotizacionStore();
+const modulosStore = useModulosStore();
+const componentesStore = useComponentesStore();
 const { fecthCotizacionById, updateCotizacion } = store;
 const { fetchClientes } = clientesStore;
 
@@ -408,8 +406,113 @@ const generarPDF = async () => {
 
 onMounted(async () => {
     const id = route.params.id;
+    console.log('📍 Cargando cotización ID:', id);
+    
+    // Cargar datos necesarios
+    await Promise.all([
+        modulosStore.fetchModulos(),
+        componentesStore.fetchComponentes()
+    ]);
+    
     cotizacion.value = await fecthCotizacionById(id);
+    console.log('📦 Cotización cargada:', cotizacion.value);
+    
+    // Sincronizar componentes desde la API
+    if (cotizacion.value) {
+        await sincronizarComponentes();
+    }
 });
+
+const sincronizarComponentes = async () => {
+    try {
+        console.log('🔄 Sincronizando componentes desde la API...');
+        console.log('🆔 ID de cotización:', cotizacion.value.id);
+        
+        // Obtener todos los componentes de la API
+        const componentesEnApi = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
+        console.log('📋 Total componentes en API:', componentesEnApi.length);
+        console.log('📋 Componentes completos:', componentesEnApi);
+        console.log('📋 IDs de cotización de cada componente:', componentesEnApi.map(c => ({
+            id: c.id,
+            cotizacion_id: c.cotizacion_id,
+            tipo: typeof c.cotizacion_id
+        })));
+        console.log('📋 Buscando componentes con cotizacion_id:', cotizacion.value.id, 'tipo:', typeof cotizacion.value.id);
+        
+        // Filtrar solo los componentes de esta cotización
+        const componentesEstaCotzacion = componentesEnApi.filter(cpc => {
+            const coincide = cpc.cotizacion_id == cotizacion.value.id; // == para comparación flexible
+            console.log(`Comparando: ${cpc.cotizacion_id} (${typeof cpc.cotizacion_id}) == ${cotizacion.value.id} (${typeof cotizacion.value.id}) = ${coincide}`);
+            return coincide;
+        });
+        console.log('📋 Componentes de esta cotización:', componentesEstaCotzacion.length);
+        console.log('📋 Componentes filtrados:', componentesEstaCotzacion);
+        
+        if (componentesEstaCotzacion.length === 0) {
+            console.log('ℹ️ No hay componentes asignados a esta cotización');
+            cotizacion.value.modulos = [];
+            return;
+        }
+        
+        // Agrupar componentes por modulo_id
+        const modulosPorId = new Map();
+        const modulos = modulosStore.modulos || [];
+        const componentes = componentesStore.componentes || [];
+        
+        for (const compApi of componentesEstaCotzacion) {
+            console.log(`🔍 Procesando componente ID ${compApi.componente_id}, modulo_id: ${compApi.modulo_id}`);
+            
+            if (compApi.modulo_id) {
+                if (!modulosPorId.has(compApi.modulo_id)) {
+                    // Buscar el módulo completo
+                    const moduloCompleto = modulos.find(m => m.id === compApi.modulo_id);
+                    
+                    if (moduloCompleto) {
+                        console.log(`✅ Módulo ${moduloCompleto.nombre} encontrado`);
+                        modulosPorId.set(compApi.modulo_id, {
+                            ...moduloCompleto,
+                            cantidad: 1,
+                            componentes: []
+                        });
+                    }
+                }
+                
+                // Agregar el componente al módulo
+                const moduloEnMapa = modulosPorId.get(compApi.modulo_id);
+                if (moduloEnMapa) {
+                    let componenteCompleto = componentes.find(c => c.id === compApi.componente_id);
+                    
+                    if (!componenteCompleto && compApi.componente) {
+                        componenteCompleto = compApi.componente;
+                    }
+                    
+                    if (componenteCompleto) {
+                        moduloEnMapa.componentes.push({
+                            ...componenteCompleto,
+                            cantidad: compApi.cantidad || 1
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Convertir el Map a array
+        const modulosArray = Array.from(modulosPorId.values());
+        console.log('✅ Módulos reconstruidos:', modulosArray.length);
+        console.log('📦 Módulos completos:', modulosArray);
+        console.log('📦 Cada módulo:', modulosArray.map(m => ({
+            id: m.id,
+            nombre: m.nombre,
+            componentesCount: m.componentes?.length
+        })));
+        cotizacion.value.modulos = modulosArray;
+        console.log('✅ cotizacion.value.modulos asignado:', cotizacion.value.modulos);
+        
+    } catch (error) {
+        console.error('❌ Error al sincronizar componentes:', error);
+        cotizacion.value.modulos = [];
+    }
+};
 </script>
 
 <style scoped>
