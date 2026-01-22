@@ -199,39 +199,31 @@ const totalComponentes = computed(() => {
 
 const totalCotizacion = computed(() => {
     const total = cotizacion.value?.total;
-    
-    if (total !== null && total !== undefined && total !== '') {
-        // Si viene como string con formato "3,220.00", limpiar comas
+    if (total != null && total !== '') {
         const numTotal = Number(String(total).replace(/,/g, ''));
         if (!isNaN(numTotal)) return numTotal;
     }
     
-    // Fallback: calcular sumando subtotales de componentes
-    return detalles.value.reduce((sum, modulo) => {
-        if (!Array.isArray(modulo.componentes)) return sum;
-        return sum + modulo.componentes.reduce((subtotal, comp) => 
-            subtotal + calcularSubtotal(comp), 0
-        );
-    }, 0);
+    // Calcular desde componentes
+    return detalles.value.reduce((sum, modulo) => 
+        sum + (modulo.componentes?.reduce((subtotal, comp) => 
+            subtotal + calcularSubtotal(comp), 0) || 0), 0
+    );
 });
 
 const formatCurrency = (value) => {
-    if (value === null || value === undefined || value === '') return '0.00';
     const num = Number(value);
-    if (isNaN(num)) return '0.00';
-    return num.toLocaleString('es-MX', { 
+    return (isNaN(num) || num == null) ? '0.00' : num.toLocaleString('es-MX', { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
     });
 };
 
 const calcularSubtotal = (componente) => {
-    // Si existe subtotal válido, usarlo
-    if (componente.subtotal !== null && componente.subtotal !== undefined && componente.subtotal !== '') {
+    if (componente.subtotal != null && componente.subtotal !== '') {
         const subtotal = Number(componente.subtotal);
         if (!isNaN(subtotal)) return subtotal;
     }
-    // Si no, calcular: cantidad × precio_unitario
     return (Number(componente.cantidad) || 0) * (Number(componente.precio_unitario) || 0);
 };
 
@@ -250,18 +242,15 @@ const cerrarSelectorClientes = () => {
 
 const seleccionarCliente = async (cliente) => {
     try {
-        // Actualizar la cotización con el nuevo cliente
         const cotizacionActualizada = {
             ...cotizacion.value,
             cliente_id: cliente.id,
-            cliente: cliente
+            cliente
         };
         
         await updateCotizacion(cotizacion.value.id, cotizacionActualizada);
         cotizacion.value = cotizacionActualizada;
         cerrarSelectorClientes();
-        
-        // Mostrar mensaje de éxito
         alert('Cliente actualizado correctamente');
     } catch (error) {
         console.error('Error al actualizar cliente:', error);
@@ -269,25 +258,13 @@ const seleccionarCliente = async (cliente) => {
     }
 };
 
-const goToCotizacionDetallada = (id) => {
-    router.push({ name: 'CotizacionDetallada', params: { id } });
-};
-
 const generarPDF = async () => {
+    generandoPDF.value = true;
     try {
-        generandoPDF.value = true;
-        console.log('Iniciando generación de PDF...');
-        
-        // Importar jsPDF dinámicamente
-        console.log('Importando jsPDF...');
         const jsPDFModule = await import('jspdf');
         const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
-        console.log('jsPDF importado correctamente');
-        
         const doc = new jsPDF();
-        console.log('Documento PDF creado');
         
-        // Configuración
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 20;
         let y = 20;
@@ -298,7 +275,7 @@ const generarPDF = async () => {
         doc.text('COTIZACIÓN', pageWidth / 2, y, { align: 'center' });
         y += 15;
         
-        // Número de cotización
+        // Número y fecha
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
         doc.text(`Número: #${cotizacion.value.id}`, margin, y);
@@ -314,19 +291,20 @@ const generarPDF = async () => {
         
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
-        if (cotizacion.value.cliente) {
-            doc.text(`Nombre: ${cotizacion.value.cliente.nombre}`, margin, y);
+        const cliente = cotizacion.value.cliente;
+        if (cliente) {
+            doc.text(`Nombre: ${cliente.nombre}`, margin, y);
             y += 6;
-            if (cotizacion.value.cliente.empresa && cotizacion.value.cliente.nombre !== 'Publico En Geneal') {
-                doc.text(`Empresa: ${cotizacion.value.cliente.empresa}`, margin, y);
+            if (cliente.empresa && cliente.nombre !== 'Publico En Geneal') {
+                doc.text(`Empresa: ${cliente.empresa}`, margin, y);
                 y += 6;
             }
-            if (cotizacion.value.cliente.email && cotizacion.value.cliente.nombre !== 'Publico En Geneal') {
-                doc.text(`Email: ${cotizacion.value.cliente.email}`, margin, y);
+            if (cliente.email && cliente.nombre !== 'Publico En Geneal') {
+                doc.text(`Email: ${cliente.email}`, margin, y);
                 y += 6;
             }
-            if (cotizacion.value.cliente.telefono) {
-                doc.text(`Teléfono: ${cotizacion.value.cliente.telefono}`, margin, y);
+            if (cliente.telefono) {
+                doc.text(`Teléfono: ${cliente.telefono}`, margin, y);
                 y += 6;
             }
         }
@@ -335,70 +313,42 @@ const generarPDF = async () => {
         // Módulos
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('MÓDULOS', margin, y);
+        doc.text('COMPONENTES', margin, y);
         y += 10;
         
-        console.log('Agregando módulos al PDF:', detalles.value.length);
         detalles.value.forEach((modulo, index) => {
-            // Verificar si necesitamos una nueva página
             if (y > 250) {
                 doc.addPage();
                 y = 20;
             }
             
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${index + 1}. ${modulo.nombre}`, margin, y);
-            y += 6;
-            
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            if (modulo.descripcion) {
-                doc.text(`   ${modulo.descripcion}`, margin, y);
-                y += 6;
-            }
-            
-            doc.text(`   Código: ${modulo.codigo}`, margin, y);
-            y += 6;
-            doc.text(`   Cantidad: ${modulo.cantidad}`, margin, y);
-            y += 8;
-            
-            // Componentes
-            if (Array.isArray(modulo.componentes) && modulo.componentes.length > 0) {
+            // Componentes del módulo
+            if (modulo.componentes?.length > 0) {
                 doc.setFontSize(9);
-                doc.text('   Componentes:', margin, y);
-                y += 5;
-                
                 modulo.componentes.forEach(comp => {
                     if (y > 270) {
                         doc.addPage();
                         y = 20;
                     }
-                    doc.text(`      - ${comp.nombre}`, margin, y);
+                    doc.text(`${comp.nombre}`, margin, y);
                     y += 4;
-                    doc.text(`        Cantidad: ${comp.cantidad} | Precio: $${formatCurrency(comp.precio_unitario)}`, margin, y);
-                    y += 4;
-                    doc.text(`        Subtotal: $${formatCurrency(calcularSubtotal(comp))}`, margin, y);
-                    y += 5;
+                    doc.text(`Cantidad: ${comp.cantidad} | Precio: $${formatCurrency(comp.precio_unitario)} | Subtotal: $${formatCurrency(calcularSubtotal(comp))}`, margin + 5, y);
+                    y += 6;
                 });
             }
-            y += 5;
+            y += 3;
         });
         
         // Total
-        y += 5;
+        y += 10;
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.text(`TOTAL: $${formatCurrency(totalCotizacion.value)}`, pageWidth - margin, y, { align: 'right' });
         
-        console.log('Guardando PDF...');
-        // Guardar el PDF
         doc.save(`Cotizacion_${cotizacion.value.id}.pdf`);
-        console.log('PDF guardado correctamente');
     } catch (err) {
         console.error('Error al generar PDF:', err);
-        console.error('Stack trace:', err.stack);
-        alert('Error al generar el PDF: ' + err.message);
+        alert('Error al generar el PDF');
     } finally {
         generandoPDF.value = false;
     }
@@ -406,18 +356,15 @@ const generarPDF = async () => {
 
 onMounted(async () => {
     const id = route.params.id;
-    console.log('📍 Cargando cotización ID:', id);
     
-    // Cargar datos necesarios
+    // Cargar datos necesarios en paralelo
     await Promise.all([
         modulosStore.fetchModulos(),
-        componentesStore.fetchComponentes()
+        componentesStore.fetchComponentes(),
+        fecthCotizacionById(id).then(data => { cotizacion.value = data; })
     ]);
     
-    cotizacion.value = await fecthCotizacionById(id);
-    console.log('📦 Cotización cargada:', cotizacion.value);
-    
-    // Sincronizar componentes desde la API
+    // Sincronizar componentes
     if (cotizacion.value) {
         await sincronizarComponentes();
     }
@@ -425,31 +372,14 @@ onMounted(async () => {
 
 const sincronizarComponentes = async () => {
     try {
-        console.log('🔄 Sincronizando componentes desde la API...');
-        console.log('🆔 ID de cotización:', cotizacion.value.id);
-        
-        // Obtener todos los componentes de la API
         const componentesEnApi = await storeComponentesPorCotizacion.fetchComponentesPorCotizacion();
-        console.log('📋 Total componentes en API:', componentesEnApi.length);
-        console.log('📋 Componentes completos:', componentesEnApi);
-        console.log('📋 IDs de cotización de cada componente:', componentesEnApi.map(c => ({
-            id: c.id,
-            cotizacion_id: c.cotizacion_id,
-            tipo: typeof c.cotizacion_id
-        })));
-        console.log('📋 Buscando componentes con cotizacion_id:', cotizacion.value.id, 'tipo:', typeof cotizacion.value.id);
         
-        // Filtrar solo los componentes de esta cotización
-        const componentesEstaCotzacion = componentesEnApi.filter(cpc => {
-            const coincide = cpc.cotizacion_id == cotizacion.value.id; // == para comparación flexible
-            console.log(`Comparando: ${cpc.cotizacion_id} (${typeof cpc.cotizacion_id}) == ${cotizacion.value.id} (${typeof cotizacion.value.id}) = ${coincide}`);
-            return coincide;
-        });
-        console.log('📋 Componentes de esta cotización:', componentesEstaCotzacion.length);
-        console.log('📋 Componentes filtrados:', componentesEstaCotzacion);
+        // Filtrar componentes de esta cotización
+        const componentesEstaCotzacion = componentesEnApi.filter(
+            cpc => cpc.cotizacion_id == cotizacion.value.id
+        );
         
         if (componentesEstaCotzacion.length === 0) {
-            console.log('ℹ️ No hay componentes asignados a esta cotización');
             cotizacion.value.modulos = [];
             return;
         }
@@ -460,58 +390,43 @@ const sincronizarComponentes = async () => {
         const componentes = componentesStore.componentes || [];
         
         for (const compApi of componentesEstaCotzacion) {
-            console.log(`🔍 Procesando componente ID ${compApi.componente_id}, modulo_id: ${compApi.modulo_id}`);
+            if (!compApi.modulo_id) continue;
             
-            if (compApi.modulo_id) {
-                if (!modulosPorId.has(compApi.modulo_id)) {
-                    // Buscar el módulo completo
-                    const moduloCompleto = modulos.find(m => m.id === compApi.modulo_id);
-                    
-                    if (moduloCompleto) {
-                        console.log(`✅ Módulo ${moduloCompleto.nombre} encontrado`);
-                        modulosPorId.set(compApi.modulo_id, {
-                            ...moduloCompleto,
-                            cantidad: 1,
-                            componentes: []
-                        });
-                    }
+            // Crear módulo si no existe en el Map
+            if (!modulosPorId.has(compApi.modulo_id)) {
+                const moduloCompleto = modulos.find(m => m.id === compApi.modulo_id);
+                if (moduloCompleto) {
+                    modulosPorId.set(compApi.modulo_id, {
+                        ...moduloCompleto,
+                        cantidad: 1,
+                        componentes: []
+                    });
                 }
+            }
+            
+            // Agregar componente al módulo
+            const moduloEnMapa = modulosPorId.get(compApi.modulo_id);
+            if (moduloEnMapa) {
+                const componenteCompleto = componentes.find(c => c.id === compApi.componente_id) || compApi.componente;
                 
-                // Agregar el componente al módulo
-                const moduloEnMapa = modulosPorId.get(compApi.modulo_id);
-                if (moduloEnMapa) {
-                    let componenteCompleto = componentes.find(c => c.id === compApi.componente_id);
+                if (componenteCompleto) {
+                    const precioUnitario = componenteCompleto.precio_unitario || componenteCompleto.costo_total || 0;
+                    const cantidad = compApi.cantidad || 1;
                     
-                    if (!componenteCompleto && compApi.componente) {
-                        componenteCompleto = compApi.componente;
-                    }
-                    
-                    if (componenteCompleto) {
-                        moduloEnMapa.componentes.push({
-                            ...componenteCompleto,
-                            cantidad: compApi.cantidad || 1,
-                            precio_unitario: componenteCompleto.precio_unitario || componenteCompleto.costo_total || 0,
-                            subtotal: (compApi.cantidad || 1) * (componenteCompleto.precio_unitario || componenteCompleto.costo_total || 0)
-                        });
-                    }
+                    moduloEnMapa.componentes.push({
+                        ...componenteCompleto,
+                        cantidad,
+                        precio_unitario: precioUnitario,
+                        subtotal: cantidad * precioUnitario
+                    });
                 }
             }
         }
         
-        // Convertir el Map a array
-        const modulosArray = Array.from(modulosPorId.values());
-        console.log('✅ Módulos reconstruidos:', modulosArray.length);
-        console.log('📦 Módulos completos:', modulosArray);
-        console.log('📦 Cada módulo:', modulosArray.map(m => ({
-            id: m.id,
-            nombre: m.nombre,
-            componentesCount: m.componentes?.length
-        })));
-        cotizacion.value.modulos = modulosArray;
-        console.log('✅ cotizacion.value.modulos asignado:', cotizacion.value.modulos);
+        cotizacion.value.modulos = Array.from(modulosPorId.values());
         
     } catch (error) {
-        console.error('❌ Error al sincronizar componentes:', error);
+        console.error('Error al sincronizar componentes:', error);
         cotizacion.value.modulos = [];
     }
 };
