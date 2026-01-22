@@ -361,14 +361,32 @@
                         </div>
 
                         <div class="modal-body-clientes">
-                            <div v-if="clientes.length === 0" class="empty-state-mejorado">
+                            <!-- Buscador -->
+                            <div class="search-box">
+                                <input
+                                    v-model="busquedaCliente"
+                                    type="text"
+                                    placeholder="🔍 Buscar cliente por nombre, empresa, email o teléfono..."
+                                    class="search-input"
+                                />
+                            </div>
+
+                            <!-- Botón de agregar cliente -->
+                            <div class="add-cliente-section">
+                                <button @click="abrirModalCrearCliente" class="btn-add-cliente">
+                                    <span class="btn-icon">➕</span>
+                                    <span>Crear Nuevo Cliente</span>
+                                </button>
+                            </div>
+
+                            <div v-if="clientesFiltrados.length === 0" class="empty-state-mejorado">
                                 <div class="empty-icon">📋</div>
-                                <p>No hay clientes disponibles</p>
+                                <p>{{ busquedaCliente ? 'No se encontraron clientes' : 'No hay clientes disponibles' }}</p>
                             </div>
 
                             <div v-else class="clientes-grid-selector">
                                 <div 
-                                    v-for="cliente in clientes" 
+                                    v-for="cliente in clientesFiltrados" 
                                     :key="cliente.id"
                                     class="cliente-card-selector"
                                     :class="{ 'selected': cotizacion.cliente_id === cliente.id }"
@@ -399,6 +417,87 @@
                         </div>
                     </div>
                 </div>
+                </Transition>
+
+                <!-- Modal para crear nuevo cliente -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalCrearCliente" class="modal-overlay" @click="cerrarModalCrearCliente">
+                        <div class="modal-content modal-form modal-crear-cliente" @click.stop>
+                            <div class="modal-header">
+                                <h3>➕ Crear Nuevo Cliente</h3>
+                                <button class="btn-close" @click="cerrarModalCrearCliente">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="create-cliente-form">
+                                    <div class="form-group">
+                                        <label for="new-cliente-nombre">Nombre *</label>
+                                        <input
+                                            v-model="nuevoCliente.nombre"
+                                            id="new-cliente-nombre"
+                                            type="text"
+                                            class="form-input"
+                                            placeholder="Nombre del cliente"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="new-cliente-empresa">Empresa</label>
+                                        <input
+                                            v-model="nuevoCliente.empresa"
+                                            id="new-cliente-empresa"
+                                            type="text"
+                                            class="form-input"
+                                            placeholder="Nombre de la empresa"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="new-cliente-email">Email</label>
+                                        <input
+                                            v-model="nuevoCliente.email"
+                                            id="new-cliente-email"
+                                            type="email"
+                                            class="form-input"
+                                            placeholder="correo@ejemplo.com"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="new-cliente-telefono">Teléfono</label>
+                                        <input
+                                            v-model="nuevoCliente.telefono"
+                                            id="new-cliente-telefono"
+                                            type="tel"
+                                            class="form-input"
+                                            placeholder="(000) 000-0000"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="new-cliente-direccion">Dirección</label>
+                                        <textarea
+                                            v-model="nuevoCliente.direccion"
+                                            id="new-cliente-direccion"
+                                            class="form-input"
+                                            rows="3"
+                                            placeholder="Dirección completa"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button @click="cerrarModalCrearCliente" class="btn-cancel">
+                                    <span class="btn-icon">✕</span>
+                                    Cancelar
+                                </button>
+                                <button @click="guardarNuevoCliente" class="btn-primary" :disabled="!nuevoCliente.nombre">
+                                    <span class="btn-icon">✔️</span>
+                                    Crear Cliente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </Transition>
 
                 <!-- Modal selector de módulos para agregar componente -->
@@ -1463,8 +1562,6 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
-const mostrarModalEditarCliente = ref(false);
-const clienteEditando = ref(null);
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
 import { fetchComponentes, actualizarComponente } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
@@ -1526,6 +1623,19 @@ const manoDeObraDisponible = ref([]);
 const mostrarModalSeleccionarAcabado = ref(false);
 const busquedaAcabado = ref('');
 const acabadosDisponibles = ref([]);
+
+// Variables para clientes
+const mostrarModalEditarCliente = ref(false);
+const clienteEditando = ref(null);
+const busquedaCliente = ref('');
+const mostrarModalCrearCliente = ref(false);
+const nuevoCliente = ref({
+    nombre: '',
+    empresa: '',
+    email: '',
+    telefono: '',
+    direccion: ''
+});
 
 // Variable para modal de estado
 const mostrarModalSeleccionarEstado = ref(false);
@@ -1607,6 +1717,20 @@ const componentesFiltrados = computed(() => {
         c.nombre.toLowerCase().includes(termino) ||
         c.codigo?.toLowerCase().includes(termino) ||
         c.descripcion?.toLowerCase().includes(termino)
+    );
+});
+
+const clientesFiltrados = computed(() => {
+    if (!busquedaCliente.value) {
+        return clientes.value;
+    }
+    
+    const termino = busquedaCliente.value.toLowerCase();
+    return clientes.value.filter(c => 
+        c.nombre.toLowerCase().includes(termino) ||
+        c.empresa?.toLowerCase().includes(termino) ||
+        c.email?.toLowerCase().includes(termino) ||
+        c.telefono?.toLowerCase().includes(termino)
     );
 });
 
@@ -1963,6 +2087,72 @@ const abrirSelectorClientes = () => {
 
 const cerrarSelectorClientes = () => {
     mostrarSelectorClientes.value = false;
+    busquedaCliente.value = '';
+};
+
+const abrirModalCrearCliente = () => {
+    cerrarSelectorClientes();
+    mostrarModalCrearCliente.value = true;
+};
+
+const cerrarModalCrearCliente = () => {
+    mostrarModalCrearCliente.value = false;
+    nuevoCliente.value = {
+        nombre: '',
+        empresa: '',
+        email: '',
+        telefono: '',
+        direccion: ''
+    };
+};
+
+const guardarNuevoCliente = async () => {
+    if (!nuevoCliente.value.nombre.trim()) {
+        error.value = 'El nombre del cliente es obligatorio';
+        setTimeout(() => { error.value = null; }, 3000);
+        return;
+    }
+
+    try {
+        // Importar la función de creación
+        const { crearCliente } = await import('../../http/clientes-api');
+        
+        // Crear en la API
+        const datosNuevoCliente = {
+            nombre: nuevoCliente.value.nombre.trim(),
+            empresa: nuevoCliente.value.empresa?.trim() || null,
+            email: nuevoCliente.value.email?.trim() || null,
+            telefono: nuevoCliente.value.telefono?.trim() || null,
+            direccion: nuevoCliente.value.direccion?.trim() || null
+        };
+
+        const response = await crearCliente(datosNuevoCliente);
+        const clienteCreado = response.data || response;
+
+        // Agregar a la lista de clientes
+        clientes.value.push(clienteCreado);
+
+        // Asignar automáticamente el nuevo cliente a la cotización
+        cotizacion.value.cliente_id = clienteCreado.id;
+        cotizacion.value.cliente = clienteCreado;
+
+        // Guardar la asignación en la API
+        const datosActualizados = {
+            cliente_id: clienteCreado.id,
+            fecha: cotizacion.value.fecha,
+            estado: cotizacion.value.estado
+        };
+
+        await actualizarCotizacion(cotizacion.value.id, datosActualizados);
+
+        cerrarModalCrearCliente();
+        success.value = `Cliente "${clienteCreado.nombre}" creado y asignado correctamente`;
+        setTimeout(() => { success.value = null; }, 3000);
+    } catch (err) {
+        console.error('Error al crear cliente:', err);
+        error.value = 'Error al crear el cliente: ' + (err.response?.data?.message || err.message);
+        setTimeout(() => { error.value = null; }, 5000);
+    }
 };
 
 const seleccionarCliente = async (cliente) => {
@@ -5170,6 +5360,92 @@ onMounted(() => {
     padding: 30px;
     overflow-y: auto;
     max-height: calc(85vh - 140px);
+}
+
+.modal-body-clientes .search-box {
+    margin-bottom: 1.5rem;
+}
+
+.add-cliente-section {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-add-cliente {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.8rem;
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-add-cliente:hover {
+    background: linear-gradient(135deg, #45a049 0%, #388e3c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+}
+
+.btn-add-cliente .btn-icon {
+    font-size: 1.2rem;
+}
+
+.modal-crear-cliente {
+    max-width: 600px;
+}
+
+.create-cliente-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.create-cliente-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.create-cliente-form label {
+    font-weight: 600;
+    color: #2c2c2c;
+    font-size: 0.95rem;
+}
+
+.create-cliente-form .form-input {
+    padding: 0.85rem 1.1rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 10px;
+    font-size: 1rem;
+    color: #1a1a1a;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fafafa;
+}
+
+.create-cliente-form .form-input:hover {
+    border-color: #d4a574;
+    background: white;
+}
+
+.create-cliente-form .form-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
+}
+
+.create-cliente-form textarea.form-input {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
 }
 
 .clientes-grid-selector {
