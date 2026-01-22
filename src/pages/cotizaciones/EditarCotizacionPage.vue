@@ -15,16 +15,7 @@
                     <div class="header-title-section">
                         <h1 class="form-title">📝 Editar Cotización</h1>
                         <span class="cotizacion-badge">#{{ cotizacion.id }}</span>
-                        <select 
-                            v-model="cotizacion.estado" 
-                            @change="cambiarEstado"
-                            class="estado-selector"
-                            :class="`estado-${cotizacion.estado}`"
-                        >
-                            <option value="activa">Activa</option>
-                            <option value="completada">Completada</option>
-                            <option value="cancelada">Cancelada</option>
-                        </select>
+
                     </div>
                 </div>
             </div>
@@ -1379,7 +1370,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
-import { fetchComponentes } from '../../http/componentes-api';
+import { fetchComponentes, actualizarComponente } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
 import { fetchMateriales, crearMaterial, actualizarMaterial } from '../../http/materiales-api';
 import { crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
@@ -1892,35 +1883,21 @@ const seleccionarEstado = async (estado) => {
         await actualizarEstadoCotizacion(cotizacion.value.id, estado);
         cotizacion.value.estado = estado;
         
-        success.value = `Estado actualizado a: ${estado.charAt(0).toUpperCase() + estado.slice(1)}`;
-        setTimeout(() => {
-            success.value = null;
-        }, 3000);
-        
+        mostrarMensajeTemporal('success', `Estado actualizado a: ${estado.charAt(0).toUpperCase() + estado.slice(1)}`);
         cerrarModalSeleccionarEstado();
     } catch (err) {
         console.error('Error al actualizar estado:', err);
-        error.value = 'Error al actualizar el estado: ' + (err.response?.data?.message || err.message);
-        setTimeout(() => {
-            error.value = null;
-        }, 5000);
+        mostrarMensajeTemporal('error', 'Error al actualizar el estado: ' + (err.response?.data?.message || err.message), 5000);
     }
 };
 
 const cambiarEstado = async () => {
     try {
         await actualizarEstadoCotizacion(cotizacion.value.id, cotizacion.value.estado);
-        
-        success.value = `Estado actualizado a: ${cotizacion.value.estado}`;
-        setTimeout(() => {
-            success.value = null;
-        }, 3000);
+        mostrarMensajeTemporal('success', `Estado actualizado a: ${cotizacion.value.estado}`);
     } catch (err) {
         console.error('Error al actualizar estado:', err);
-        error.value = 'Error al actualizar el estado: ' + (err.response?.data?.message || err.message);
-        setTimeout(() => {
-            error.value = null;
-        }, 5000);
+        mostrarMensajeTemporal('error', 'Error al actualizar el estado: ' + (err.response?.data?.message || err.message), 5000);
     }
 };
 
@@ -2161,8 +2138,6 @@ const cerrarModalEditarComponente = () => {
 
 const guardarCambiosComponente = async () => {
     try {
-        const { actualizarComponente } = await import('../../http/componentes-api');
-        
         await actualizarComponente(componenteEditando.value.componente_id, {
             nombre: componenteEditando.value.nombre,
             descripcion: componenteEditando.value.descripcion,
@@ -2208,7 +2183,7 @@ const guardarCambiosComponente = async () => {
 const agregarMaterial = async () => {
     try {
         const response = await fetchMateriales();
-        materialesDisponibles.value = Array.isArray(response) ? response : (response.data || []);
+        materialesDisponibles.value = normalizarRespuestaAPI(response);
         
         materialSeleccionado.value = null;
         cantidadMaterial.value = 1;
@@ -2233,17 +2208,9 @@ const cerrarModalAgregarMaterial = () => {
 const abrirModalCrearMaterial = async () => {
     try {
         const response = await fetchTiposDeMaterial();
-        tiposDeMaterial.value = Array.isArray(response) ? response : (response.data || []);
+        tiposDeMaterial.value = normalizarRespuestaAPI(response);
         
-        nuevoMaterial.value = {
-            nombre: '',
-            unidad_medida: '',
-            alto: '',
-            ancho: '',
-            largo: '',
-            precio_unitario: '',
-            tipo_de_material_id: null
-        };
+        nuevoMaterial.value = resetFormularioMaterial();
         tipoMaterialSeleccionado.value = null;
         
         mostrarModalCrearMaterial.value = true;
@@ -2269,17 +2236,20 @@ const seleccionarTipoMaterial = (tipo) => {
     cerrarModalSeleccionarTipoMaterial();
 };
 
+// ===== FUNCIONES HELPER REUTILIZABLES =====
+const resetFormularioMaterial = () => ({
+    nombre: '',
+    unidad_medida: '',
+    alto: '',
+    ancho: '',
+    largo: '',
+    precio_unitario: '',
+    tipo_de_material_id: null
+});
+
 const cerrarModalCrearMaterial = () => {
     mostrarModalCrearMaterial.value = false;
-    nuevoMaterial.value = {
-        nombre: '',
-        unidad_medida: '',
-        alto: '',
-        ancho: '',
-        largo: '',
-        precio_unitario: '',
-        tipo_de_material_id: null
-    };
+    nuevoMaterial.value = resetFormularioMaterial();
 };
 
 const guardarNuevoMaterial = async () => {
@@ -2468,7 +2438,7 @@ const abrirModalSeleccionarTipoMaterialEdicion = async () => {
     try {
         if (tiposDeMaterial.value.length === 0) {
             const response = await fetchTiposDeMaterial();
-            tiposDeMaterial.value = Array.isArray(response) ? response : (response.data || []);
+            tiposDeMaterial.value = normalizarRespuestaAPI(response);
         }
         
         // Establecer el tipo de material actual si existe
@@ -2503,7 +2473,7 @@ const abrirModalEditarMaterial = async (material) => {
         // Cargar tipos de material si no están cargados
         if (tiposDeMaterial.value.length === 0) {
             const response = await fetchTiposDeMaterial();
-            tiposDeMaterial.value = Array.isArray(response) ? response : (response.data || []);
+            tiposDeMaterial.value = normalizarRespuestaAPI(response);
         }
         
         materialEditando.value = material;
@@ -2545,7 +2515,6 @@ const disminuirCantidadEdicion = () => {
 const guardarEdicionMaterial = async () => {
     try {
         // Actualizar el material en la tabla de materiales
-        const { actualizarMaterial } = await import('../../http/materiales-api');
         await actualizarMaterial(materialEditando.value.material_id, {
             nombre: materialEditando.value.material.nombre,
             unidad_medida: materialEditando.value.material.unidad_medida,
@@ -2582,6 +2551,16 @@ const guardarEdicionMaterial = async () => {
 };
 
 // ===== FUNCIONES HELPER REUTILIZABLES =====
+const mostrarMensajeTemporal = (tipo, mensaje, duracion = 3000) => {
+    if (tipo === 'success') {
+        success.value = mensaje;
+        setTimeout(() => { success.value = null; }, duracion);
+    } else if (tipo === 'error') {
+        error.value = mensaje;
+        setTimeout(() => { error.value = null; }, duracion);
+    }
+};
+
 const filtrarItems = (items, busqueda) => {
     if (!busqueda) return items;
     const busquedaLower = busqueda.toLowerCase();
@@ -2594,7 +2573,7 @@ const filtrarItems = (items, busqueda) => {
 const abrirModalSeleccion = async (fetchFunction, disponiblesRef, busquedaRef, modalRef, errorName) => {
     try {
         const response = await fetchFunction();
-        disponiblesRef.value = Array.isArray(response) ? response : (response.data || []);
+        disponiblesRef.value = normalizarRespuestaAPI(response);
         busquedaRef.value = '';
         modalRef.value = true;
     } catch (err) {
@@ -2679,21 +2658,19 @@ const cerrarModalAgregarHerraje = () => cerrarModal(mostrarModalAgregarHerraje, 
 
 // Funciones para crear nuevo herraje
 const abrirModalCrearHerraje = () => {
-    nuevoHerraje.value = {
-        nombre: '',
-        descripcion: '',
-        precio_unitario: ''
-    };
+    nuevoHerraje.value = resetFormularioHerraje();
     mostrarModalCrearHerraje.value = true;
 };
 
+const resetFormularioHerraje = () => ({
+    nombre: '',
+    descripcion: '',
+    precio_unitario: ''
+});
+
 const cerrarModalCrearHerraje = () => {
     mostrarModalCrearHerraje.value = false;
-    nuevoHerraje.value = {
-        nombre: '',
-        descripcion: '',
-        precio_unitario: ''
-    };
+    nuevoHerraje.value = resetFormularioHerraje();
 };
 
 const guardarNuevoHerraje = async () => {
@@ -2843,21 +2820,19 @@ const manoDeObraFiltrada = computed(() => filtrarItems(manoDeObraDisponible.valu
 
 // Funciones para crear nueva mano de obra
 const abrirModalCrearManoDeObra = () => {
-    nuevaManoDeObra.value = {
-        nombre: '',
-        descripcion: '',
-        costo_hora: ''
-    };
+    nuevaManoDeObra.value = resetFormularioManoDeObra();
     mostrarModalCrearManoDeObra.value = true;
 };
 
+const resetFormularioManoDeObra = () => ({
+    nombre: '',
+    descripcion: '',
+    costo_hora: ''
+});
+
 const cerrarModalCrearManoDeObra = () => {
     mostrarModalCrearManoDeObra.value = false;
-    nuevaManoDeObra.value = {
-        nombre: '',
-        descripcion: '',
-        costo_hora: ''
-    };
+    nuevaManoDeObra.value = resetFormularioManoDeObra();
 };
 
 const guardarNuevaManoDeObra = async () => {
@@ -3034,21 +3009,19 @@ const tiposMaterialFiltradosEdicion = computed(() => {
 
 // Funciones para crear nuevo acabado
 const abrirModalCrearAcabado = () => {
-    nuevoAcabado.value = {
-        nombre: '',
-        descripcion: '',
-        costo: ''
-    };
+    nuevoAcabado.value = resetFormularioAcabado();
     mostrarModalCrearAcabado.value = true;
 };
 
+const resetFormularioAcabado = () => ({
+    nombre: '',
+    descripcion: '',
+    costo: ''
+});
+
 const cerrarModalCrearAcabado = () => {
     mostrarModalCrearAcabado.value = false;
-    nuevoAcabado.value = {
-        nombre: '',
-        descripcion: '',
-        costo: ''
-    };
+    nuevoAcabado.value = resetFormularioAcabado();
 };
 
 const guardarNuevoAcabado = async () => {
