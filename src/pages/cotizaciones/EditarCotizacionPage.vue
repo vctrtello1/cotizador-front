@@ -120,9 +120,15 @@
 
                 <!-- Información del Cliente -->
                 <div class="form-section cliente-section">
-                    <div class="section-header-inline">
-                        <h2 class="section-title">👤 Datos del Cliente</h2>
-                        <span class="section-subtitle">Información de contacto</span>
+                    <div class="section-header">
+                        <div class="section-header-inline">
+                            <h2 class="section-title">👤 Datos del Cliente</h2>
+                            <span class="section-subtitle">Información de contacto</span>
+                        </div>
+                        <button v-if="cotizacion.cliente" @click="abrirModalEditarCliente" class="btn-edit-cliente">
+                            <span class="btn-icon">✏️</span>
+                            <span>Editar Cliente</span>
+                        </button>
                     </div>
                     <div class="info-grid">
                         <div class="info-item">
@@ -1286,6 +1292,87 @@
                     </div>
                 </Transition>
 
+                <!-- Modal para editar cliente -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalEditarCliente" class="modal-overlay" @click="cerrarModalEditarCliente">
+                        <div class="modal-content modal-form modal-editar-cliente" @click.stop>
+                            <div class="modal-header">
+                                <h3>✏️ Editar Cliente</h3>
+                                <button class="btn-close" @click="cerrarModalEditarCliente">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div v-if="clienteEditando" class="edit-cliente-form">
+                                    <div class="form-group">
+                                        <label for="edit-cliente-nombre">Nombre *</label>
+                                        <input
+                                            v-model="clienteEditando.nombre"
+                                            id="edit-cliente-nombre"
+                                            type="text"
+                                            class="form-input"
+                                            placeholder="Nombre del cliente"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="edit-cliente-empresa">Empresa</label>
+                                        <input
+                                            v-model="clienteEditando.empresa"
+                                            id="edit-cliente-empresa"
+                                            type="text"
+                                            class="form-input"
+                                            placeholder="Nombre de la empresa"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="edit-cliente-email">Email</label>
+                                        <input
+                                            v-model="clienteEditando.email"
+                                            id="edit-cliente-email"
+                                            type="email"
+                                            class="form-input"
+                                            placeholder="correo@ejemplo.com"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="edit-cliente-telefono">Teléfono</label>
+                                        <input
+                                            v-model="clienteEditando.telefono"
+                                            id="edit-cliente-telefono"
+                                            type="tel"
+                                            class="form-input"
+                                            placeholder="(000) 000-0000"
+                                        />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="edit-cliente-direccion">Dirección</label>
+                                        <textarea
+                                            v-model="clienteEditando.direccion"
+                                            id="edit-cliente-direccion"
+                                            class="form-input"
+                                            rows="3"
+                                            placeholder="Dirección completa"
+                                        ></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button @click="cerrarModalEditarCliente" class="btn-cancel">
+                                    <span class="btn-icon">✕</span>
+                                    Cancelar
+                                </button>
+                                <button @click="guardarEdicionCliente" class="btn-primary" :disabled="!clienteEditando?.nombre">
+                                    <span class="btn-icon">✔️</span>
+                                    Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
                 <!-- Modal para seleccionar tipo de material en edición -->
                 <Transition name="modal">
                     <div v-if="mostrarModalSeleccionarTipoMaterialEdicion" class="modal-overlay" @click="cerrarModalSeleccionarTipoMaterialEdicion">
@@ -1376,6 +1463,8 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes } from '../../http/clientes-api';
+const mostrarModalEditarCliente = ref(false);
+const clienteEditando = ref(null);
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
 import { fetchComponentes, actualizarComponente } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
@@ -1903,6 +1992,73 @@ const seleccionarCliente = async (cliente) => {
         setTimeout(() => {
             error.value = null;
         }, 5000);
+    }
+};
+
+const abrirModalEditarCliente = () => {
+    if (cotizacion.value?.cliente) {
+        // Crear una copia del cliente para editar
+        clienteEditando.value = {
+            id: cotizacion.value.cliente.id,
+            nombre: cotizacion.value.cliente.nombre || '',
+            empresa: cotizacion.value.cliente.empresa || '',
+            email: cotizacion.value.cliente.email || '',
+            telefono: cotizacion.value.cliente.telefono || '',
+            direccion: cotizacion.value.cliente.direccion || ''
+        };
+        mostrarModalEditarCliente.value = true;
+    }
+};
+
+const cerrarModalEditarCliente = () => {
+    mostrarModalEditarCliente.value = false;
+    clienteEditando.value = null;
+};
+
+const guardarEdicionCliente = async () => {
+    if (!clienteEditando.value || !clienteEditando.value.nombre.trim()) {
+        error.value = 'El nombre del cliente es obligatorio';
+        setTimeout(() => { error.value = null; }, 3000);
+        return;
+    }
+
+    try {
+        // Importar la función de actualización
+        const { actualizarCliente } = await import('../../http/clientes-api');
+        
+        // Actualizar en la API
+        const datosActualizados = {
+            nombre: clienteEditando.value.nombre.trim(),
+            empresa: clienteEditando.value.empresa?.trim() || null,
+            email: clienteEditando.value.email?.trim() || null,
+            telefono: clienteEditando.value.telefono?.trim() || null,
+            direccion: clienteEditando.value.direccion?.trim() || null
+        };
+
+        await actualizarCliente(clienteEditando.value.id, datosActualizados);
+
+        // Actualizar localmente
+        cotizacion.value.cliente = {
+            ...cotizacion.value.cliente,
+            ...datosActualizados
+        };
+
+        // Actualizar también en la lista de clientes
+        const clienteIndex = clientes.value.findIndex(c => c.id === clienteEditando.value.id);
+        if (clienteIndex !== -1) {
+            clientes.value[clienteIndex] = {
+                ...clientes.value[clienteIndex],
+                ...datosActualizados
+            };
+        }
+
+        cerrarModalEditarCliente();
+        success.value = 'Cliente actualizado correctamente';
+        setTimeout(() => { success.value = null; }, 3000);
+    } catch (err) {
+        console.error('Error al actualizar cliente:', err);
+        error.value = 'Error al actualizar el cliente: ' + (err.response?.data?.message || err.message);
+        setTimeout(() => { error.value = null; }, 5000);
     }
 };
 
@@ -6458,6 +6614,82 @@ onMounted(() => {
 
 .cliente-section {
     border-left: 4px solid #4caf50;
+}
+
+.btn-edit-cliente {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-edit-cliente:hover {
+    background: linear-gradient(135deg, #45a049 0%, #388e3c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.btn-edit-cliente .btn-icon {
+    font-size: 1.1rem;
+}
+
+.modal-editar-cliente {
+    max-width: 600px;
+}
+
+.edit-cliente-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.edit-cliente-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.edit-cliente-form label {
+    font-weight: 600;
+    color: #2c2c2c;
+    font-size: 0.95rem;
+}
+
+.edit-cliente-form .form-input {
+    padding: 0.85rem 1.1rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 10px;
+    font-size: 1rem;
+    color: #1a1a1a;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fafafa;
+}
+
+.edit-cliente-form .form-input:hover {
+    border-color: #d4a574;
+    background: white;
+}
+
+.edit-cliente-form .form-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
+}
+
+.edit-cliente-form textarea.form-input {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
 }
 
 .modulos-section {
