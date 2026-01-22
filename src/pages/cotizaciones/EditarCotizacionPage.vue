@@ -8,14 +8,70 @@
         <div v-else-if="cotizacion" class="cotizacion-form">
             <div class="form-header">
                 <div class="header-content">
-                    <button class="btn-back" @click="$router.back()">
-                        <span class="back-icon">←</span>
-                        <span>Volver</span>
-                    </button>
-                    <div class="header-title-section">
-                        <h1 class="form-title">📝 Editar Cotización</h1>
-                        <span class="cotizacion-badge">#{{ cotizacion.id }}</span>
-
+                    <div class="header-top-row">
+                        <button class="btn-back" @click="$router.back()">
+                            <span class="back-icon">←</span>
+                            <span>Volver</span>
+                        </button>
+                        <div class="header-actions">
+                            <button @click="generarPDF" class="btn-header-action" :disabled="generandoPDF">
+                                <span class="btn-icon">{{ generandoPDF ? '⏳' : '📄' }}</span>
+                                <span class="btn-text">PDF</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="header-main-section">
+                        <div class="header-title-section">
+                            <div class="title-wrapper">
+                                <h1 class="form-title">📝 Editar Cotización</h1>
+                                <span class="cotizacion-badge">#{{ cotizacion.id }}</span>
+                            </div>
+                            <div class="header-meta-info">
+                                <div class="meta-item">
+                                    <span class="meta-icon">👤</span>
+                                    <span class="meta-text">{{ cotizacion.cliente?.nombre || 'Sin cliente' }}</span>
+                                </div>
+                                <div class="meta-separator">•</div>
+                                <div class="meta-item">
+                                    <span class="meta-icon">📅</span>
+                                    <span class="meta-text">{{ formatFecha(cotizacion.fecha) }}</span>
+                                </div>
+                                <div class="meta-separator">•</div>
+                                <div class="meta-item">
+                                    <span :class="['meta-status', `status-${cotizacion.estado}`]">
+                                        <span v-if="cotizacion.estado === 'activa'">🔄</span>
+                                        <span v-else-if="cotizacion.estado === 'completada'">✅</span>
+                                        <span v-else-if="cotizacion.estado === 'cancelada'">❌</span>
+                                        {{ cotizacion.estado.charAt(0).toUpperCase() + cotizacion.estado.slice(1) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="header-summary-cards">
+                            <div class="summary-card">
+                                <div class="summary-icon">⚙️</div>
+                                <div class="summary-content">
+                                    <span class="summary-value">{{ todosLosComponentes.length }}</span>
+                                    <span class="summary-label">Componentes</span>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-icon">🧩</div>
+                                <div class="summary-content">
+                                    <span class="summary-value">{{ modulosAsignados.length }}</span>
+                                    <span class="summary-label">Módulos</span>
+                                </div>
+                            </div>
+                            <div class="summary-card highlight">
+                                <div class="summary-icon">💰</div>
+                                <div class="summary-content">
+                                    <span class="summary-value">${{ formatCurrency(totalCotizacion) }}</span>
+                                    <span class="summary-label">Total</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1563,6 +1619,16 @@ const formatCurrency = (value) => {
     return num.toLocaleString('es-MX', { 
         minimumFractionDigits: 2, 
         maximumFractionDigits: 2 
+    });
+};
+
+const formatFecha = (fecha) => {
+    if (!fecha) return 'Sin fecha';
+    const date = new Date(fecha + 'T00:00:00');
+    return date.toLocaleDateString('es-MX', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
     });
 };
 
@@ -3738,11 +3804,192 @@ onMounted(() => {
     gap: 1.5rem;
 }
 
+.header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-header-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #c89564;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-header-action:hover:not(:disabled) {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-header-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-header-action .btn-icon {
+    font-size: 1.1rem;
+}
+
+.btn-header-action .btn-text {
+    font-weight: 600;
+}
+
+.header-main-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
 .header-title-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 300px;
+}
+
+.title-wrapper {
     display: flex;
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.header-meta-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.meta-icon {
+    font-size: 1rem;
+}
+
+.meta-text {
+    font-weight: 500;
+}
+
+.meta-separator {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 300;
+}
+
+.meta-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 6px;
+    text-transform: capitalize;
+}
+
+.status-activa {
+    background: rgba(76, 175, 80, 0.3);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.status-completada {
+    background: rgba(33, 150, 243, 0.3);
+    border: 1px solid rgba(33, 150, 243, 0.5);
+}
+
+.status-cancelada {
+    background: rgba(244, 67, 54, 0.3);
+    border: 1px solid rgba(244, 67, 54, 0.5);
+}
+
+.header-summary-cards {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.summary-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    min-width: 130px;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.summary-card.highlight {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 2px solid rgba(255, 215, 0, 0.4);
+}
+
+.summary-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.summary-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #c89564;
+    line-height: 1.2;
+}
+
+.summary-card.highlight .summary-value {
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.summary-label {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .btn-back {
