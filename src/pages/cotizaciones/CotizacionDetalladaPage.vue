@@ -49,42 +49,46 @@
         </div>
 
         <!-- Modal de Selección de Clientes -->
-        <div v-if="mostrarSelectorClientes" class="modal-overlay" @click.self="cerrarSelectorClientes">
-            <div class="modal-container">
-                <div class="modal-header">
-                    <h3 class="modal-title">Seleccionar Cliente</h3>
-                    <button @click="cerrarSelectorClientes" class="btn-close-modal">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="search-bar">
-                        <input 
-                            v-model="busquedaCliente" 
-                            type="text" 
-                            placeholder="Buscar cliente..." 
-                            class="search-input"
-                        />
-                    </div>
-                    <div class="clientes-list">
-                        <div 
-                            v-for="cliente in clientesFiltrados" 
-                            :key="cliente.id"
-                            @click="seleccionarCliente(cliente)"
-                            class="cliente-item"
-                            :class="{ 'selected': cotizacion.cliente?.id === cliente.id }"
-                        >
-                            <div class="cliente-info">
-                                <span class="cliente-nombre-modal">{{ cliente.nombre }}</span>
-                                <span v-if="cliente.empresa" class="cliente-empresa">{{ cliente.empresa }}</span>
+        <Transition name="modal">
+            <div v-if="mostrarSelectorClientes" class="modal-overlay" @click.self="cerrarSelectorClientes">
+                <Transition name="modal-content" appear>
+                    <div class="modal-container">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Seleccionar Cliente</h3>
+                            <button @click="cerrarSelectorClientes" class="btn-close-modal">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="search-bar">
+                                <input 
+                                    v-model="busquedaCliente" 
+                                    type="text" 
+                                    placeholder="Buscar cliente..." 
+                                    class="search-input"
+                                />
                             </div>
-                            <div class="cliente-contact">
-                                <span v-if="cliente.email" class="cliente-email">{{ cliente.email }}</span>
-                                <span v-if="cliente.telefono" class="cliente-telefono">{{ cliente.telefono }}</span>
-                            </div>
+                            <TransitionGroup name="list" tag="div" class="clientes-list">
+                                <div 
+                                    v-for="cliente in clientesFiltrados" 
+                                    :key="cliente.id"
+                                    @click="seleccionarCliente(cliente)"
+                                    class="cliente-item"
+                                    :class="{ 'selected': cotizacion.cliente?.id === cliente.id }"
+                                >
+                                    <div class="cliente-info">
+                                        <span class="cliente-nombre-modal">{{ cliente.nombre }}</span>
+                                        <span v-if="cliente.empresa" class="cliente-empresa">{{ cliente.empresa }}</span>
+                                    </div>
+                                    <div class="cliente-contact">
+                                        <span v-if="cliente.email" class="cliente-email">{{ cliente.email }}</span>
+                                        <span v-if="cliente.telefono" class="cliente-telefono">{{ cliente.telefono }}</span>
+                                    </div>
+                                </div>
+                            </TransitionGroup>
                         </div>
                     </div>
-                </div>
+                </Transition>
             </div>
-        </div>
+        </Transition>
 
         <!-- Estadísticas rápidas -->
         <div class="stats-container">
@@ -101,34 +105,38 @@
         </div>
 
         <!-- Componentes -->
-        <div class="modulos-section">
-            <div class="modulos-header">
-                <h2 class="section-title">🧩 Componentes de la Cotización</h2>
-            </div>
-
-            <div v-if="detalles.length === 0" class="empty-state">
+        <Transition name="fade-slide" mode="out-in">
+            <div v-if="detalles.length === 0" class="empty-state" key="empty">
                 <p>No hay componentes asignados a esta cotización</p>
             </div>
 
-            <div v-else>
-                <div v-for="(modulo, index) in detalles" :key="`modulo-${modulo.id}-${index}`" class="modulo-card">
-                    <div class="articulos-table">
-                        <div class="table-header">
-                            <div class="col-nombre">Componente</div>
-                            <div class="col-cantidad">Cantidad</div>
-                            <div class="col-precio">Precio Unit.</div>
-                            <div class="col-subtotal">Subtotal</div>
-                        </div>
-                        <div v-for="componente in modulo.componentes" :key="`comp-${componente.id}`" class="table-row">
-                            <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
-                            <div class="col-cantidad">{{ componente.cantidad }}</div>
-                            <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
-                            <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
+            <div v-else class="modulos-section" key="content">
+                <div class="modulos-header">
+                    <h2 class="section-title">🧩 Componentes de la Cotización</h2>
+                </div>
+
+                <TransitionGroup name="modulo-list" tag="div">
+                    <div v-for="(modulo, index) in detalles" :key="`modulo-${modulo.id}-${index}`" 
+                         class="modulo-card"
+                         :style="{ '--index': index }">
+                        <div class="articulos-table">
+                            <div class="table-header">
+                                <div class="col-nombre">Componente</div>
+                                <div class="col-cantidad">Cantidad</div>
+                                <div class="col-precio">Precio Unit.</div>
+                                <div class="col-subtotal">Subtotal</div>
+                            </div>
+                            <div v-for="componente in modulo.componentes" :key="`comp-${componente.id}`" class="table-row">
+                                <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
+                                <div class="col-cantidad">{{ componente.cantidad }}</div>
+                                <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
+                                <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </TransitionGroup>
             </div>
-        </div>
+        </Transition>
 
         <!-- Total -->
         <div class="total-card">
@@ -1184,6 +1192,124 @@ const sincronizarComponentes = async () => {
     .cliente-contact {
         flex-direction: column;
         gap: 0.25rem;
+    }
+}
+
+/* ============================================
+   TRANSICIONES
+   ============================================ */
+
+/* Modal overlay fade */
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+/* Modal content slide & scale */
+.modal-content-enter-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-content-leave-active {
+    transition: all 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.modal-content-enter-from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+}
+
+.modal-content-leave-to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+}
+
+/* Lista de clientes en modal */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.list-enter-from {
+    opacity: 0;
+    transform: translateX(-30px);
+}
+
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(30px);
+}
+
+.list-leave-active {
+    position: absolute;
+    width: 100%;
+}
+
+/* Fade slide para secciones */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+/* Módulos list con stagger */
+.modulo-list-move,
+.modulo-list-enter-active,
+.modulo-list-leave-active {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modulo-list-enter-from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+}
+
+.modulo-list-leave-to {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+}
+
+.modulo-list-leave-active {
+    position: absolute;
+    width: 100%;
+}
+
+/* Animación inicial de módulos con delay */
+.modulo-card {
+    animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+    animation-delay: calc(var(--index) * 0.08s);
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 </style>
