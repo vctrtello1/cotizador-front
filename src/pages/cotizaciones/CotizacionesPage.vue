@@ -8,11 +8,17 @@
         </header>
         
 
-        <div v-if="cotizacionesMostradas.length" class="cotizaciones-grid">
+        <TransitionGroup 
+            v-if="cotizacionesMostradas.length" 
+            name="cotizacion-list"
+            tag="div"
+            class="cotizaciones-grid"
+        >
             <div 
-                v-for="cotizacion in cotizacionesMostradas" 
+                v-for="(cotizacion, index) in cotizacionesMostradas" 
                 :key="cotizacion.id" 
                 class="cotizacion-card"
+                :style="{ '--index': index }"
                 @click="goToCotizacionDetallada(cotizacion.id)"
             >
                 <div class="card-header">
@@ -45,13 +51,15 @@
                     <span class="amount">{{ formatCurrency(calcularTotalReal(cotizacion)) }}</span>
                 </div>
             </div>
-        </div>
+        </TransitionGroup>
         
-        <div v-else class="empty-state">
-            <div class="empty-icon">📋</div>
-            <p class="empty-title">No hay cotizaciones disponibles</p>
-            <p class="empty-subtitle">Crea tu primera cotización haciendo clic en el botón de arriba</p>
-        </div>
+        <Transition name="fade" mode="out-in">
+            <div v-if="!cotizacionesMostradas.length" class="empty-state">
+                <div class="empty-icon">📋</div>
+                <p class="empty-title">No hay cotizaciones disponibles</p>
+                <p class="empty-subtitle">Crea tu primera cotización haciendo clic en el botón de arriba</p>
+            </div>
+        </Transition>
     </div>
 </template>
 
@@ -642,5 +650,77 @@
     margin: 0;
     font-size: 1rem;
     color: #6c757d;
+}
+
+/* Transiciones */
+.cotizacion-list-move,
+.cotizacion-list-enter-active,
+.cotizacion-list-leave-active {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cotizacion-list-enter-from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+}
+
+.cotizacion-list-enter-to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.cotizacion-list-leave-from {
+    opacity: 1;
+}
+
+.cotizacion-list-leave-to {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+}
+
+.cotizacion-list-leave-active {
+    position: absolute;
+}
+
+/* Animación escalonada con delay */
+.cotizacion-card {
+    animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+    animation-delay: calc(var(--index) * 0.05s);
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Fade transition para empty state */
+.fade-enter-active,
+.fade-leave-active {
+    transition: all 0.3s ease;
+}
+
+.fade-enter-from {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.fade-enter-to {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.fade-leave-from {
+    opacity: 1;
+}
+
+.fade-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
 }
 </style>
