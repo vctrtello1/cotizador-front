@@ -64,11 +64,15 @@
 
                         <div class="form-group">
                             <label for="estado">Estado</label>
-                            <select v-model="cotizacion.estado" id="estado" class="form-input">
-                                <option value="activa">Activa</option>
-                                <option value="completada">Completada</option>
-                                <option value="cancelada">Cancelada</option>
-                            </select>
+                            <button class="btn-selector estado-selector-btn" @click="abrirModalSeleccionarEstado" type="button" :class="`estado-${cotizacion.estado}`">
+                                <span class="selector-value">
+                                    <span v-if="cotizacion.estado === 'activa'" class="estado-icon">🔄</span>
+                                    <span v-else-if="cotizacion.estado === 'completada'" class="estado-icon">✅</span>
+                                    <span v-else-if="cotizacion.estado === 'cancelada'" class="estado-icon">❌</span>
+                                    {{ cotizacion.estado.charAt(0).toUpperCase() + cotizacion.estado.slice(1) }}
+                                </span>
+                                <span class="selector-arrow">▼</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1167,6 +1171,92 @@
                     </div>
                 </Transition>
 
+                <!-- Modal para seleccionar estado -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalSeleccionarEstado" class="modal-overlay" @click="cerrarModalSeleccionarEstado">
+                        <div class="modal-content modal-selector modal-estado" @click.stop>
+                            <div class="modal-header">
+                                <h3>📋 Cambiar Estado de la Cotización</h3>
+                                <button class="btn-close" @click="cerrarModalSeleccionarEstado">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="estados-list">
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'activa' }" @click="seleccionarEstado('activa')">
+                                        <div class="estado-item-content">
+                                            <span class="estado-icon-large">🔄</span>
+                                            <div class="estado-info">
+                                                <span class="estado-name">Activa</span>
+                                                <span class="estado-description">La cotización está en proceso</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'completada' }" @click="seleccionarEstado('completada')">
+                                        <div class="estado-item-content">
+                                            <span class="estado-icon-large">✅</span>
+                                            <div class="estado-info">
+                                                <span class="estado-name">Completada</span>
+                                                <span class="estado-description">La cotización ha sido finalizada</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'cancelada' }" @click="seleccionarEstado('cancelada')">
+                                        <div class="estado-item-content">
+                                            <span class="estado-icon-large">❌</span>
+                                            <div class="estado-info">
+                                                <span class="estado-name">Cancelada</span>
+                                                <span class="estado-description">La cotización ha sido cancelada</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para seleccionar estado -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalSeleccionarEstado" class="modal-overlay" @click="cerrarModalSeleccionarEstado">
+                        <div class="modal-content modal-selector modal-estado" @click.stop>
+                            <div class="modal-header">
+                                <h3>📋 Cambiar Estado de la Cotización</h3>
+                                <button class="btn-close" @click="cerrarModalSeleccionarEstado">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="estados-list">
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'activa' }" @click="seleccionarEstado('activa')">
+                                        <div class="estado-item-content">
+                                            <span class="estado-icon-large">🔄</span>
+                                            <div class="estado-info">
+                                                <span class="estado-name">Activa</span>
+                                                <span class="estado-description">La cotización está en proceso</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'completada' }" @click="seleccionarEstado('completada')">
+                                        <div class="estado-item-content">
+                                            <span class="estado-icon-large">✅</span>
+                                            <div class="estado-info">
+                                                <span class="estado-name">Completada</span>
+                                                <span class="estado-description">La cotización ha sido finalizada</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="estado-item" :class="{ 'selected': cotizacion.estado === 'cancelada' }" @click="seleccionarEstado('cancelada')">
+                                        <div class="estado-item-content">
+                                            <span class="estado-icon-large">❌</span>
+                                            <div class="estado-info">
+                                                <span class="estado-name">Cancelada</span>
+                                                <span class="estado-description">La cotización ha sido cancelada</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
                 <!-- Modal para seleccionar tipo de material -->
                 <Transition name="modal">
                     <div v-if="mostrarModalSeleccionarTipoMaterial" class="modal-overlay" @click="cerrarModalSeleccionarTipoMaterial">
@@ -1349,6 +1439,9 @@ const manoDeObraDisponible = ref([]);
 const mostrarModalSeleccionarAcabado = ref(false);
 const busquedaAcabado = ref('');
 const acabadosDisponibles = ref([]);
+
+// Variable para modal de estado
+const mostrarModalSeleccionarEstado = ref(false);
 
 // Variables para modales de crear nuevos elementos
 const mostrarModalCrearMaterial = ref(false);
@@ -1780,6 +1873,34 @@ const seleccionarCliente = async (cliente) => {
     } catch (err) {
         console.error('Error al actualizar cliente:', err);
         error.value = 'Error al actualizar el cliente: ' + (err.response?.data?.message || err.message);
+        setTimeout(() => {
+            error.value = null;
+        }, 5000);
+    }
+};
+
+const abrirModalSeleccionarEstado = () => {
+    mostrarModalSeleccionarEstado.value = true;
+};
+
+const cerrarModalSeleccionarEstado = () => {
+    mostrarModalSeleccionarEstado.value = false;
+};
+
+const seleccionarEstado = async (estado) => {
+    try {
+        await actualizarEstadoCotizacion(cotizacion.value.id, estado);
+        cotizacion.value.estado = estado;
+        
+        success.value = `Estado actualizado a: ${estado.charAt(0).toUpperCase() + estado.slice(1)}`;
+        setTimeout(() => {
+            success.value = null;
+        }, 3000);
+        
+        cerrarModalSeleccionarEstado();
+    } catch (err) {
+        console.error('Error al actualizar estado:', err);
+        error.value = 'Error al actualizar el estado: ' + (err.response?.data?.message || err.message);
         setTimeout(() => {
             error.value = null;
         }, 5000);
@@ -4270,6 +4391,98 @@ onMounted(() => {
 /* ===== MODAL: Selector de Materiales ===== */
 .modal-selector {
     max-width: 600px;
+}
+
+.modal-estado {
+    max-width: 500px;
+}
+
+.estados-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+.estado-item {
+    padding: 1.25rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+}
+
+.estado-item:hover {
+    border-color: #d4a574;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.2);
+}
+
+.estado-item.selected {
+    border-color: #d4a574;
+    background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%);
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.3);
+}
+
+.estado-item-content {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.estado-icon-large {
+    font-size: 2.5rem;
+}
+
+.estado-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.estado-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.estado-description {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.estado-selector-btn {
+    font-weight: 600;
+}
+
+.estado-selector-btn .estado-icon {
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+}
+
+.estado-selector-btn.estado-activa {
+    border-color: #3b82f6;
+}
+
+.estado-selector-btn.estado-activa .selector-value {
+    color: #3b82f6;
+}
+
+.estado-selector-btn.estado-completada {
+    border-color: #10b981;
+}
+
+.estado-selector-btn.estado-completada .selector-value {
+    color: #10b981;
+}
+
+.estado-selector-btn.estado-cancelada {
+    border-color: #ef4444;
+}
+
+.estado-selector-btn.estado-cancelada .selector-value {
+    color: #ef4444;
 }
 
 .modal-form {
