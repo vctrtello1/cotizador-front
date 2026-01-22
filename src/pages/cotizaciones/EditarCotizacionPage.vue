@@ -2121,7 +2121,7 @@ const guardarNuevoCliente = async () => {
         const datosNuevoCliente = {
             nombre: nuevoCliente.value.nombre.trim(),
             empresa: nuevoCliente.value.empresa?.trim() || null,
-            email: nuevoCliente.value.email?.trim() || null,
+            email: nuevoCliente.value.email?.trim() || '',
             telefono: nuevoCliente.value.telefono?.trim() || null,
             direccion: nuevoCliente.value.direccion?.trim() || null
         };
