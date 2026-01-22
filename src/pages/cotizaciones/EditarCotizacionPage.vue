@@ -569,6 +569,20 @@
                                                     </div>
                                                 </div>
                                                 <div class="item-details">
+                                                    <div v-if="mat.material?.tipo_de_material" class="item-detail-row">
+                                                        <span class="detail-label">Tipo de material:</span>
+                                                        <span class="detail-value detail-badge">{{ mat.material.tipo_de_material.nombre }}</span>
+                                                    </div>
+                                                    <div v-if="mat.material?.unidad_medida" class="item-detail-row">
+                                                        <span class="detail-label">Unidad de medida:</span>
+                                                        <span class="detail-value">{{ mat.material.unidad_medida }}</span>
+                                                    </div>
+                                                    <div v-if="mat.material?.alto || mat.material?.ancho || mat.material?.largo" class="item-detail-row">
+                                                        <span class="detail-label">Dimensiones:</span>
+                                                        <span class="detail-value">
+                                                            {{ mat.material.alto || 0 }} × {{ mat.material.ancho || 0 }} × {{ mat.material.largo || 0 }}
+                                                        </span>
+                                                    </div>
                                                     <div class="item-detail-row">
                                                         <span class="detail-label">Cantidad:</span>
                                                         <div class="cantidad-controls">
@@ -2428,8 +2442,14 @@ const guardarEdicionMaterial = async () => {
             cantidad: cantidadEdicionMaterial.value
         });
         
-        // Actualizar localmente
+        // Actualizar localmente la cantidad
         materialEditando.value.cantidad = cantidadEdicionMaterial.value;
+        
+        // Actualizar el objeto tipo_de_material en el material local
+        if (tipoMaterialSeleccionadoEdicion.value) {
+            materialEditando.value.material.tipo_de_material = tipoMaterialSeleccionadoEdicion.value;
+        }
+        
         console.log('✅ Material actualizado:', materialEditando.value.material?.nombre, cantidadEdicionMaterial.value);
         
         await recalcularCostoComponente();
@@ -5439,6 +5459,17 @@ onMounted(() => {
     color: #6B4423;
     font-size: 0.95rem;
     font-weight: 600;
+}
+
+.detail-badge {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
 .item-detail-row.subtotal .detail-value {
