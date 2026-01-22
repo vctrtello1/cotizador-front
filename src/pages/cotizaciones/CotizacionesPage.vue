@@ -8,9 +8,9 @@
         </header>
         
 
-        <div v-if="cotizaciones.length" class="cotizaciones-grid">
+        <div v-if="cotizacionesMostradas.length" class="cotizaciones-grid">
             <div 
-                v-for="cotizacion in cotizaciones" 
+                v-for="cotizacion in cotizacionesMostradas" 
                 :key="cotizacion.id" 
                 class="cotizacion-card"
                 @click="goToCotizacionDetallada(cotizacion.id)"
@@ -56,19 +56,28 @@
 </template>
 
 <script setup>  
-    import { onMounted, ref } from 'vue';
+    import { onMounted, ref, computed } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useRouter } from 'vue-router';
     import { useCotizacionesStore } from '@/stores/cotizaciones';
     import { useClientesStore } from '@/stores/clientes';
+    import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
+    import { useModulosStore } from '@/stores/modulos';
+    import { useComponentesStore } from '@/stores/componentes';
     import { crearCotizacion } from '@/http/cotizaciones-api';
 
     const router = useRouter();
     const store = useCotizacionesStore();
     const storeClientes = useClientesStore();
+    const componentesPorCotizacionStore = useComponentesPorCotizacionStore();
+    const modulosStore = useModulosStore();
+    const componentesStore = useComponentesStore();
     const { cotizaciones } = storeToRefs(store);
     const { fetchCotizaciones } = store;
     const creandoCotizacion = ref(false);
+
+    // Crear ref local para evitar problemas con storeToRefs
+    const cotizacionesConComponentes = ref([]);
 
     const goToCotizacionDetallada = (id) => {
         router.push({ name: 'CotizacionDetallada', params: { id } });
@@ -130,6 +139,92 @@
         return componentes.join(', ');
     };
 
+    // Computed para usar cotizaciones con componentes o las del store
+    const cotizacionesMostradas = computed(() => {
+        return cotizacionesConComponentes.value.length > 0 
+            ? cotizacionesConComponentes.value 
+            : cotizaciones.value;
+    });
+
+    const sincronizarComponentesDeCotizaciones = async () => {
+        try {
+            console.log('🔄 Sincronizando componentes de todas las cotizaciones...');
+            
+            await Promise.all([
+                modulosStore.fetchModulos(),
+                componentesStore.fetchComponentes(),
+                componentesPorCotizacionStore.fetchComponentesPorCotizacion()
+            ]);
+
+            const todosComponentes = componentesPorCotizacionStore.componentesPorCotizacion;
+            const todosModulos = modulosStore.modulos;
+            const componentesCompletos = componentesStore.componentes;
+
+            console.log('📊 Total cotizaciones:', cotizaciones.value.length);
+            console.log('📊 Total componentes por cotización:', todosComponentes.length);
+
+            // Crear nuevo array para forzar reactividad
+            const cotizacionesActualizadas = cotizaciones.value.map(cotizacion => {
+                const componentesDeCotizacion = todosComponentes.filter(
+                    cpc => cpc.cotizacion_id == cotizacion.id
+                );
+
+                console.log(`📋 Cotización #${cotizacion.id}: ${componentesDeCotizacion.length} componentes`);
+
+                if (componentesDeCotizacion.length === 0) {
+                    return { ...cotizacion, modulos: [] };
+                }
+
+                const modulosMap = new Map();
+
+                componentesDeCotizacion.forEach(compApi => {
+                    const moduloId = compApi.modulo_id;
+                    
+                    if (!modulosMap.has(moduloId)) {
+                        const moduloCompleto = todosModulos.find(m => m.id == moduloId);
+                        if (moduloCompleto) {
+                            modulosMap.set(moduloId, {
+                                ...moduloCompleto,
+                                componentes: []
+                            });
+                        }
+                    }
+
+                    const moduloEnMapa = modulosMap.get(moduloId);
+                    if (moduloEnMapa) {
+                        const componenteCompleto = componentesCompletos.find(
+                            c => c.id == compApi.componente_id
+                        );
+
+                        if (componenteCompleto) {
+                            const precioUnitario = componenteCompleto.precio_unitario || componenteCompleto.costo_total || 0;
+                            const cantidad = compApi.cantidad || 1;
+                            
+                            moduloEnMapa.componentes.push({
+                                ...componenteCompleto,
+                                cantidad,
+                                precio_unitario: precioUnitario,
+                                subtotal: cantidad * precioUnitario
+                            });
+                        }
+                    }
+                });
+
+                const modulos = Array.from(modulosMap.values());
+                console.log(`✅ Cotización #${cotizacion.id}: ${modulos.length} módulos reconstruidos`);
+                
+                return { ...cotizacion, modulos };
+            });
+            
+            // Reasignar al ref local para forzar reactividad
+            cotizacionesConComponentes.value = cotizacionesActualizadas;
+            
+            console.log('✅ Sincronización completada');
+        } catch (error) {
+            console.error('Error sincronizando componentes:', error);
+        }
+    };
+
     const crearNuevaCotizacion = async () => {
         creandoCotizacion.value = true;
         try {
@@ -176,8 +271,9 @@
         }
     };
 
-    onMounted(() => {
-        fetchCotizaciones();
+    onMounted(async () => {
+        await fetchCotizaciones();
+        await sincronizarComponentesDeCotizaciones();
     });
 </script>
 
@@ -462,6 +558,7 @@
     line-height: 1.6;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
