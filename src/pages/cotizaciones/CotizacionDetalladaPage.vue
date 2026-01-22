@@ -489,7 +489,9 @@ const sincronizarComponentes = async () => {
                     if (componenteCompleto) {
                         moduloEnMapa.componentes.push({
                             ...componenteCompleto,
-                            cantidad: compApi.cantidad || 1
+                            cantidad: compApi.cantidad || 1,
+                            precio_unitario: componenteCompleto.precio_unitario || componenteCompleto.costo_total || 0,
+                            subtotal: (compApi.cantidad || 1) * (componenteCompleto.precio_unitario || componenteCompleto.costo_total || 0)
                         });
                     }
                 }
