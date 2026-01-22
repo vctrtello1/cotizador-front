@@ -822,6 +822,17 @@
                                             required
                                         />
                                     </div>
+
+                                    <div class="form-group">
+                                        <label>Tipo de Material*</label>
+                                        <button class="btn-selector" @click="abrirModalSeleccionarTipoMaterialEdicion" type="button">
+                                            <span v-if="tipoMaterialSeleccionadoEdicion" class="selector-value">
+                                                📦 {{ tipoMaterialSeleccionadoEdicion.nombre }}
+                                            </span>
+                                            <span v-else class="selector-placeholder">Seleccionar tipo de material...</span>
+                                            <span class="selector-arrow">▼</span>
+                                        </button>
+                                    </div>
                                     
                                     <!-- Información del Material Editable -->
                                     <div class="material-details-grid">
@@ -1013,12 +1024,13 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Tipo de Material*</label>
-                                    <select v-model="nuevoMaterial.tipo_de_material_id" class="input-text">
-                                        <option :value="null">Seleccionar tipo</option>
-                                        <option v-for="tipo in tiposDeMaterial" :key="tipo.id" :value="tipo.id">
-                                            {{ tipo.nombre }}
-                                        </option>
-                                    </select>
+                                    <button class="btn-selector" @click="abrirModalSeleccionarTipoMaterial" type="button">
+                                        <span v-if="tipoMaterialSeleccionado" class="selector-value">
+                                            📦 {{ tipoMaterialSeleccionado.nombre }}
+                                        </span>
+                                        <span v-else class="selector-placeholder">Seleccionar tipo de material...</span>
+                                        <span class="selector-arrow">▼</span>
+                                    </button>
                                 </div>
                                 <div class="form-group">
                                     <label>Unidad de Medida</label>
@@ -1136,6 +1148,68 @@
                             <div class="modal-footer">
                                 <button class="btn-cancel" @click="cerrarModalCrearAcabado">Cancelar</button>
                                 <button class="btn-primary" @click="guardarNuevoAcabado">Crear Acabado</button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para seleccionar tipo de material -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalSeleccionarTipoMaterial" class="modal-overlay" @click="cerrarModalSeleccionarTipoMaterial">
+                        <div class="modal-content modal-selector" @click.stop>
+                            <div class="modal-header">
+                                <h3>📦 Seleccionar Tipo de Material</h3>
+                                <button class="btn-close" @click="cerrarModalSeleccionarTipoMaterial">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="search-box">
+                                    <input v-model="busquedaTipoMaterial" type="text" placeholder="🔍 Buscar tipo de material..." class="search-input" />
+                                </div>
+                                <div class="selector-list">
+                                    <div v-for="tipo in tiposMaterialFiltrados" :key="tipo.id" class="selector-item" @click="seleccionarTipoMaterial(tipo)">
+                                        <div class="selector-item-content">
+                                            <span class="selector-icon">📦</span>
+                                            <div class="selector-info">
+                                                <span class="selector-name">{{ tipo.nombre }}</span>
+                                                <span v-if="tipo.descripcion" class="selector-description">{{ tipo.descripcion }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="tiposMaterialFiltrados.length === 0" class="empty-selector">
+                                        <p>No se encontraron tipos de material</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+
+                <!-- Modal para seleccionar tipo de material en edición -->
+                <Transition name="modal">
+                    <div v-if="mostrarModalSeleccionarTipoMaterialEdicion" class="modal-overlay" @click="cerrarModalSeleccionarTipoMaterialEdicion">
+                        <div class="modal-content modal-selector" @click.stop>
+                            <div class="modal-header">
+                                <h3>📦 Seleccionar Tipo de Material</h3>
+                                <button class="btn-close" @click="cerrarModalSeleccionarTipoMaterialEdicion">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="search-box">
+                                    <input v-model="busquedaTipoMaterialEdicion" type="text" placeholder="🔍 Buscar tipo de material..." class="search-input" />
+                                </div>
+                                <div class="selector-list">
+                                    <div v-for="tipo in tiposMaterialFiltradosEdicion" :key="tipo.id" class="selector-item" @click="seleccionarTipoMaterialEdicion(tipo)">
+                                        <div class="selector-item-content">
+                                            <span class="selector-icon">📦</span>
+                                            <div class="selector-info">
+                                                <span class="selector-name">{{ tipo.nombre }}</span>
+                                                <span v-if="tipo.descripcion" class="selector-description">{{ tipo.descripcion }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="tiposMaterialFiltradosEdicion.length === 0" class="empty-selector">
+                                        <p>No se encontraron tipos de material</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1274,6 +1348,12 @@ const nuevoMaterial = ref({
     tipo_de_material_id: null
 });
 const tiposDeMaterial = ref([]);
+const mostrarModalSeleccionarTipoMaterial = ref(false);
+const busquedaTipoMaterial = ref('');
+const tipoMaterialSeleccionado = ref(null);
+const mostrarModalSeleccionarTipoMaterialEdicion = ref(false);
+const busquedaTipoMaterialEdicion = ref('');
+const tipoMaterialSeleccionadoEdicion = ref(null);
 
 const mostrarModalCrearHerraje = ref(false);
 const nuevoHerraje = ref({
@@ -2029,12 +2109,29 @@ const abrirModalCrearMaterial = async () => {
             precio_unitario: '',
             tipo_de_material_id: null
         };
+        tipoMaterialSeleccionado.value = null;
         
         mostrarModalCrearMaterial.value = true;
     } catch (err) {
         console.error('❌ Error al cargar tipos de material:', err);
         alert('Error al cargar tipos de material');
     }
+};
+
+const abrirModalSeleccionarTipoMaterial = () => {
+    busquedaTipoMaterial.value = '';
+    mostrarModalSeleccionarTipoMaterial.value = true;
+};
+
+const cerrarModalSeleccionarTipoMaterial = () => {
+    mostrarModalSeleccionarTipoMaterial.value = false;
+    busquedaTipoMaterial.value = '';
+};
+
+const seleccionarTipoMaterial = (tipo) => {
+    tipoMaterialSeleccionado.value = tipo;
+    nuevoMaterial.value.tipo_de_material_id = tipo.id;
+    cerrarModalSeleccionarTipoMaterial();
 };
 
 const cerrarModalCrearMaterial = () => {
@@ -2231,17 +2328,73 @@ const disminuirCantidadMaterial = async (material) => {
     }
 };
 
+// ===== FUNCIONES PARA SELECCIONAR TIPO DE MATERIAL EN EDICIÓN =====
+const abrirModalSeleccionarTipoMaterialEdicion = async () => {
+    try {
+        if (tiposDeMaterial.value.length === 0) {
+            const response = await fetchTiposDeMaterial();
+            tiposDeMaterial.value = Array.isArray(response) ? response : (response.data || []);
+        }
+        
+        // Establecer el tipo de material actual si existe
+        if (materialEditando.value?.material?.tipo_de_material_id) {
+            tipoMaterialSeleccionadoEdicion.value = tiposDeMaterial.value.find(
+                tipo => tipo.id === materialEditando.value.material.tipo_de_material_id
+            ) || null;
+        }
+        
+        busquedaTipoMaterialEdicion.value = '';
+        mostrarModalSeleccionarTipoMaterialEdicion.value = true;
+    } catch (err) {
+        console.error('❌ Error al cargar tipos de material:', err);
+        alert('Error al cargar tipos de material');
+    }
+};
+
+const cerrarModalSeleccionarTipoMaterialEdicion = () => {
+    mostrarModalSeleccionarTipoMaterialEdicion.value = false;
+    busquedaTipoMaterialEdicion.value = '';
+};
+
+const seleccionarTipoMaterialEdicion = (tipo) => {
+    tipoMaterialSeleccionadoEdicion.value = tipo;
+    materialEditando.value.material.tipo_de_material_id = tipo.id;
+    cerrarModalSeleccionarTipoMaterialEdicion();
+};
+
 // ===== FUNCIONES PARA EDITAR MATERIAL =====
-const abrirModalEditarMaterial = (material) => {
-    materialEditando.value = material;
-    cantidadEdicionMaterial.value = material.cantidad || 1;
-    mostrarModalEditarMaterial.value = true;
+const abrirModalEditarMaterial = async (material) => {
+    try {
+        // Cargar tipos de material si no están cargados
+        if (tiposDeMaterial.value.length === 0) {
+            const response = await fetchTiposDeMaterial();
+            tiposDeMaterial.value = Array.isArray(response) ? response : (response.data || []);
+        }
+        
+        materialEditando.value = material;
+        cantidadEdicionMaterial.value = material.cantidad || 1;
+        
+        // Establecer el tipo de material seleccionado
+        if (material.material?.tipo_de_material_id) {
+            tipoMaterialSeleccionadoEdicion.value = tiposDeMaterial.value.find(
+                tipo => tipo.id === material.material.tipo_de_material_id
+            ) || null;
+        } else {
+            tipoMaterialSeleccionadoEdicion.value = null;
+        }
+        
+        mostrarModalEditarMaterial.value = true;
+    } catch (err) {
+        console.error('❌ Error al abrir modal de edición:', err);
+        alert('Error al cargar los datos para editar');
+    }
 };
 
 const cerrarModalEditarMaterial = () => {
     mostrarModalEditarMaterial.value = false;
     materialEditando.value = null;
     cantidadEdicionMaterial.value = 1;
+    tipoMaterialSeleccionadoEdicion.value = null;
 };
 
 const aumentarCantidadEdicion = () => {
@@ -2715,6 +2868,28 @@ const seleccionarAcabado = async (acabado) => {
 };
 
 const acabadosFiltrados = computed(() => filtrarItems(acabadosDisponibles.value, busquedaAcabado.value));
+
+const tiposMaterialFiltrados = computed(() => {
+    if (!busquedaTipoMaterial.value) {
+        return tiposDeMaterial.value;
+    }
+    const termino = busquedaTipoMaterial.value.toLowerCase();
+    return tiposDeMaterial.value.filter(tipo =>
+        tipo.nombre.toLowerCase().includes(termino) ||
+        tipo.descripcion?.toLowerCase().includes(termino)
+    );
+});
+
+const tiposMaterialFiltradosEdicion = computed(() => {
+    if (!busquedaTipoMaterialEdicion.value) {
+        return tiposDeMaterial.value;
+    }
+    const termino = busquedaTipoMaterialEdicion.value.toLowerCase();
+    return tiposDeMaterial.value.filter(tipo =>
+        tipo.nombre.toLowerCase().includes(termino) ||
+        tipo.descripcion?.toLowerCase().includes(termino)
+    );
+});
 
 // Funciones para crear nuevo acabado
 const abrirModalCrearAcabado = () => {
@@ -6551,6 +6726,49 @@ onMounted(() => {
     background: white;
     box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.1);
     transform: translateY(-1px);
+}
+
+.btn-selector {
+    width: 100%;
+    padding: 0.85rem 1.1rem;
+    border: 2px solid #e8ddd7;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: #fafafa;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+}
+
+.btn-selector:hover {
+    border-color: #d4a574;
+    background: white;
+    transform: translateY(-1px);
+}
+
+.btn-selector:focus {
+    outline: none;
+    border-color: #d4a574;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.1);
+}
+
+.selector-value {
+    color: #1a1a1a;
+    font-weight: 500;
+}
+
+.selector-placeholder {
+    color: #999;
+}
+
+.selector-arrow {
+    color: #d4a574;
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
 }
 
 .input-textarea {
