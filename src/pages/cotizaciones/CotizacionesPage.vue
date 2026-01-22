@@ -19,13 +19,21 @@
                 :key="cotizacion.id" 
                 class="cotizacion-card"
                 :style="{ '--index': index }"
-                @click="goToCotizacionDetallada(cotizacion.id)"
             >
                 <div class="card-header">
                     <span class="cotizacion-id">#{{ cotizacion.id }}</span>
-                    <span class="cotizacion-date">{{ formatDate(cotizacion.fecha) }}</span>
+                    <div class="header-actions">
+                        <span class="cotizacion-date">{{ formatDate(cotizacion.fecha) }}</span>
+                        <button 
+                            @click.stop="eliminarCotizacion(cotizacion.id)"
+                            class="btn-delete"
+                            title="Eliminar cotización"
+                        >
+                            🗑️
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body" @click="goToCotizacionDetallada(cotizacion.id)">
                     <div class="client-section">
                         <h3 class="client-name">
                             {{ cotizacion.cliente?.nombre || 'Sin Cliente' }}
@@ -46,7 +54,7 @@
                         </p>
                     </div>
                 </div>
-                <div class="card-footer">
+                <div class="card-footer" @click="goToCotizacionDetallada(cotizacion.id)">
                     <span class="label">Total:</span>
                     <span class="amount">{{ formatCurrency(calcularTotalReal(cotizacion)) }}</span>
                 </div>
@@ -72,7 +80,7 @@
     import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
     import { useModulosStore } from '@/stores/modulos';
     import { useComponentesStore } from '@/stores/componentes';
-    import { crearCotizacion } from '@/http/cotizaciones-api';
+    import { crearCotizacion, eliminarCotizacion as eliminarCotizacionApi } from '@/http/cotizaciones-api';
 
     const router = useRouter();
     const store = useCotizacionesStore();
@@ -298,6 +306,22 @@
         }
     };
 
+    const eliminarCotizacion = async (id) => {
+        try {
+            await eliminarCotizacionApi(id);
+            
+            // Actualizar la lista local eliminando la cotización
+            cotizacionesConComponentes.value = cotizacionesConComponentes.value.filter(c => c.id !== id);
+            
+            // También actualizar el store
+            await fetchCotizaciones();
+            await sincronizarComponentesDeCotizaciones();
+        } catch (error) {
+            console.error('Error eliminando cotización:', error);
+            alert('Error al eliminar la cotización: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
     onMounted(async () => {
         await fetchCotizaciones();
         await sincronizarComponentesDeCotizaciones();
@@ -483,6 +507,12 @@
     font-weight: 600;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .cotizacion-id {
     font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
     font-size: 1.2rem;
@@ -496,11 +526,38 @@
     font-weight: 500;
 }
 
+.btn-delete {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+}
+
+.btn-delete:hover {
+    background: rgba(220, 38, 38, 0.9);
+    border-color: rgba(220, 38, 38, 1);
+    transform: scale(1.1);
+}
+
+.btn-delete:active {
+    transform: scale(0.95);
+}
+
 .card-body {
     padding: 24px;
     flex-grow: 1;
     background: white;
     min-height: 120px;
+    cursor: pointer;
 }
 
 .client-section {
@@ -603,6 +660,7 @@
     justify-content: space-between;
     align-items: center;
     background: #f8f9fa;
+    cursor: pointer;
 }
 
 .label {

@@ -20,6 +20,11 @@ export const actualizarCotizacion = async (id, datos) => {
   return response.data;
 };
 
+export const eliminarCotizacion = async (id) => {
+  const response = await api.delete(`/cotizaciones/${id}`);
+  return response.data;
+};
+
 export const eliminarModuloDeCotizacion = async (cotizacionId, moduloId) => {
   const response = await api.delete(`/cotizaciones/${cotizacionId}/modulos/${moduloId}`);
   return response.data;
