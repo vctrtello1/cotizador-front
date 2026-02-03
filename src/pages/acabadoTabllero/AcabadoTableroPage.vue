@@ -6,6 +6,23 @@
             <button class="btn-primary" @click="$router.push('/nuevo-acabado-tablero')">✨ Nuevo Acabado de Tablero</button>
         </div>
 
+        <div class="search-bar">
+            <input
+                v-model="searchTerm"
+                type="text"
+                class="search-input"
+                placeholder="Buscar por nombre, código o descripción..."
+            />
+            <button
+                v-if="searchTerm"
+                class="search-clear"
+                @click="searchTerm = ''"
+                aria-label="Limpiar búsqueda"
+            >
+                ✕
+            </button>
+        </div>
+
         <!-- Mensaje de error -->
         <div v-if="error" class="error-message">
             <span>⚠️ {{ error }}</span>
@@ -24,14 +41,14 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="acabadoTableros.length === 0" class="empty-state">
+        <div v-else-if="filteredAcabadoTableros.length === 0" class="empty-state">
             <p>No hay acabados de tablero registrados.</p>
             <button class="btn-primary" @click="$router.push('/nuevo-acabado-tablero')">✨ Crear Primer Acabado de Tablero</button>
         </div>
 
         <!-- Acabados Tablero Grid -->
         <div v-else class="acabado-tableros-grid">
-            <div v-for="acabadoTablero in acabadoTableros" :key="acabadoTablero.id" class="acabado-tablero-card">
+            <div v-for="acabadoTablero in filteredAcabadoTableros" :key="acabadoTablero.id" class="acabado-tablero-card">
                 <div class="acabado-tablero-header">
                     <h3 class="acabado-tablero-nombre">{{ acabadoTablero.nombre }}</h3>
             
@@ -68,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchAcabadoTableros, eliminarAcabadoTablero as deleteAcabadoTableroAPI } from '@/http/acabado_tablero-api.js';
 
@@ -81,6 +98,7 @@ const error = ref(null);
 const exito = ref(null);
 const modalEliminar = ref(false);
 const acabadoTableroAEliminar = ref(null);
+const searchTerm = ref('');
 
 // Cargar acabados de tablero
 const cargarAcabadoTableros = async () => {
@@ -129,6 +147,18 @@ const formatCurrency = (value) => {
     return parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
+const filteredAcabadoTableros = computed(() => {
+    const term = searchTerm.value.trim().toLowerCase();
+    if (!term) return acabadoTableros.value;
+
+    return acabadoTableros.value.filter((acabado) => {
+        const nombre = (acabado.nombre || '').toLowerCase();
+        const codigo = (acabado.codigo || '').toLowerCase();
+        const descripcion = (acabado.descripcion || '').toLowerCase();
+        return nombre.includes(term) || codigo.includes(term) || descripcion.includes(term);
+    });
+});
+
 // Cargar datos al montar
 onMounted(() => {
     cargarAcabadoTableros();
@@ -156,6 +186,50 @@ onMounted(() => {
     font-weight: 600;
     color: #333;
     margin: 0;
+}
+
+.search-bar {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+}
+
+.search-clear {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: #f5f5f5;
+    color: #666;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.search-clear:hover {
+    background: #e0e0e0;
+    color: #333;
 }
 
 .btn-primary {
