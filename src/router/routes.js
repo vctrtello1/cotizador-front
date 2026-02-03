@@ -20,6 +20,9 @@ import EditarTipoMaterialPage from "@/pages/tiipoDeMaterial/EditarTipoMaterialPa
 import ManoDeObraPage from "@/pages/mano-de-obra/ManoDeObraPage.vue";
 import NuevoManoDeObraPage from "@/pages/mano-de-obra/NuevoManoDeObraPage.vue";
 import EditarManoDeObraPage from "@/pages/mano-de-obra/EditarManoDeObraPage.vue";
+import EstructurasPage from "@/pages/estructuras/EstructurasPage.vue";
+import NuevaEstructuraPage from "@/pages/estructuras/NuevaEstructuraPage.vue";
+import EditarEstructuraPage from "@/pages/estructuras/EditarEstructuraPage.vue";
 
 export const routes = [
     {
@@ -135,6 +138,21 @@ export const routes = [
         path: "/editar-mano-de-obra/:id",
         name: "EditarManoDeObra",
         component: EditarManoDeObraPage,
+    },
+    {
+        path: "/estructuras",
+        name: "Estructuras",
+        component: EstructurasPage,
+    },
+    {
+        path: "/nueva-estructura",
+        name: "NuevaEstructura",
+        component: NuevaEstructuraPage,
+    },
+    {
+        path: "/editar-estructura/:id",
+        name: "EditarEstructura",
+        component: EditarEstructuraPage,
     }
 
 ];

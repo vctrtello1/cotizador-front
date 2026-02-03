@@ -75,6 +75,14 @@ const isActive = (path) => {
           <span class="nav-icon">✨</span>
           Acabados
         </router-link>
+        <router-link 
+          to="/estructuras" 
+          class="nav-link"
+          :class="{ active: isActive('/estructuras') && !isActive('/nueva-') }"
+        >
+          <span class="nav-icon">🏗️</span>
+          Estructuras
+        </router-link>
       </nav>
     </div>
   </header>
