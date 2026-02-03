@@ -23,6 +23,9 @@ import EditarManoDeObraPage from "@/pages/mano-de-obra/EditarManoDeObraPage.vue"
 import EstructurasPage from "@/pages/estructuras/EstructurasPage.vue";
 import NuevaEstructuraPage from "@/pages/estructuras/NuevaEstructuraPage.vue";
 import EditarEstructuraPage from "@/pages/estructuras/EditarEstructuraPage.vue";
+import AcabadoTableroPage from "@/pages/acabadoTabllero/AcabadoTableroPage.vue";
+import NuevoAcabadoTableroPage from "@/pages/acabadoTabllero/NuevoAcabadoTableroPage.vue";
+import EditarAcabadoTableroPage from "@/pages/acabadoTabllero/EditarAcabadoTableroPage.vue";
 
 export const routes = [
     {
@@ -153,6 +156,21 @@ export const routes = [
         path: "/editar-estructura/:id",
         name: "EditarEstructura",
         component: EditarEstructuraPage,
+    },
+    {
+        path: "/acabado-tablero",
+        name: "AcabadoTablero",
+        component: AcabadoTableroPage,
+    },
+    {
+        path: "/nuevo-acabado-tablero",
+        name: "NuevoAcabadoTablero",
+        component: NuevoAcabadoTableroPage,
+    },
+    {
+        path: "/editar-acabado-tablero/:id",
+        name: "EditarAcabadoTablero",
+        component: EditarAcabadoTableroPage,
     }
 
 ];
