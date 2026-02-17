@@ -27,6 +27,9 @@ import AcabadoTableroPage from "@/pages/acabadoTabllero/AcabadoTableroPage.vue";
 import NuevoAcabadoTableroPage from "@/pages/acabadoTabllero/NuevoAcabadoTableroPage.vue";
 import EditarAcabadoTableroPage from "@/pages/acabadoTabllero/EditarAcabadoTableroPage.vue";
 import AcabadoCubreCantoPage from "@/pages/acabadoCubreCanto/AcabadoCubreCantoPage.vue";
+import CorrederasPage from "@/pages/correderas/CorrederasPage.vue";
+import NuevaCorrederaPage from "@/pages/correderas/NuevaCorrederaPage.vue";
+import EditarCorrederaPage from "@/pages/correderas/EditarCorrederaPage.vue";
 
 export const routes = [
     {
@@ -177,6 +180,21 @@ export const routes = [
         path: "/acabado-cubre-canto",
         name: "AcabadoCubreCanto",
         component: AcabadoCubreCantoPage,
+    },
+    {
+        path: "/correderas",
+        name: "Correderas",
+        component: CorrederasPage,
+    },
+    {
+        path: "/nueva-corredera",
+        name: "NuevaCorredera",
+        component: NuevaCorrederaPage,
+    },
+    {
+        path: "/editar-corredera/:id",
+        name: "EditarCorredera",
+        component: EditarCorrederaPage,
     }
 
 ];
