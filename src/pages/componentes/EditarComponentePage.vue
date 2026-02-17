@@ -97,28 +97,7 @@
                     <button type="button" class="btn-edit-small" @click="mostrarModalMateriales = true">✏️ Editar</button>
                 </div>
                 
-                <!-- Materiales por Componente desde API -->
-                <div v-if="cargandoMateriales" class="loading-info">
-                    <p>Cargando relación de materiales...</p>
-                </div>
-                <div v-else-if="materialesDelComponente && materialesDelComponente.length > 0" class="info-list">
-                    <div v-for="matComp in materialesDelComponente" :key="matComp.id" class="info-item-card">
-                        <div class="info-label">
-                            {{ matComp.material?.nombre || 'Material sin datos' }}
-                            <span v-if="matComp.cantidad" class="quantity-badge">{{ matComp.cantidad }} unidades</span>
-                        </div>
-                        <div v-if="matComp.material?.codigo" class="info-detail">
-                            Código: {{ matComp.material.codigo }}
-                        </div>
-                        <div v-if="matComp.material?.costo_unitario" class="info-detail">
-                            Precio unitario: ${{ formatCurrency(matComp.material.costo_unitario) }}
-                        </div>
-                        <div v-if="matComp.material?.costo_unitario && matComp.cantidad" class="info-detail">
-                            Subtotal: ${{ formatCurrency((matComp.material.costo_unitario * matComp.cantidad)) }}
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="empty-info">Sin materiales</div>
+
             </div>
 
             <!-- Sección de Herrajes -->
@@ -157,43 +136,8 @@
                 <div v-else class="empty-info">Sin herrajes</div>
             </div>
 
-            <!-- Sección de Mano de Obra -->
-            <div class="section-info">
-                <div class="section-header">
-                    <h3 class="section-title">👷 Mano de Obra</h3>
-                    <button type="button" class="btn-edit-small" @click="mostrarModalManoDeObra = true">✏️ Editar</button>
-                </div>
-                <div v-if="formData.mano_de_obra" class="info-list">
-                    <div class="info-item-card">
-                        <div class="info-label">{{ formData.mano_de_obra.nombre }}</div>
-                        <div class="info-detail">Descripción: {{ formData.mano_de_obra.descripcion }}</div>
-                        <div class="info-detail">Costo/hora: ${{ formatCurrency(formData.mano_de_obra.costo_hora) }}</div>
-                        <div v-if="horasManoDeObra.length > 0" class="info-detail">
-                            Horas asignadas: <strong>{{ horasManoDeObra.reduce((sum, h) => sum + (h.horas || 0), 0) }} horas</strong>
-                        </div>
-                        <div v-if="horasManoDeObra.length > 0" class="info-detail">
-                            Costo total: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong>
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="empty-info">Sin mano de obra asignada</div>
-            </div>
 
-            <!-- Sección de Acabado -->
-            <div class="section-info">
-                <div class="section-header">
-                    <h3 class="section-title">🎨 Acabado</h3>
-                    <button type="button" class="btn-edit-small" @click="mostrarModalAcabado = true">✏️ Editar</button>
-                </div>
-                <div v-if="formData.acabado" class="info-list">
-                    <div class="info-item-card">
-                        <div class="info-label">{{ formData.acabado.nombre }}</div>
-                        <div class="info-detail">Descripción: {{ formData.acabado.descripcion }}</div>
-                        <div class="info-detail">Costo: ${{ formatCurrency(formData.acabado.costo) }}</div>
-                    </div>
-                </div>
-                <div v-else class="empty-info">Sin acabado asignado</div>
-            </div>
+            
 
 
         </form>
