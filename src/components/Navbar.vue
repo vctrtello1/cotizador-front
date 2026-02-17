@@ -51,30 +51,7 @@ const isActive = (path) => {
           <span class="nav-icon">📦</span>
           Materiales
         </router-link>
-        <router-link 
-          to="/tipo-de-material" 
-          class="nav-link"
-          :class="{ active: isActive('/tipo-de-material') }"
-        >
-          <span class="nav-icon">🏷️</span>
-          Tipo de Material
-        </router-link>
-        <router-link 
-          to="/mano-de-obra" 
-          class="nav-link"
-          :class="{ active: isActive('/mano-de-obra') && !isActive('/nuevo-') }"
-        >
-          <span class="nav-icon">👷</span>
-          Mano de Obra
-        </router-link>
-        <router-link 
-          to="/acabados" 
-          class="nav-link"
-          :class="{ active: isActive('/acabados') && !isActive('/nuevo-') }"
-        >
-          <span class="nav-icon">✨</span>
-          Acabados
-        </router-link>
+        
         <router-link 
           to="/estructuras" 
           class="nav-link"
@@ -90,6 +67,14 @@ const isActive = (path) => {
         >
           <span class="nav-icon">🎨</span>
           Acabado Tablero
+        </router-link>
+        <router-link 
+          to="/acabado-cubre-canto" 
+          class="nav-link"
+          :class="{ active: isActive('/acabado-cubre-canto') }"
+        >
+          <span class="nav-icon">🧵</span>
+          Acabado Cubre Canto
         </router-link>
       </nav>
     </div>

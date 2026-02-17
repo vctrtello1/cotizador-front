@@ -26,6 +26,7 @@ import EditarEstructuraPage from "@/pages/estructuras/EditarEstructuraPage.vue";
 import AcabadoTableroPage from "@/pages/acabadoTabllero/AcabadoTableroPage.vue";
 import NuevoAcabadoTableroPage from "@/pages/acabadoTabllero/NuevoAcabadoTableroPage.vue";
 import EditarAcabadoTableroPage from "@/pages/acabadoTabllero/EditarAcabadoTableroPage.vue";
+import AcabadoCubreCantoPage from "@/pages/acabadoCubreCanto/AcabadoCubreCantoPage.vue";
 
 export const routes = [
     {
@@ -171,6 +172,11 @@ export const routes = [
         path: "/editar-acabado-tablero/:id",
         name: "EditarAcabadoTablero",
         component: EditarAcabadoTableroPage,
+    },
+    {
+        path: "/acabado-cubre-canto",
+        name: "AcabadoCubreCanto",
+        component: AcabadoCubreCantoPage,
     }
 
 ];
