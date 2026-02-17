@@ -10,7 +10,8 @@ const navItems = [
   { path: '/estructuras', icon: '🏗️', label: 'Estructuras', excludeNew: true },
   { path: '/acabado-tablero', icon: '🎨', label: 'Acabado Tablero', excludeNew: true },
   { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false },
-  { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true }
+  { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true },
+  { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true }
 ];
 
 const isActive = (path, excludeNew) => {
@@ -183,33 +184,163 @@ const isActive = (path, excludeNew) => {
   }
 }
 
+/* Tablets y pantallas medianas */
+@media (max-width: 1024px) {
+  .header-content {
+    gap: 30px;
+    padding: 0 16px;
+  }
+
+  .nav-menu {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nav-link {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .nav-icon {
+    font-size: 16px;
+  }
+}
+
+/* Tablets pequeños */
 @media (max-width: 768px) {
   .header-content {
-    gap: 20px;
+    gap: 16px;
     height: auto;
-    padding: 12px 16px;
+    padding: 12px;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+  }
+
+  .logo-section {
+    width: 100%;
+  }
+
+  .logo-link {
+    justify-content: center;
+  }
+
+  .logo-text {
+    font-size: 20px;
+  }
+
+  .logo-icon {
+    font-size: 24px;
   }
 
   .nav-menu {
     width: 100%;
-    gap: 4px;
-    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
   }
 
   .nav-link {
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: 10px 14px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .nav-link.active::after {
+    left: 14px;
+    right: 14px;
+  }
+
+  .nav-icon {
+    font-size: 16px;
+  }
+}
+
+/* Móviles */
+@media (max-width: 640px) {
+  .header-content {
+    padding: 10px;
+    gap: 12px;
+  }
+
+  .logo-text {
+    font-size: 18px;
+  }
+
+  .logo-icon {
+    font-size: 22px;
+  }
+
+  .nav-menu {
+    gap: 4px;
+  }
+
+  .nav-link {
+    padding: 8px 10px;
+    font-size: 11px;
+    gap: 5px;
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .nav-icon {
+    font-size: 14px;
+  }
+
+  .nav-link.active::after {
+    height: 2px;
+    left: 10px;
+    right: 10px;
+  }
+}
+
+/* Móviles muy pequeños - solo iconos */
+@media (max-width: 480px) {
+  .header-content {
+    padding: 8px;
+    gap: 10px;
+  }
+
+  .logo-section {
+    padding: 4px 0;
+  }
+
+  .logo-text {
+    font-size: 16px;
+  }
+
+  .logo-icon {
+    font-size: 20px;
+  }
+
+  .nav-menu {
+    gap: 6px;
+    justify-content: space-around;
+  }
+
+  .nav-link {
+    padding: 10px 8px;
+    font-size: 0;
+    gap: 0;
     flex: 0 1 auto;
+    min-width: 44px;
+  }
+
+  .nav-icon {
+    font-size: 20px;
+    margin: 0;
+  }
+
+  .nav-link span:not(.nav-icon) {
+    display: none;
   }
 
   .nav-link.active::after {
     display: none;
   }
 
-  .logo-text {
-    font-size: 18px;
+  .nav-link.active {
+    background: rgba(212, 165, 116, 0.25);
   }
 }
 </style>

@@ -30,6 +30,9 @@ import AcabadoCubreCantoPage from "@/pages/acabadoCubreCanto/AcabadoCubreCantoPa
 import CorrederasPage from "@/pages/correderas/CorrederasPage.vue";
 import NuevaCorrederaPage from "@/pages/correderas/NuevaCorrederaPage.vue";
 import EditarCorrederaPage from "@/pages/correderas/EditarCorrederaPage.vue";
+import CompasesAbatiblesPage from "@/pages/compases-abatibles/CompasesAbatiblesPage.vue";
+import NuevoCompasAbatiblePage from "@/pages/compases-abatibles/NuevoCompasAbatiblePage.vue";
+import EditarCompasAbatiblePage from "@/pages/compases-abatibles/EditarCompasAbatiblePage.vue";
 
 export const routes = [
     {
@@ -195,6 +198,21 @@ export const routes = [
         path: "/editar-corredera/:id",
         name: "EditarCorredera",
         component: EditarCorrederaPage,
+    },
+    {
+        path: "/compases-abatibles",
+        name: "CompasesAbatibles",
+        component: CompasesAbatiblesPage,
+    },
+    {
+        path: "/nuevo-compas-abatible",
+        name: "NuevoCompasAbatible",
+        component: NuevoCompasAbatiblePage,
+    },
+    {
+        path: "/editar-compas-abatible/:id",
+        name: "EditarCompasAbatible",
+        component: EditarCompasAbatiblePage,
     }
 
 ];
