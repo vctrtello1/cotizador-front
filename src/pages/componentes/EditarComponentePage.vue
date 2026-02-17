@@ -63,19 +63,6 @@
                 ></textarea>
             </div>
 
-            <div class="form-group">
-                <label for="costo_unitario">Costo Unitario *</label>
-                <input
-                    v-model.number="formData.costo_unitario"
-                    type="number"
-                    id="costo_unitario"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    required
-                />
-                <span v-if="errors.costo_unitario" class="error-text">{{ errors.costo_unitario }}</span>
-            </div>
 
             <div class="form-actions">
                 <button type="button" class="btn-secondary" @click="$router.back()">
@@ -87,18 +74,6 @@
                 </button>
             </div>
 
-            <!-- Sección de Materiales -->
-            <div class="section-info">
-                <div class="section-header">
-                    <div class="header-with-count">
-                        <h3 class="section-title">📋 Materiales</h3>
-                        
-                    </div>
-                    <button type="button" class="btn-edit-small" @click="mostrarModalMateriales = true">✏️ Editar</button>
-                </div>
-                
-
-            </div>
 
             <!-- Sección de Herrajes -->
             <div class="section-info">
