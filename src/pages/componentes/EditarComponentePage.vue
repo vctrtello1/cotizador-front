@@ -261,8 +261,7 @@
                 </div>
                 <div class="modal-body">
                     <div v-if="formData.mano_de_obra" class="selected-items">
-                        <!-- Modo Lectura -->
-                        <div v-if="!editandoManoDeObra" class="selected-item-full">
+                        <div class="selected-item-full">
                             <div class="item-info-full">
                                 <div class="item-name">{{ formData.mano_de_obra.nombre }}</div>
                                 <div class="item-code">{{ formData.mano_de_obra.descripcion }}</div>
@@ -273,49 +272,6 @@
                             </div>
                             <div class="button-group-vertical">
                                 <button class="btn-change-item" @click="abrirSelectorManoDeObra" title="Cambiar">🔄 Cambiar</button>
-                            </div>
-                        </div>
-
-                        <!-- Modo Edición -->
-                        <div v-else class="edit-form">
-                            <div class="form-group-small">
-                                <label for="nombre-mano">Nombre</label>
-                                <input 
-                                    id="nombre-mano"
-                                    v-model="manoDeObraEditando.nombre"
-                                    type="text"
-                                    placeholder="Nombre de la mano de obra"
-                                    class="form-input-small"
-                                />
-                            </div>
-                            <div class="form-group-small">
-                                <label for="descripcion-mano">Descripción</label>
-                                <textarea 
-                                    id="descripcion-mano"
-                                    v-model="manoDeObraEditando.descripcion"
-                                    placeholder="Descripción de la mano de obra"
-                                    class="form-input-small"
-                                    rows="2"
-                                ></textarea>
-                            </div>
-                            <div class="form-group-small">
-                                <label for="costo-mano">Costo/Hora</label>
-                                <input 
-                                    id="costo-mano"
-                                    v-model.number="manoDeObraEditando.costo_hora"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    class="form-input-small"
-                                />
-                            </div>
-                            <div class="button-group-horizontal">
-                                <button class="btn-cancel" @click="cancelarEdicionManoDeObra">Cancelar</button>
-                                <button class="btn-save" @click="guardarManoDeObra" :disabled="guardandoManoDeObra">
-                                    <span v-if="guardandoManoDeObra">⏳ Guardando...</span>
-                                    <span v-else>Guardar</span>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -387,18 +343,8 @@
                     <h3 class="modal-title">🎨 Editar Acabado</h3>
                 </div>
                 <div class="modal-body">
-                    <!-- Sección para agregar acabado -->
-                    <div v-if="!formData.acabado" class="add-section">
-                        <button 
-                            type="button" 
-                            class="btn-add-material"
-                            @click="abrirSelectorAcabados()"
-                        >+ Agregar Acabado</button>
-                    </div>
-
                     <div v-if="formData.acabado" class="selected-items">
-                        <!-- Modo Lectura -->
-                        <div v-if="!editandoAcabado" class="selected-item-full">
+                        <div class="selected-item-full">
                             <div class="item-info-full">
                                 <div class="item-name">{{ formData.acabado.nombre }}</div>
                                 <div class="item-code">{{ formData.acabado.descripcion }}</div>
@@ -411,48 +357,13 @@
                                 <button class="btn-change-item" @click="abrirSelectorAcabados" title="Cambiar">🔄 Cambiar</button>
                             </div>
                         </div>
-
-                        <!-- Modo Edición -->
-                        <div v-else class="edit-form">
-                            <div class="form-group-small">
-                                <label for="nombre-acabado">Nombre</label>
-                                <input 
-                                    id="nombre-acabado"
-                                    v-model="acabadoEditando.nombre"
-                                    type="text"
-                                    placeholder="Nombre del acabado"
-                                    class="form-input-small"
-                                />
-                            </div>
-                            <div class="form-group-small">
-                                <label for="descripcion-acabado">Descripción</label>
-                                <textarea 
-                                    id="descripcion-acabado"
-                                    v-model="acabadoEditando.descripcion"
-                                    placeholder="Descripción del acabado"
-                                    class="form-input-small"
-                                    rows="2"
-                                ></textarea>
-                            </div>
-                            <div class="form-group-small">
-                                <label for="costo-acabado">Costo</label>
-                                <input 
-                                    id="costo-acabado"
-                                    v-model.number="acabadoEditando.costo"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    class="form-input-small"
-                                />
-                            </div>
-                            <div class="button-group-horizontal">
-                                <button class="btn-cancel" @click="cancelarEdicionAcabado">Cancelar</button>
-                                <button class="btn-save" @click="guardarAcabado">Guardar</button>
-                            </div>
-                        </div>
                     </div>
-                    <div v-if="formData.acabado && !editandoAcabado" class="empty-list">
+                    <div v-else class="add-section">
+                        <button 
+                            type="button" 
+                            class="btn-add-material"
+                            @click="abrirSelectorAcabados()"
+                        >+ Agregar Acabado</button>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -730,19 +641,10 @@ const herrajesDisponibles = ref([]);
 const busquedaHerraje = ref('');
 const mostrarSelectorHerrajes = ref(false);
 
-// Estado para editar mano de obra
-const editandoManoDeObra = ref(false);
-const manoDeObraEditando = ref(null);
-const guardandoManoDeObra = ref(false);
-
 // Datos para seleccionar mano de obra
 const manoDeObraDisponible = ref([]);
 const busquedaManoDeObra = ref('');
 const mostrarSelectorManoDeObra = ref(false);
-
-// Estado para editar acabado
-const editandoAcabado = ref(false);
-const acabadoEditando = ref(null);
 
 // Datos para seleccionar acabados
 const acabadosDisponibles = ref([]);
@@ -939,65 +841,7 @@ const removerHerraje = async (herrajeId) => {
         mostrarMensaje('❌ Error al eliminar herraje', 'error', 3000);
     }
 };
-const removerManoDeObra = () => { formData.value.mano_de_obra = null; };
-const removerAcabado = () => { formData.value.acabado = null; };
 
-// Funciones para editar mano de obra
-const iniciarEdicionManoDeObra = () => {
-    // Copiar los datos actuales para editar
-    manoDeObraEditando.value = {
-        ...formData.value.mano_de_obra
-    };
-    editandoManoDeObra.value = true;
-};
-
-const guardarManoDeObra = async () => {
-    if (!manoDeObraEditando.value) {
-        console.warn('⚠️ No hay datos de mano de obra para guardar');
-        return;
-    }
-    
-    guardandoManoDeObra.value = true;
-    try {
-        console.log('📝 Iniciando guardado de mano de obra...');
-        console.log('   ID:', manoDeObraEditando.value.id);
-        console.log('   Datos a guardar:', manoDeObraEditando.value);
-        
-        const datosActualizados = {
-            nombre: manoDeObraEditando.value.nombre,
-            descripcion: manoDeObraEditando.value.descripcion,
-            costo_hora: manoDeObraEditando.value.costo_hora,
-        };
-        
-        console.log('📤 Enviando datos a la API:', datosActualizados);
-        
-        // Guardar en la API usando el store
-        const respuesta = await storeManosDeObra.actualizarManoDeObra(manoDeObraEditando.value.id, datosActualizados);
-        
-        console.log('✅ Respuesta de la API:', respuesta);
-        
-        // Actualizar los datos en formData
-        formData.value.mano_de_obra = {
-            ...manoDeObraEditando.value
-        };
-        
-        editandoManoDeObra.value = false;
-        manoDeObraEditando.value = null;
-        
-        console.log('✅ Mano de obra actualizada correctamente');
-    } catch (err) {
-        console.error('❌ Error al guardar mano de obra:', err);
-        console.error('   Detalles del error:', err.response?.data || err.message);
-        error.value = 'Error al guardar los cambios en la mano de obra: ' + (err.response?.data?.message || err.message);
-    } finally {
-        guardandoManoDeObra.value = false;
-    }
-};
-
-const cancelarEdicionManoDeObra = () => {
-    editandoManoDeObra.value = false;
-    manoDeObraEditando.value = null;
-};
 
 // Computed para obtener el registro de horas de la mano de obra actual
 const horaActual = computed(() => {
@@ -1119,35 +963,6 @@ const decrementarHorasTotal = async () => {
     
     // Limpiar bloques vacíos
     horasManoDeObra.value = horasManoDeObra.value.filter(hora => (hora.horas || 0) > 0);
-};
-
-const actualizarHorasTotal = async (event) => {
-    // Esta función ya no se usa, ahora solo se usan los botones +/-
-};
-
-// Funciones para editar acabado
-const iniciarEdicionAcabado = () => {
-    // Copiar los datos actuales para editar
-    acabadoEditando.value = {
-        ...formData.value.acabado
-    };
-    editandoAcabado.value = true;
-};
-
-const guardarAcabado = () => {
-    if (acabadoEditando.value) {
-        // Actualizar los datos en formData
-        formData.value.acabado = {
-            ...acabadoEditando.value
-        };
-        editandoAcabado.value = false;
-        acabadoEditando.value = null;
-    }
-};
-
-const cancelarEdicionAcabado = () => {
-    editandoAcabado.value = false;
-    acabadoEditando.value = null;
 };
 
 // Incrementar cantidad de material/herraje
