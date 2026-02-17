@@ -1,11 +1,22 @@
 <script setup>
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 
-const router = useRouter();
 const route = useRoute();
 
-const isActive = (path) => {
-  return route.path.startsWith(path);
+const navItems = [
+  { path: '/cotizaciones', icon: '📋', label: 'Cotizaciones', excludeNew: true },
+  { path: '/modulos', icon: '🧩', label: 'Módulos', excludeNew: true },
+  { path: '/componentes', icon: '🔧', label: 'Componentes', excludeNew: true },
+  { path: '/estructuras', icon: '🏗️', label: 'Estructuras', excludeNew: true },
+  { path: '/acabado-tablero', icon: '🎨', label: 'Acabado Tablero', excludeNew: true },
+  { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false },
+  { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true }
+];
+
+const isActive = (path, excludeNew) => {
+  if (!route.path.startsWith(path)) return false;
+  if (!excludeNew) return true;
+  return !route.path.includes('/nueva-') && !route.path.includes('/nuevo-');
 };
 </script>
 
@@ -20,61 +31,14 @@ const isActive = (path) => {
       </div>
       <nav class="nav-menu">
         <router-link 
-          to="/cotizaciones" 
+          v-for="item in navItems"
+          :key="item.path"
+          :to="item.path" 
           class="nav-link"
-          :class="{ active: isActive('/cotizaciones') && !isActive('/nueva-') }"
+          :class="{ active: isActive(item.path, item.excludeNew) }"
         >
-          <span class="nav-icon">📋</span>
-          Cotizaciones
-        </router-link>
-        <router-link 
-          to="/modulos" 
-          class="nav-link"
-          :class="{ active: isActive('/modulos') && !isActive('/nuevo-') }"
-        >
-          <span class="nav-icon">🧩</span>
-          Módulos
-        </router-link>
-        <router-link 
-          to="/componentes" 
-          class="nav-link"
-          :class="{ active: isActive('/componentes') && !isActive('/nuevo-') }"
-        >
-          <span class="nav-icon">🔧</span>
-          Componentes
-        </router-link>
-        <router-link 
-          to="/materiales" 
-          class="nav-link"
-          :class="{ active: isActive('/materiales') && !isActive('/nuevo-') }"
-        >
-          <span class="nav-icon">📦</span>
-          Materiales
-        </router-link>
-        
-        <router-link 
-          to="/estructuras" 
-          class="nav-link"
-          :class="{ active: isActive('/estructuras') && !isActive('/nueva-') }"
-        >
-          <span class="nav-icon">🏗️</span>
-          Estructuras
-        </router-link>
-        <router-link 
-          to="/acabado-tablero" 
-          class="nav-link"
-          :class="{ active: isActive('/acabado-tablero') && !isActive('/nuevo-') }"
-        >
-          <span class="nav-icon">🎨</span>
-          Acabado Tablero
-        </router-link>
-        <router-link 
-          to="/acabado-cubre-canto" 
-          class="nav-link"
-          :class="{ active: isActive('/acabado-cubre-canto') }"
-        >
-          <span class="nav-icon">🧵</span>
-          Acabado Cubre Canto
+          <span class="nav-icon">{{ item.icon }}</span>
+          {{ item.label }}
         </router-link>
       </nav>
     </div>
