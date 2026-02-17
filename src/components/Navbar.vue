@@ -11,7 +11,8 @@ const navItems = [
   { path: '/acabado-tablero', icon: '🎨', label: 'Acabado Tablero', excludeNew: true },
   { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false },
   { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true },
-  { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true }
+  { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true },
+  { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true }
 ];
 
 const isActive = (path, excludeNew) => {
