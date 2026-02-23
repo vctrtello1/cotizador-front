@@ -61,38 +61,20 @@
         <form v-else @submit.prevent="guardarComponente">
             <!-- Resumen superior -->
             <div class="stats-bar">
-                <div class="stat-card">
-                    <div class="stat-icon">🏗️</div>
+                <div v-for="e in entidades" :key="`stat-${e.key}`" class="stat-card">
+                    <div class="stat-icon">{{ e.icon }}</div>
                     <div class="stat-content">
-                        <span class="stat-label">Estructuras</span>
-                        <strong class="stat-value">{{ estructurasDelComponente.length }} <small>tipos</small></strong>
-                        <span class="stat-detail">{{ totalCantidadEstructuras }} unidades</span>
+                        <span class="stat-label">{{ e.labelCorto }}</span>
+                        <strong class="stat-value">{{ e.items.length }} <small>tipos</small></strong>
+                        <span class="stat-detail">{{ e.totalCantidad }} unidades</span>
                     </div>
-                    <span class="stat-amount">${{ formatCurrency(totalCostoEstructuras) }}</span>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🎨</div>
-                    <div class="stat-content">
-                        <span class="stat-label">Cubre Cantos</span>
-                        <strong class="stat-value">{{ acabadoCubreCantosDelComponente.length }} <small>tipos</small></strong>
-                        <span class="stat-detail">{{ totalCantidadCubreCantos }} unidades</span>
-                    </div>
-                    <span class="stat-amount">${{ formatCurrency(totalCostoCubreCantos) }}</span>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🪵</div>
-                    <div class="stat-content">
-                        <span class="stat-label">Acabado Tableros</span>
-                        <strong class="stat-value">{{ acabadoTablerosDelComponente.length }} <small>tipos</small></strong>
-                        <span class="stat-detail">{{ totalCantidadAcabadoTableros }} unidades</span>
-                    </div>
-                    <span class="stat-amount">${{ formatCurrency(totalCostoAcabadoTableros) }}</span>
+                    <span class="stat-amount">${{ formatCurrency(e.totalCosto) }}</span>
                 </div>
                 <div class="stat-card stat-card--highlight">
                     <div class="stat-icon stat-icon--total">💰</div>
                     <div class="stat-content">
                         <span class="stat-label">Costo total</span>
-                        <strong class="stat-value stat-value--total">${{ formatCurrency(totalCostoEstructuras + totalCostoCubreCantos + totalCostoAcabadoTableros) }}</strong>
+                        <strong class="stat-value stat-value--total">${{ formatCurrency(costoTotalGeneral) }}</strong>
                     </div>
                 </div>
             </div>
@@ -158,253 +140,30 @@
                 </div>
             </div>
 
-            <!-- Estructuras Asociadas -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">🏗️</span>
-                        Estructuras Asociadas
-                        <span v-if="estructurasDelComponente.length" class="section-count">{{ estructurasDelComponente.length }}</span>
-                    </h2>
-                    <button type="button" class="btn-action-header" @click="abrirSelectorEstructuras">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Agregar
-                    </button>
-                </div>
-
-                <div v-if="estructurasDelComponente.length > 0">
-                    <div class="tableros-metrics">
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ estructurasDelComponente.length }}</span>
-                            <span class="metric-label">Tipos</span>
-                        </div>
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ totalCantidadEstructuras }}</span>
-                            <span class="metric-label">Unidades</span>
-                        </div>
-                        <div class="metric-pill metric-pill--accent">
-                            <span class="metric-number">${{ formatCurrency(totalCostoEstructuras) }}</span>
-                            <span class="metric-label">Costo total</span>
-                        </div>
-                    </div>
-
-                    <TransitionGroup name="entity-list" tag="div" class="entity-list">
-                        <div
-                            v-for="item in estructurasOrdenadasParaVista"
-                            :key="`estructura-inline-${item.id}`"
-                            class="entity-row"
-                        >
-                            <div class="entity-row-left">
-                                <div class="entity-avatar">🏗️</div>
-                                <div class="entity-info">
-                                    <div class="entity-name">{{ obtenerNombreEstructura(item) }}</div>
-                                    <div class="entity-code">{{ obtenerCodigoEstructura(item) }}</div>
-                                </div>
-                            </div>
-                            <div class="entity-row-center">
-                                <div class="entity-pricing">
-                                    <span class="entity-unit-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(item)) }} <small>c/u</small></span>
-                                    <span class="entity-subtotal">${{ formatCurrency(obtenerSubtotalEstructura(item)) }}</span>
-                                </div>
-                            </div>
-                            <div class="entity-row-right">
-                                <div class="quantity-controls-compact">
-                                    <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadEstructura(item)" title="Disminuir">−</button>
-                                    <input
-                                        v-model.number="item.cantidad"
-                                        type="number" min="1" step="1" placeholder="1"
-                                        @blur="guardarCantidadEstructura(item)"
-                                        @keyup.enter="guardarCantidadEstructura(item)"
-                                        class="qty-input"
-                                    />
-                                    <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadEstructura(item)" title="Aumentar">+</button>
-                                </div>
-                                <button type="button" class="btn-delete-sm" @click="removerEstructura(item)" title="Eliminar">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </TransitionGroup>
-                </div>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-illustration">
-                        <span class="empty-icon">🏗️</span>
-                        <div class="empty-rings"></div>
-                    </div>
-                    <p class="empty-title">Sin estructuras asignadas</p>
-                    <p class="empty-desc">Asocia estructuras metálicas o de soporte al componente</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorEstructuras">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Agregar Estructura
-                    </button>
-                </div>
-            </div>
-
-            <!-- Acabado Cubre Cantos Asociados -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">🎨</span>
-                        Cubre Cantos Asociados
-                        <span v-if="acabadoCubreCantosDelComponente.length" class="section-count">{{ acabadoCubreCantosDelComponente.length }}</span>
-                    </h2>
-                    <button type="button" class="btn-action-header" @click="abrirSelectorCubreCantos">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Agregar
-                    </button>
-                </div>
-
-                <div v-if="acabadoCubreCantosDelComponente.length > 0">
-                    <div class="tableros-metrics">
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ acabadoCubreCantosDelComponente.length }}</span>
-                            <span class="metric-label">Tipos</span>
-                        </div>
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ totalCantidadCubreCantos }}</span>
-                            <span class="metric-label">Unidades</span>
-                        </div>
-                        <div class="metric-pill metric-pill--accent">
-                            <span class="metric-number">${{ formatCurrency(totalCostoCubreCantos) }}</span>
-                            <span class="metric-label">Costo total</span>
-                        </div>
-                    </div>
-
-                    <TransitionGroup name="entity-list" tag="div" class="entity-list">
-                        <div
-                            v-for="item in cubreCantosOrdenadosParaVista"
-                            :key="`cc-inline-${item.id}`"
-                            class="entity-row"
-                        >
-                            <div class="entity-row-left">
-                                <div class="entity-avatar">🎨</div>
-                                <div class="entity-info">
-                                    <div class="entity-name">{{ obtenerNombreCubreCanto(item) }}</div>
-                                    <div class="entity-code">{{ obtenerCodigoCubreCanto(item) }}</div>
-                                </div>
-                            </div>
-                            <div class="entity-row-center">
-                                <div class="entity-pricing">
-                                    <span class="entity-unit-price">${{ formatCurrency(obtenerCostoUnitarioCubreCanto(item)) }} <small>c/u</small></span>
-                                    <span class="entity-subtotal">${{ formatCurrency(obtenerSubtotalCubreCanto(item)) }}</span>
-                                </div>
-                            </div>
-                            <div class="entity-row-right">
-                                <div class="quantity-controls-compact">
-                                    <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadCubreCanto(item)" title="Disminuir">−</button>
-                                    <input
-                                        v-model.number="item.cantidad"
-                                        type="number" min="1" step="1" placeholder="1"
-                                        @blur="guardarCantidadCubreCanto(item)"
-                                        @keyup.enter="guardarCantidadCubreCanto(item)"
-                                        class="qty-input"
-                                    />
-                                    <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadCubreCanto(item)" title="Aumentar">+</button>
-                                </div>
-                                <button type="button" class="btn-delete-sm" @click="removerCubreCanto(item)" title="Eliminar">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </TransitionGroup>
-                </div>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-illustration">
-                        <span class="empty-icon">🎨</span>
-                        <div class="empty-rings"></div>
-                    </div>
-                    <p class="empty-title">Sin cubre cantos asignados</p>
-                    <p class="empty-desc">Agrega acabados de cubre cantos para los bordes del componente</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorCubreCantos">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Agregar Cubre Canto
-                    </button>
-                </div>
-            </div>
-
-            <!-- Acabado Tableros Asociados -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">🪵</span>
-                        Acabado Tableros Asociados
-                        <span v-if="acabadoTablerosDelComponente.length" class="section-count">{{ acabadoTablerosDelComponente.length }}</span>
-                    </h2>
-                    <button type="button" class="btn-action-header" @click="abrirSelectorAcabadoTableros">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Agregar
-                    </button>
-                </div>
-
-                <div v-if="acabadoTablerosDelComponente.length > 0">
-                    <div class="tableros-metrics">
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ acabadoTablerosDelComponente.length }}</span>
-                            <span class="metric-label">Tipos</span>
-                        </div>
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ totalCantidadAcabadoTableros }}</span>
-                            <span class="metric-label">Unidades</span>
-                        </div>
-                        <div class="metric-pill metric-pill--accent">
-                            <span class="metric-number">${{ formatCurrency(totalCostoAcabadoTableros) }}</span>
-                            <span class="metric-label">Costo total</span>
-                        </div>
-                    </div>
-
-                    <TransitionGroup name="entity-list" tag="div" class="entity-list">
-                        <div
-                            v-for="item in acabadoTablerosOrdenadosParaVista"
-                            :key="`at-inline-${item.id}`"
-                            class="entity-row"
-                        >
-                            <div class="entity-row-left">
-                                <div class="entity-avatar">🪵</div>
-                                <div class="entity-info">
-                                    <div class="entity-name">{{ obtenerNombreAcabadoTablero(item) }}</div>
-                                    <div class="entity-code">{{ obtenerCodigoAcabadoTablero(item) }}</div>
-                                </div>
-                            </div>
-                            <div class="entity-row-center">
-                                <div class="entity-pricing">
-                                    <span class="entity-unit-price">${{ formatCurrency(obtenerCostoUnitarioAcabadoTablero(item)) }} <small>c/u</small></span>
-                                    <span class="entity-subtotal">${{ formatCurrency(obtenerSubtotalAcabadoTablero(item)) }}</span>
-                                </div>
-                            </div>
-                            <div class="entity-row-right">
-                                <div class="quantity-controls-compact">
-                                    <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadAcabadoTablero(item)" title="Disminuir">−</button>
-                                    <input
-                                        v-model.number="item.cantidad"
-                                        type="number" min="1" step="1" placeholder="1"
-                                        @blur="guardarCantidadAcabadoTablero(item)"
-                                        @keyup.enter="guardarCantidadAcabadoTablero(item)"
-                                        class="qty-input"
-                                    />
-                                    <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadAcabadoTablero(item)" title="Aumentar">+</button>
-                                </div>
-                                <button type="button" class="btn-delete-sm" @click="removerAcabadoTablero(item)" title="Eliminar">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </TransitionGroup>
-                </div>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-illustration">
-                        <span class="empty-icon">🪵</span>
-                        <div class="empty-rings"></div>
-                    </div>
-                    <p class="empty-title">Sin acabado tableros asignados</p>
-                    <p class="empty-desc">Agrega acabados de tablero para las superficies del componente</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorAcabadoTableros">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Agregar Acabado Tablero
-                    </button>
-                </div>
+            <!-- Secciones de entidades -->
+            <div v-for="e in entidades" :key="e.key" class="info-card">
+                <EntitySection
+                    :icon="e.icon"
+                    :titulo="e.titulo"
+                    :key-prefix="e.keyPrefix"
+                    :items="e.items"
+                    :items-ordenados="e.itemsOrdenados"
+                    :total-cantidad="e.totalCantidad"
+                    :total-costo="e.totalCosto"
+                    :empty-title="e.emptyTitle"
+                    :empty-desc="e.emptyDesc"
+                    :add-label="e.addLabel"
+                    :format-currency="formatCurrency"
+                    :obtener-nombre="e.obtenerNombre"
+                    :obtener-codigo="e.obtenerCodigo"
+                    :obtener-costo-unitario="e.obtenerCostoUnitario"
+                    :obtener-subtotal="e.obtenerSubtotal"
+                    @abrir-selector="e.abrirSelector"
+                    @incrementar="e.incrementar"
+                    @decrementar="e.decrementar"
+                    @guardar-cantidad="e.guardarCantidad"
+                    @remover="e.remover"
+                />
             </div>
 
             <!-- Acciones -->
@@ -425,49 +184,21 @@
             </div>
         </form>
 
-        <!-- Selector de Estructuras -->
+        <!-- Selectores de entidades -->
         <EntitySelectorModal
-            :visible="mostrarSelectorEstructuras"
-            icon="🏗️"
-            titulo="Seleccionar Estructuras"
-            label-singular="Estructura"
-            :busqueda="busquedaEstructura"
-            :items-filtrados="estructurasFiltradas"
+            v-for="e in entidades"
+            :key="`modal-${e.key}`"
+            :visible="e.selectorVisible"
+            :icon="e.icon"
+            :titulo="e.tituloModal"
+            :label-singular="e.labelSingular"
+            :busqueda="e.busqueda"
+            :items-filtrados="e.itemsFiltrados"
             :format-currency="formatCurrency"
-            :obtener-precio="(item) => item.costo_unitario || item.costo || item.precio || 0"
-            @close="mostrarSelectorEstructuras = false"
-            @seleccionar="agregarEstructura"
-            @update:busqueda="busquedaEstructura = $event"
-        />
-
-        <!-- Selector de Cubre Cantos -->
-        <EntitySelectorModal
-            :visible="mostrarSelectorCubreCantos"
-            icon="🎨"
-            titulo="Seleccionar Cubre Cantos"
-            label-singular="Cubre Canto"
-            :busqueda="busquedaCubreCanto"
-            :items-filtrados="cubreCantosFiltrados"
-            :format-currency="formatCurrency"
-            :obtener-precio="(item) => item.costo_unitario || item.costo || item.precio || 0"
-            @close="mostrarSelectorCubreCantos = false"
-            @seleccionar="agregarCubreCanto"
-            @update:busqueda="busquedaCubreCanto = $event"
-        />
-
-        <!-- Selector de Acabado Tableros -->
-        <EntitySelectorModal
-            :visible="mostrarSelectorAcabadoTableros"
-            icon="🪵"
-            titulo="Seleccionar Acabado Tableros"
-            label-singular="Acabado Tablero"
-            :busqueda="busquedaAcabadoTablero"
-            :items-filtrados="acabadoTablerosFiltrados"
-            :format-currency="formatCurrency"
-            :obtener-precio="(item) => item.costo_unitario || item.costo || item.precio || 0"
-            @close="mostrarSelectorAcabadoTableros = false"
-            @seleccionar="agregarAcabadoTablero"
-            @update:busqueda="busquedaAcabadoTablero = $event"
+            :obtener-precio="obtenerPrecio"
+            @close="e.cerrarSelector"
+            @seleccionar="e.agregar"
+            @update:busqueda="e.actualizarBusqueda($event)"
         />
     </div>
 </template>
@@ -485,6 +216,7 @@ import { useAcabadoTableroPorComponenteStore } from '@/stores/acabado-tablero-po
 import { useAcabadoTableroStore } from '@/stores/acabado-tablero';
 import { useEntidadPorComponente } from '@/composables/useEntidadPorComponente';
 import EntitySelectorModal from '@/components/EntitySelectorModal.vue';
+import EntitySection from '@/components/EntitySection.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -708,21 +440,21 @@ const formatCurrency = (value) => {
     return parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-const abrirSelectorEstructuras = async () => {
-    await storeEstructuras.fetchEstructuras();
-    estructurasDisponibles.value = storeEstructuras.estructuras || [];
-    mostrarSelectorEstructuras.value = true;
+// === Factory helpers para DRY ===
+const crearAbrirSelector = (catalogStore, fetchMethod, catalogProp, disponiblesRef, mostrarRef) => async () => {
+    await catalogStore[fetchMethod]();
+    disponiblesRef.value = catalogStore[catalogProp] || [];
+    mostrarRef.value = true;
 };
-const abrirSelectorCubreCantos = async () => {
-    await storeAcabadoCubreCantos.fetchAcabadoCubreCantos();
-    cubreCantosDisponibles.value = storeAcabadoCubreCantos.acabadoCubreCantos || [];
-    mostrarSelectorCubreCantos.value = true;
-};
-const abrirSelectorAcabadoTableros = async () => {
-    await storeAcabadoTableros.fetchAcabadoTableros();
-    acabadoTablerosDisponibles.value = storeAcabadoTableros.acabadoTableros || [];
-    mostrarSelectorAcabadoTableros.value = true;
-};
+
+const crearFiltro = (itemsRef, obtenerId, disponiblesRef, busquedaRef) => computed(() => {
+    const agregados = itemsRef.value.map(i => obtenerId(i));
+    return filtrarCatalogo(disponiblesRef.value, busquedaRef.value, agregados);
+});
+
+const abrirSelectorEstructuras = crearAbrirSelector(storeEstructuras, 'fetchEstructuras', 'estructuras', estructurasDisponibles, mostrarSelectorEstructuras);
+const abrirSelectorCubreCantos = crearAbrirSelector(storeAcabadoCubreCantos, 'fetchAcabadoCubreCantos', 'acabadoCubreCantos', cubreCantosDisponibles, mostrarSelectorCubreCantos);
+const abrirSelectorAcabadoTableros = crearAbrirSelector(storeAcabadoTableros, 'fetchAcabadoTableros', 'acabadoTableros', acabadoTablerosDisponibles, mostrarSelectorAcabadoTableros);
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
@@ -742,21 +474,113 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
     );
 };
 
-// Computed properties para filtros
-const estructurasFiltradas = computed(() => {
-    const estructurasAgregadas = estructurasDelComponente.value.map(e => obtenerIdEstructuraRelacion(e));
-    return filtrarCatalogo(estructurasDisponibles.value, busquedaEstructuraDebounced.value, estructurasAgregadas);
-});
+// Filtros de catálogo (usando factory)
+const estructurasFiltradas = crearFiltro(estructurasDelComponente, obtenerIdEstructuraRelacion, estructurasDisponibles, busquedaEstructuraDebounced);
+const cubreCantosFiltrados = crearFiltro(acabadoCubreCantosDelComponente, obtenerIdCubreCantoRelacion, cubreCantosDisponibles, busquedaCubreCantoDebounced);
+const acabadoTablerosFiltrados = crearFiltro(acabadoTablerosDelComponente, obtenerIdAcabadoTableroRelacion, acabadoTablerosDisponibles, busquedaAcabadoTableroDebounced);
 
-const cubreCantosFiltrados = computed(() => {
-    const cubreCantosAgregados = acabadoCubreCantosDelComponente.value.map(c => obtenerIdCubreCantoRelacion(c));
-    return filtrarCatalogo(cubreCantosDisponibles.value, busquedaCubreCantoDebounced.value, cubreCantosAgregados);
-});
+// === Configuración data-driven de entidades ===
+const obtenerPrecio = (item) => item.costo_unitario || item.costo || item.precio || 0;
 
-const acabadoTablerosFiltrados = computed(() => {
-    const tablerosAgregados = acabadoTablerosDelComponente.value.map(t => obtenerIdAcabadoTableroRelacion(t));
-    return filtrarCatalogo(acabadoTablerosDisponibles.value, busquedaAcabadoTableroDebounced.value, tablerosAgregados);
-});
+const entidades = computed(() => [
+    {
+        key: 'estructuras',
+        icon: '🏗️',
+        titulo: 'Estructuras Asociadas',
+        tituloModal: 'Seleccionar Estructuras',
+        labelSingular: 'Estructura',
+        labelCorto: 'Estructuras',
+        emptyTitle: 'Sin estructuras asignadas',
+        emptyDesc: 'Asocia estructuras metálicas o de soporte al componente',
+        addLabel: 'Agregar Estructura',
+        keyPrefix: 'estructura-inline',
+        items: estructurasDelComponente.value,
+        itemsOrdenados: estructurasOrdenadasParaVista.value,
+        totalCantidad: totalCantidadEstructuras.value,
+        totalCosto: totalCostoEstructuras.value,
+        obtenerNombre: obtenerNombreEstructura,
+        obtenerCodigo: obtenerCodigoEstructura,
+        obtenerCostoUnitario: obtenerCostoUnitarioEstructura,
+        obtenerSubtotal: obtenerSubtotalEstructura,
+        incrementar: incrementarCantidadEstructura,
+        decrementar: decrementarCantidadEstructura,
+        guardarCantidad: guardarCantidadEstructura,
+        remover: removerEstructura,
+        agregar: agregarEstructura,
+        abrirSelector: abrirSelectorEstructuras,
+        selectorVisible: mostrarSelectorEstructuras.value,
+        busqueda: busquedaEstructura.value,
+        itemsFiltrados: estructurasFiltradas.value,
+        cerrarSelector: () => { mostrarSelectorEstructuras.value = false; },
+        actualizarBusqueda: (val) => { busquedaEstructura.value = val; },
+    },
+    {
+        key: 'cubreCantos',
+        icon: '🎨',
+        titulo: 'Cubre Cantos Asociados',
+        tituloModal: 'Seleccionar Cubre Cantos',
+        labelSingular: 'Cubre Canto',
+        labelCorto: 'Cubre Cantos',
+        emptyTitle: 'Sin cubre cantos asignados',
+        emptyDesc: 'Agrega acabados de cubre cantos para los bordes del componente',
+        addLabel: 'Agregar Cubre Canto',
+        keyPrefix: 'cc-inline',
+        items: acabadoCubreCantosDelComponente.value,
+        itemsOrdenados: cubreCantosOrdenadosParaVista.value,
+        totalCantidad: totalCantidadCubreCantos.value,
+        totalCosto: totalCostoCubreCantos.value,
+        obtenerNombre: obtenerNombreCubreCanto,
+        obtenerCodigo: obtenerCodigoCubreCanto,
+        obtenerCostoUnitario: obtenerCostoUnitarioCubreCanto,
+        obtenerSubtotal: obtenerSubtotalCubreCanto,
+        incrementar: incrementarCantidadCubreCanto,
+        decrementar: decrementarCantidadCubreCanto,
+        guardarCantidad: guardarCantidadCubreCanto,
+        remover: removerCubreCanto,
+        agregar: agregarCubreCanto,
+        abrirSelector: abrirSelectorCubreCantos,
+        selectorVisible: mostrarSelectorCubreCantos.value,
+        busqueda: busquedaCubreCanto.value,
+        itemsFiltrados: cubreCantosFiltrados.value,
+        cerrarSelector: () => { mostrarSelectorCubreCantos.value = false; },
+        actualizarBusqueda: (val) => { busquedaCubreCanto.value = val; },
+    },
+    {
+        key: 'acabadoTableros',
+        icon: '🪵',
+        titulo: 'Acabado Tableros Asociados',
+        tituloModal: 'Seleccionar Acabado Tableros',
+        labelSingular: 'Acabado Tablero',
+        labelCorto: 'Acabado Tableros',
+        emptyTitle: 'Sin acabado tableros asignados',
+        emptyDesc: 'Agrega acabados de tablero para las superficies del componente',
+        addLabel: 'Agregar Acabado Tablero',
+        keyPrefix: 'at-inline',
+        items: acabadoTablerosDelComponente.value,
+        itemsOrdenados: acabadoTablerosOrdenadosParaVista.value,
+        totalCantidad: totalCantidadAcabadoTableros.value,
+        totalCosto: totalCostoAcabadoTableros.value,
+        obtenerNombre: obtenerNombreAcabadoTablero,
+        obtenerCodigo: obtenerCodigoAcabadoTablero,
+        obtenerCostoUnitario: obtenerCostoUnitarioAcabadoTablero,
+        obtenerSubtotal: obtenerSubtotalAcabadoTablero,
+        incrementar: incrementarCantidadAcabadoTablero,
+        decrementar: decrementarCantidadAcabadoTablero,
+        guardarCantidad: guardarCantidadAcabadoTablero,
+        remover: removerAcabadoTablero,
+        agregar: agregarAcabadoTablero,
+        abrirSelector: abrirSelectorAcabadoTableros,
+        selectorVisible: mostrarSelectorAcabadoTableros.value,
+        busqueda: busquedaAcabadoTablero.value,
+        itemsFiltrados: acabadoTablerosFiltrados.value,
+        cerrarSelector: () => { mostrarSelectorAcabadoTableros.value = false; },
+        actualizarBusqueda: (val) => { busquedaAcabadoTablero.value = val; },
+    },
+]);
+
+const costoTotalGeneral = computed(() =>
+    entidades.value.reduce((sum, e) => sum + e.totalCosto, 0)
+);
 
 
 // Validar formulario
@@ -1355,43 +1179,6 @@ onMounted(async () => {
     font-weight: 700;
 }
 
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-    border-bottom: 2px solid #f5f1ed;
-}
-
-.section-header .section-title {
-    margin: 0;
-    padding: 0;
-    border: none;
-}
-
-.btn-action-header {
-    padding: 8px 16px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.25s;
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.btn-action-header:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(212, 165, 116, 0.35);
-}
-
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1497,333 +1284,6 @@ onMounted(async () => {
     color: #dc2626;
     font-size: 12px;
     font-weight: 500;
-}
-
-/* ========== Entity Sections ========== */
-.tableros-metrics {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-
-.metric-pill {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: #f7f3ef;
-    border-radius: 20px;
-    border: 1px solid #ede7e0;
-}
-
-.metric-pill--accent {
-    background: #fffbf5;
-    border-color: #e8d5c0;
-}
-
-.metric-number {
-    font-size: 13px;
-    font-weight: 800;
-    color: #5a4037;
-}
-
-.metric-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: #a89480;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-/* Entity List & Transitions */
-.entity-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    position: relative;
-}
-
-.entity-list-enter-active {
-    transition: all 0.35s ease;
-}
-.entity-list-leave-active {
-    transition: all 0.25s ease;
-}
-.entity-list-enter-from {
-    opacity: 0;
-    transform: translateX(-12px);
-}
-.entity-list-leave-to {
-    opacity: 0;
-    transform: translateX(16px);
-}
-.entity-list-move {
-    transition: transform 0.3s ease;
-}
-
-/* Entity Row Card */
-.entity-row {
-    display: flex;
-    align-items: center;
-    padding: 12px 14px;
-    background: #fefefe;
-    border: 1px solid #eee9e3;
-    border-radius: 10px;
-    gap: 14px;
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.entity-row:hover {
-    border-color: #ddd4c8;
-    background: #fffdf9;
-    box-shadow: 0 2px 8px rgba(90, 64, 55, 0.06);
-}
-
-.entity-row-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    min-width: 0;
-}
-
-.entity-avatar {
-    width: 36px;
-    height: 36px;
-    background: #f7f3ef;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    flex-shrink: 0;
-}
-
-.entity-info {
-    min-width: 0;
-}
-
-.entity-name {
-    font-weight: 600;
-    color: #2c2c2c;
-    font-size: 13.5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.3;
-}
-
-.entity-code {
-    font-size: 11px;
-    color: #a89480;
-    margin-top: 1px;
-    font-weight: 500;
-}
-
-.entity-row-center {
-    flex-shrink: 0;
-}
-
-.entity-pricing {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 1px;
-}
-
-.entity-unit-price {
-    font-size: 11px;
-    color: #a89480;
-    font-weight: 500;
-}
-
-.entity-unit-price small {
-    font-size: 10px;
-}
-
-.entity-subtotal {
-    font-size: 14px;
-    font-weight: 800;
-    color: #2e7d32;
-}
-
-.entity-row-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.quantity-controls-compact {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    border: 1.5px solid #e8e3dd;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #faf8f6;
-}
-
-.btn-qty {
-    width: 30px;
-    height: 32px;
-    border: none;
-    background: transparent;
-    color: #5a4037;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-}
-
-.btn-qty:hover {
-    background: #eee9e3;
-}
-
-.btn-qty:active {
-    transform: scale(0.92);
-}
-
-.btn-qty--minus:hover {
-    background: #fef2f2;
-    color: #dc2626;
-}
-
-.btn-qty--plus:hover {
-    background: #f0fdf4;
-    color: #16a34a;
-}
-
-.qty-input {
-    width: 42px;
-    height: 32px;
-    border: none;
-    border-left: 1px solid #e8e3dd;
-    border-right: 1px solid #e8e3dd;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 700;
-    color: #5a4037;
-    background: white;
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
-
-.qty-input::-webkit-outer-spin-button,
-.qty-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.qty-input:focus {
-    outline: none;
-    background: #fffdf9;
-}
-
-.btn-delete-sm {
-    width: 32px;
-    height: 32px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    color: #bbb;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-}
-
-.btn-delete-sm:hover {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
-}
-
-.btn-delete-sm:active {
-    transform: scale(0.9);
-}
-
-/* ========== Empty State ========== */
-.empty-state-inline {
-    text-align: center;
-    padding: 36px 20px;
-}
-
-.empty-illustration {
-    position: relative;
-    display: inline-block;
-    margin-bottom: 12px;
-}
-
-.empty-illustration .empty-icon {
-    font-size: 36px;
-    position: relative;
-    z-index: 1;
-}
-
-.empty-rings {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: 2px dashed #e8e3dd;
-    animation: ring-rotate 12s linear infinite;
-}
-
-@keyframes ring-rotate {
-    to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-.empty-title {
-    margin: 0 0 4px;
-    font-size: 14px;
-    color: #5a4037;
-    font-weight: 600;
-}
-
-.empty-desc {
-    margin: 0 0 18px;
-    font-size: 13px;
-    color: #a89480;
-    font-weight: 400;
-    max-width: 280px;
-    margin-left: auto;
-    margin-right: auto;
-    line-height: 1.5;
-}
-
-.btn-empty-action {
-    padding: 10px 22px;
-    background: white;
-    color: #8b7355;
-    border: 1.5px dashed #d4a574;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.btn-empty-action:hover {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border-color: transparent;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(212, 165, 116, 0.3);
 }
 
 /* ========== Form Actions ========== */
@@ -1977,33 +1437,6 @@ onMounted(async () => {
         grid-template-columns: 1fr;
     }
 
-    .entity-row {
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 12px;
-    }
-
-    .entity-row-left {
-        flex: 1 1 100%;
-    }
-
-    .entity-row-center {
-        flex: 1;
-    }
-
-    .entity-row-right {
-        flex: 0 0 auto;
-    }
-
-    .tableros-metrics {
-        flex-direction: column;
-    }
-
-    .section-header {
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
     .form-actions {
         flex-direction: column-reverse;
     }
@@ -2022,14 +1455,6 @@ onMounted(async () => {
 @media (max-width: 480px) {
     .stats-bar {
         grid-template-columns: 1fr;
-    }
-
-    .entity-pricing {
-        align-items: flex-start;
-    }
-
-    .quantity-controls-compact {
-        order: 1;
     }
 }
 </style>
