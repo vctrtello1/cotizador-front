@@ -193,26 +193,71 @@
             </div>
 
             <!-- Estructuras Asociadas -->
-            <EntityCardList
-                icon="🏗️"
-                titulo="Estructuras Asociadas"
-                label-singular="estructura"
-                key-prefix="estructura"
-                :items="estructurasDelComponente"
-                :items-ordenados="estructurasOrdenadasParaVista"
-                :total-cantidad="totalCantidadEstructuras"
-                :total-costo="totalCostoEstructuras"
-                :obtener-nombre="obtenerNombreEstructura"
-                :obtener-codigo="obtenerCodigoEstructura"
-                :obtener-costo-unitario="obtenerCostoUnitarioEstructura"
-                :obtener-subtotal="obtenerSubtotalEstructura"
-                :format-currency="formatCurrency"
-                @gestionar="abrirSelectorEstructuras"
-                @incrementar="incrementarCantidadEstructura"
-                @decrementar="decrementarCantidadEstructura"
-                @guardar-cantidad="guardarCantidadEstructura"
-                @remover="removerEstructura"
-            />
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">🏗️ Estructuras Asociadas</h2>
+                    <button type="button" class="btn-action-header" @click="abrirSelectorEstructuras">
+                        + Gestionar
+                    </button>
+                </div>
+
+                <div v-if="estructurasDelComponente.length > 0">
+                    <div class="tableros-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ estructurasDelComponente.length }}</span>
+                            <span class="metric-label">Tipos</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ totalCantidadEstructuras }}</span>
+                            <span class="metric-label">Unidades</span>
+                        </div>
+                        <div class="metric-pill metric-pill--accent">
+                            <span class="metric-number">${{ formatCurrency(totalCostoEstructuras) }}</span>
+                            <span class="metric-label">Costo total</span>
+                        </div>
+                    </div>
+
+                    <div
+                        v-for="item in estructurasOrdenadasParaVista"
+                        :key="`estructura-inline-${item.id}`"
+                        class="tablero-card"
+                    >
+                        <div class="tablero-card-left">
+                            <div class="tablero-avatar">🏗️</div>
+                            <div class="tablero-info">
+                                <div class="tablero-name">{{ obtenerNombreEstructura(item) }}</div>
+                                <div class="tablero-code">{{ obtenerCodigoEstructura(item) }}</div>
+                            </div>
+                        </div>
+                        <div class="tablero-card-center">
+                            <div class="tablero-pricing">
+                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(item)) }} <small>c/u</small></span>
+                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalEstructura(item)) }}</span>
+                            </div>
+                        </div>
+                        <div class="tablero-card-right">
+                            <div class="quantity-controls-compact">
+                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadEstructura(item)" title="Disminuir">−</button>
+                                <input
+                                    v-model.number="item.cantidad"
+                                    type="number" min="1" step="1" placeholder="1"
+                                    @blur="guardarCantidadEstructura(item)"
+                                    @keyup.enter="guardarCantidadEstructura(item)"
+                                    class="qty-input"
+                                />
+                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadEstructura(item)" title="Aumentar">+</button>
+                            </div>
+                            <button type="button" class="btn-delete-sm" @click="removerEstructura(item)" title="Eliminar">🗑</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-icon">🏗️</div>
+                    <p>No hay estructuras asignadas</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorEstructuras">+ Agregar Estructura</button>
+                </div>
+            </div>
 
             <!-- Acabado Cubre Cantos Asociados -->
             <div class="info-card">
@@ -344,34 +389,6 @@
                 </div>
             </div>
 
-            <!-- Acabado del Componente -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">🎨 Acabado del Componente</h2>
-                    <button type="button" class="btn-action-header" @click="abrirSelectorAcabados">
-                        {{ formData.acabado ? '🔄 Cambiar' : '+ Seleccionar' }}
-                    </button>
-                </div>
-
-                <div v-if="formData.acabado" class="acabado-card-inline">
-                    <div class="acabado-card-icon">🎨</div>
-                    <div class="acabado-card-info">
-                        <div class="acabado-card-name">{{ formData.acabado.nombre }}</div>
-                        <div class="acabado-card-desc">{{ formData.acabado.descripcion || 'Sin descripción' }}</div>
-                    </div>
-                    <div class="acabado-card-price">
-                        <span class="acabado-price-label">Costo</span>
-                        <span class="acabado-price-value">${{ formatCurrency(formData.acabado.costo) }}</span>
-                    </div>
-                </div>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-icon">🎨</div>
-                    <p>No hay acabado asignado</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorAcabados">+ Seleccionar Acabado</button>
-                </div>
-            </div>
-
             <!-- Acciones -->
             <div class="form-actions form-actions--sticky">
                 <button type="button" class="btn-secondary" @click="$router.back()">
@@ -452,42 +469,6 @@
             </div>
         </div>
 
-        <!-- Modal Acabado -->
-        <div v-if="mostrarModalAcabado" class="modal-overlay" @click.self="mostrarModalAcabado = false">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">🎨 Editar Acabado</h3>
-                </div>
-                <div class="modal-body">
-                    <div v-if="formData.acabado" class="selected-items">
-                        <div class="selected-item-full">
-                            <div class="item-info-full">
-                                <div class="item-name">{{ formData.acabado.nombre }}</div>
-                                <div class="item-code">{{ formData.acabado.descripcion }}</div>
-                                <div class="info-row">
-                                    <span class="info-label">Costo:</span>
-                                    <span class="info-value">${{ formatCurrency(formData.acabado.costo) }}</span>
-                                </div>
-                            </div>
-                            <div class="button-group-vertical">
-                                <button class="btn-change-item" @click="abrirSelectorAcabados" title="Cambiar">🔄 Cambiar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="add-section">
-                        <button 
-                            type="button" 
-                            class="btn-add-material"
-                            @click="abrirSelectorAcabados()"
-                        >+ Agregar Acabado</button>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalAcabado = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Modal Selector de Materiales -->
         <div v-if="mostrarSelectorMateriales" class="modal-overlay" @click.self="mostrarSelectorMateriales = false">
             <div class="modal-content modal-content-large">
@@ -529,53 +510,6 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn-secondary" @click="mostrarSelectorMateriales = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Selector de Acabados -->
-        <div v-if="mostrarSelectorAcabados" class="modal-overlay" @click.self="mostrarSelectorAcabados = false">
-            <div class="modal-content modal-content-large">
-                <div class="modal-header">
-                    <h3 class="modal-title">🎨 Seleccionar Acabados</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="search-section">
-                        <input 
-                            v-model="busquedaAcabado"
-                            type="text"
-                            class="search-input"
-                            placeholder="🔍 Buscar acabado..."
-                        />
-                    </div>
-                    <div class="materiales-grid">
-                        <div 
-                            v-for="acabado in acabadosFiltrados"
-                            :key="acabado.id"
-                            class="material-card"
-                            :class="{ 'selected': formData.acabado?.id === acabado.id }"
-                            @click="agregarAcabado(acabado)"
-                        >
-                            <div class="card-header">
-                                <div class="card-name">{{ acabado.nombre }}</div>
-                                <div class="card-badge">{{ acabado.codigo }}</div>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-label">Costo</p>
-                                <p class="card-price">${{ formatCurrency(acabado.costo) }}</p>
-                            </div>
-                            <div class="card-footer">
-                                <button v-if="formData.acabado?.id === acabado.id" class="btn-select btn-select-active" disabled>✓ Seleccionado</button>
-                                <button v-else class="btn-select">+ Seleccionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="acabadosFiltrados.length === 0" class="empty-list">
-                        <p>📭 No hay acabados disponibles</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarSelectorAcabados = false">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -661,7 +595,6 @@ const formData = ref({
     descripcion: '',
     costo_unitario: '',
     materiales: [],
-    acabado: null,
 });
 
 const errors = ref({});
@@ -689,19 +622,13 @@ const cerrarMensaje = () => {
 };
 const materialesDelComponente = ref([]);
 
-// Modales (materiales, acabado)
+// Modales (materiales)
 const mostrarModalMateriales = ref(false);
-const mostrarModalAcabado = ref(false);
 const mostrarSelectorMateriales = ref(false);
 
 // Datos para seleccionar materiales
 const materialesDisponibles = ref([]);
 const busquedaMaterial = ref('');
-
-// Datos para seleccionar acabados
-const acabadosDisponibles = ref([]);
-const busquedaAcabado = ref('');
-const mostrarSelectorAcabados = ref(false);
 
 const createDebouncedRef = (sourceRef, delay = 180) => {
     const debounced = ref(sourceRef.value);
@@ -715,7 +642,6 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
 };
 
 const busquedaMaterialDebounced = createDebouncedRef(busquedaMaterial);
-const busquedaAcabadoDebounced = createDebouncedRef(busquedaAcabado);
 
 // ===== Catálogos disponibles para entidades =====
 const tablerosDisponibles = ref([]);
@@ -848,7 +774,6 @@ const cargarComponente = async () => {
             descripcion: data.descripcion || '',
             costo_unitario: data.costo_unitario || data.costo_total || '',
             materiales: data.materiales || [],
-            acabado: data.acabado_id || null,
         };
         
         // Cargar catálogos relacionados en paralelo
@@ -1084,48 +1009,6 @@ const agregarMaterial = async (material) => {
     }
 };
 
-// Cargar acabados disponibles
-const cargarAcabados = async () => {
-    try {
-        const response = await api.get('/acabados');
-        const data = response.data.data || response.data || [];
-        acabadosDisponibles.value = Array.isArray(data) ? data : [];
-    } catch (err) {
-        console.error('Error al cargar acabados:', err);
-        acabadosDisponibles.value = [];
-    }
-};
-
-// Abrir selector de acabados
-const abrirSelectorAcabados = async () => {
-    await cargarAcabados();
-    mostrarSelectorAcabados.value = true;
-};
-
-// Agregar acabado seleccionado
-const agregarAcabado = (acabado) => {
-    if (acabado) {
-        formData.value.acabado = {
-            ...acabado
-        };
-        mostrarSelectorAcabados.value = false;
-        busquedaAcabado.value = '';
-    }
-};
-
-// Filtrar acabados disponibles
-const acabadosFiltrados = computed(() => {
-    if (busquedaAcabadoDebounced.value.trim()) {
-        const busqueda = busquedaAcabadoDebounced.value.toLowerCase();
-        return acabadosDisponibles.value.filter(a => 
-            a.nombre.toLowerCase().includes(busqueda) ||
-            a.codigo.toLowerCase().includes(busqueda)
-        );
-    }
-    
-    return acabadosDisponibles.value;
-});
-
 // Validar formulario
 const validar = () => {
     errors.value = {};
@@ -1155,11 +1038,6 @@ const guardarComponente = async () => {
             descripcion: formData.value.descripcion.trim(),
             costo_unitario: parseFloat(formData.value.costo_unitario),
         };
-        
-        // Agregar acabado_id si existe
-        if (formData.value.acabado && formData.value.acabado.id) {
-            datos.acabado_id = formData.value.acabado.id;
-        }
         
         await api.put(`/componentes/${componenteId.value || route.params.id}`, datos);
         router.push('/componentes');
@@ -1939,77 +1817,6 @@ onMounted(async () => {
     padding: 20px 0 8px;
     z-index: 10;
     margin-top: 8px;
-}
-
-/* ========== Acabado Card Inline ========== */
-.acabado-card-inline {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 18px;
-    background: linear-gradient(135deg, #faf7f2 0%, #fff9f0 100%);
-    border: 1px solid #e8e3dd;
-    border-radius: 10px;
-    transition: all 0.3s;
-}
-
-.acabado-card-inline:hover {
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.12);
-}
-
-.acabado-card-icon {
-    font-size: 28px;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    border-radius: 10px;
-    flex-shrink: 0;
-}
-
-.acabado-card-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.acabado-card-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #5a4037;
-    margin-bottom: 2px;
-}
-
-.acabado-card-desc {
-    font-size: 12px;
-    color: #8b7355;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.acabado-card-price {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-    flex-shrink: 0;
-}
-
-.acabado-price-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 700;
-    color: #8b7355;
-}
-
-.acabado-price-value {
-    font-size: 16px;
-    font-weight: 800;
-    color: #d4a574;
 }
 
 /* ========== Section Header ========== */
@@ -3129,16 +2936,6 @@ onMounted(async () => {
 
     .tableros-metrics {
         flex-direction: column;
-    }
-
-    .acabado-card-inline {
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .acabado-card-price {
-        align-items: flex-start;
-        flex-basis: 100%;
     }
 
     .section-header {
