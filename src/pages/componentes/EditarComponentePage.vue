@@ -11,8 +11,10 @@
                     <p class="header-subtitle">{{ formData.nombre || 'Cargando...' }}</p>
                 </div>
             </div>
-            <div class="header-badges">
+            <div class="header-right">
                 <span class="badge badge-code">{{ formData.codigo || '---' }}</span>
+                <span v-if="guardando" class="badge badge-saving">⏳ Guardando...</span>
+                <span v-else class="badge badge-status">✓ Listo</span>
             </div>
         </div>
 
@@ -46,13 +48,6 @@
             <!-- Resumen superior -->
             <div class="stats-bar">
                 <div class="stat-card">
-                    <div class="stat-icon">📦</div>
-                    <div class="stat-content">
-                        <span class="stat-label">Componente</span>
-                        <strong class="stat-value">{{ formData.codigo || 'Sin código' }}</strong>
-                    </div>
-                </div>
-                <div class="stat-card">
                     <div class="stat-icon">🪵</div>
                     <div class="stat-content">
                         <span class="stat-label">Tableros</span>
@@ -71,6 +66,13 @@
                     <div class="stat-content">
                         <span class="stat-label">Cubre Cantos</span>
                         <strong class="stat-value">{{ acabadoCubreCantosDelComponente.length }} <small>tipos</small> · {{ totalCantidadCubreCantos }} <small>u</small></strong>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-content">
+                        <span class="stat-label">Materiales</span>
+                        <strong class="stat-value">{{ materialesDelComponente.length }} <small>tipos</small></strong>
                     </div>
                 </div>
                 <div class="stat-card stat-card--highlight">
@@ -124,26 +126,71 @@
             </div>
 
             <!-- Tableros Asociados -->
-            <EntityCardList
-                icon="🪵"
-                titulo="Tableros Asociados"
-                label-singular="tablero"
-                key-prefix="tablero"
-                :items="tablerosDelComponente"
-                :items-ordenados="tablerosOrdenadosParaVista"
-                :total-cantidad="totalCantidadTableros"
-                :total-costo="totalCostoTableros"
-                :obtener-nombre="obtenerNombreTablero"
-                :obtener-codigo="obtenerCodigoTablero"
-                :obtener-costo-unitario="obtenerCostoUnitarioTablero"
-                :obtener-subtotal="obtenerSubtotalTablero"
-                :format-currency="formatCurrency"
-                @gestionar="abrirSelectorTableros"
-                @incrementar="incrementarCantidadTablero"
-                @decrementar="decrementarCantidadTablero"
-                @guardar-cantidad="guardarCantidadTablero"
-                @remover="removerTablero"
-            />
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">🪵 Tableros Asociados</h2>
+                    <button type="button" class="btn-action-header" @click="abrirSelectorTableros">
+                        + Gestionar
+                    </button>
+                </div>
+
+                <div v-if="tablerosDelComponente.length > 0">
+                    <div class="tableros-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ tablerosDelComponente.length }}</span>
+                            <span class="metric-label">Tipos</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ totalCantidadTableros }}</span>
+                            <span class="metric-label">Unidades</span>
+                        </div>
+                        <div class="metric-pill metric-pill--accent">
+                            <span class="metric-number">${{ formatCurrency(totalCostoTableros) }}</span>
+                            <span class="metric-label">Costo total</span>
+                        </div>
+                    </div>
+
+                    <div
+                        v-for="item in tablerosOrdenadosParaVista"
+                        :key="`tablero-inline-${item.id}`"
+                        class="tablero-card"
+                    >
+                        <div class="tablero-card-left">
+                            <div class="tablero-avatar">🪵</div>
+                            <div class="tablero-info">
+                                <div class="tablero-name">{{ obtenerNombreTablero(item) }}</div>
+                                <div class="tablero-code">{{ obtenerCodigoTablero(item) }}</div>
+                            </div>
+                        </div>
+                        <div class="tablero-card-center">
+                            <div class="tablero-pricing">
+                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioTablero(item)) }} <small>c/u</small></span>
+                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalTablero(item)) }}</span>
+                            </div>
+                        </div>
+                        <div class="tablero-card-right">
+                            <div class="quantity-controls-compact">
+                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadTablero(item)" title="Disminuir">−</button>
+                                <input
+                                    v-model.number="item.cantidad"
+                                    type="number" min="1" step="1" placeholder="1"
+                                    @blur="guardarCantidadTablero(item)"
+                                    @keyup.enter="guardarCantidadTablero(item)"
+                                    class="qty-input"
+                                />
+                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadTablero(item)" title="Aumentar">+</button>
+                            </div>
+                            <button type="button" class="btn-delete-sm" @click="removerTablero(item)" title="Eliminar">🗑</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-icon">🪵</div>
+                    <p>No hay tableros asignados</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorTableros">+ Agregar Tablero</button>
+                </div>
+            </div>
 
             <!-- Estructuras Asociadas -->
             <EntityCardList
@@ -168,29 +215,165 @@
             />
 
             <!-- Acabado Cubre Cantos Asociados -->
-            <EntityCardList
-                icon="🎨"
-                titulo="Cubre Cantos Asociados"
-                label-singular="cubre canto"
-                key-prefix="cc"
-                :items="acabadoCubreCantosDelComponente"
-                :items-ordenados="cubreCantosOrdenadosParaVista"
-                :total-cantidad="totalCantidadCubreCantos"
-                :total-costo="totalCostoCubreCantos"
-                :obtener-nombre="obtenerNombreCubreCanto"
-                :obtener-codigo="obtenerCodigoCubreCanto"
-                :obtener-costo-unitario="obtenerCostoUnitarioCubreCanto"
-                :obtener-subtotal="obtenerSubtotalCubreCanto"
-                :format-currency="formatCurrency"
-                @gestionar="abrirSelectorCubreCantos"
-                @incrementar="incrementarCantidadCubreCanto"
-                @decrementar="decrementarCantidadCubreCanto"
-                @guardar-cantidad="guardarCantidadCubreCanto"
-                @remover="removerCubreCanto"
-            />
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">🎨 Cubre Cantos Asociados</h2>
+                    <button type="button" class="btn-action-header" @click="abrirSelectorCubreCantos">
+                        + Gestionar
+                    </button>
+                </div>
+
+                <div v-if="acabadoCubreCantosDelComponente.length > 0">
+                    <div class="tableros-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ acabadoCubreCantosDelComponente.length }}</span>
+                            <span class="metric-label">Tipos</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ totalCantidadCubreCantos }}</span>
+                            <span class="metric-label">Unidades</span>
+                        </div>
+                        <div class="metric-pill metric-pill--accent">
+                            <span class="metric-number">${{ formatCurrency(totalCostoCubreCantos) }}</span>
+                            <span class="metric-label">Costo total</span>
+                        </div>
+                    </div>
+
+                    <div
+                        v-for="item in cubreCantosOrdenadosParaVista"
+                        :key="`cc-inline-${item.id}`"
+                        class="tablero-card"
+                    >
+                        <div class="tablero-card-left">
+                            <div class="tablero-avatar">🎨</div>
+                            <div class="tablero-info">
+                                <div class="tablero-name">{{ obtenerNombreCubreCanto(item) }}</div>
+                                <div class="tablero-code">{{ obtenerCodigoCubreCanto(item) }}</div>
+                            </div>
+                        </div>
+                        <div class="tablero-card-center">
+                            <div class="tablero-pricing">
+                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioCubreCanto(item)) }} <small>c/u</small></span>
+                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalCubreCanto(item)) }}</span>
+                            </div>
+                        </div>
+                        <div class="tablero-card-right">
+                            <div class="quantity-controls-compact">
+                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadCubreCanto(item)" title="Disminuir">−</button>
+                                <input
+                                    v-model.number="item.cantidad"
+                                    type="number" min="1" step="1" placeholder="1"
+                                    @blur="guardarCantidadCubreCanto(item)"
+                                    @keyup.enter="guardarCantidadCubreCanto(item)"
+                                    class="qty-input"
+                                />
+                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadCubreCanto(item)" title="Aumentar">+</button>
+                            </div>
+                            <button type="button" class="btn-delete-sm" @click="removerCubreCanto(item)" title="Eliminar">🗑</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-icon">🎨</div>
+                    <p>No hay cubre cantos asignados</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorCubreCantos">+ Agregar Cubre Canto</button>
+                </div>
+            </div>
+
+            <!-- Materiales Asociados -->
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">📋 Materiales Asociados</h2>
+                    <button type="button" class="btn-action-header" @click="mostrarModalMateriales = true">
+                        + Gestionar
+                    </button>
+                </div>
+
+                <div v-if="materialesDelComponente.length > 0">
+                    <div class="tableros-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ materialesDelComponente.length }}</span>
+                            <span class="metric-label">Tipos</span>
+                        </div>
+                        <div class="metric-pill metric-pill--accent">
+                            <span class="metric-number">${{ formatCurrency(materialesDelComponente.reduce((sum, m) => sum + ((m.material?.costo_unitario || 0) * (m.cantidad || 1)), 0)) }}</span>
+                            <span class="metric-label">Costo total</span>
+                        </div>
+                    </div>
+
+                    <div
+                        v-for="mat in materialesDelComponente"
+                        :key="`mat-inline-${mat.id}`"
+                        class="tablero-card"
+                    >
+                        <div class="tablero-card-left">
+                            <div class="tablero-avatar">📋</div>
+                            <div class="tablero-info">
+                                <div class="tablero-name">{{ mat.material?.nombre || 'Material' }}</div>
+                                <div class="tablero-code">{{ mat.material?.codigo || '' }}</div>
+                            </div>
+                        </div>
+                        <div class="tablero-card-center">
+                            <div class="tablero-pricing">
+                                <span class="tablero-unit-price">${{ formatCurrency(mat.material?.costo_unitario || 0) }} <small>c/u</small></span>
+                                <span class="tablero-subtotal">${{ formatCurrency((mat.material?.costo_unitario || 0) * (mat.cantidad || 1)) }}</span>
+                            </div>
+                        </div>
+                        <div class="tablero-card-right">
+                            <div class="quantity-controls-compact">
+                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidad(mat)" title="Disminuir">−</button>
+                                <input
+                                    v-model.number="mat.cantidad"
+                                    type="number" min="1" step="1" placeholder="1"
+                                    @blur="guardarCantidadMaterial(mat)"
+                                    @keyup.enter="guardarCantidadMaterial(mat)"
+                                    class="qty-input"
+                                />
+                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidad(mat)" title="Aumentar">+</button>
+                            </div>
+                            <button type="button" class="btn-delete-sm" @click="removerMaterial(mat.id)" title="Eliminar">🗑</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-icon">📋</div>
+                    <p>No hay materiales asignados</p>
+                    <button type="button" class="btn-empty-action" @click="mostrarModalMateriales = true">+ Agregar Material</button>
+                </div>
+            </div>
+
+            <!-- Acabado del Componente -->
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">🎨 Acabado del Componente</h2>
+                    <button type="button" class="btn-action-header" @click="abrirSelectorAcabados">
+                        {{ formData.acabado ? '🔄 Cambiar' : '+ Seleccionar' }}
+                    </button>
+                </div>
+
+                <div v-if="formData.acabado" class="acabado-card-inline">
+                    <div class="acabado-card-icon">🎨</div>
+                    <div class="acabado-card-info">
+                        <div class="acabado-card-name">{{ formData.acabado.nombre }}</div>
+                        <div class="acabado-card-desc">{{ formData.acabado.descripcion || 'Sin descripción' }}</div>
+                    </div>
+                    <div class="acabado-card-price">
+                        <span class="acabado-price-label">Costo</span>
+                        <span class="acabado-price-value">${{ formatCurrency(formData.acabado.costo) }}</span>
+                    </div>
+                </div>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-icon">🎨</div>
+                    <p>No hay acabado asignado</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorAcabados">+ Seleccionar Acabado</button>
+                </div>
+            </div>
 
             <!-- Acciones -->
-            <div class="form-actions">
+            <div class="form-actions form-actions--sticky">
                 <button type="button" class="btn-secondary" @click="$router.back()">
                     ← Cancelar
                 </button>
@@ -1073,10 +1256,29 @@ onMounted(async () => {
     font-weight: 500;
 }
 
-.header-badges {
+.header-right {
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.badge-saving {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    color: #856404;
+    border: 1px solid #ffc107;
+    animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+.badge-status {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 .badge {
@@ -1283,8 +1485,8 @@ onMounted(async () => {
 /* ========== Stats Bar ========== */
 .stats-bar {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 12px;
     margin-bottom: 24px;
 }
 
@@ -1728,6 +1930,123 @@ onMounted(async () => {
     gap: 14px;
     justify-content: flex-end;
     padding-top: 8px;
+}
+
+.form-actions--sticky {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(to top, #ffffff 60%, rgba(255,255,255,0.95) 80%, rgba(255,255,255,0) 100%);
+    padding: 20px 0 8px;
+    z-index: 10;
+    margin-top: 8px;
+}
+
+/* ========== Acabado Card Inline ========== */
+.acabado-card-inline {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    background: linear-gradient(135deg, #faf7f2 0%, #fff9f0 100%);
+    border: 1px solid #e8e3dd;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.acabado-card-inline:hover {
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.12);
+}
+
+.acabado-card-icon {
+    font-size: 28px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.acabado-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.acabado-card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #5a4037;
+    margin-bottom: 2px;
+}
+
+.acabado-card-desc {
+    font-size: 12px;
+    color: #8b7355;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.acabado-card-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.acabado-price-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: #8b7355;
+}
+
+.acabado-price-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: #d4a574;
+}
+
+/* ========== Section Header ========== */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #5a4037;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-action-header {
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.3s;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
+}
+
+.btn-action-header:hover {
+    background: linear-gradient(135deg, #c89564 0%, #b88454 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 .btn-primary,
@@ -2775,8 +3094,12 @@ onMounted(async () => {
         gap: 12px;
     }
 
+    .header-right {
+        margin-top: 10px;
+    }
+
     .stats-bar {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     }
 
     .info-card {
@@ -2808,8 +3131,27 @@ onMounted(async () => {
         flex-direction: column;
     }
 
+    .acabado-card-inline {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .acabado-card-price {
+        align-items: flex-start;
+        flex-basis: 100%;
+    }
+
+    .section-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
     .form-actions {
         flex-direction: column-reverse;
+    }
+
+    .form-actions--sticky {
+        padding: 16px 0 4px;
     }
 
     .btn-primary,
@@ -2822,6 +3164,10 @@ onMounted(async () => {
 @media (max-width: 480px) {
     .page-title {
         font-size: 20px;
+    }
+
+    .stats-bar {
+        grid-template-columns: 1fr 1fr;
     }
 
     .tablero-pricing {
