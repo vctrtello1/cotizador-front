@@ -1561,17 +1561,16 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
-import { fetchClientes } from '../../http/clientes-api';
+import { fetchClientes, crearCliente, actualizarCliente } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
-import { fetchComponentes, actualizarComponente } from '../../http/componentes-api';
+import { fetchComponentes, actualizarComponente, getComponenteById } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
 import { fetchMateriales, crearMaterial, actualizarMaterial } from '../../http/materiales-api';
-import { crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
+import { fetchMaterialesPorComponente, crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
 import { fetchHerrajes, crearHerraje } from '../../http/herrajes-api';
-import { crearCantidadPorHerraje, actualizarCantidadPorHerraje, eliminarCantidadPorHerraje } from '../../http/cantidad_por_herraje-api';
+import { fetchCantidadPorHerraje, crearCantidadPorHerraje, actualizarCantidadPorHerraje, eliminarCantidadPorHerraje } from '../../http/cantidad_por_herraje-api';
 import { fetchClientes as fetchManoDeObra, crearCliente as crearManoDeObra } from '../../http/mano_de_obra-api ';
-import { crearHoras, actualizarHoras, eliminarHoras } from '../../http/horas_por_mano_de_obra_por_componente-api';
-import { fetchAcabados, crearAcabado } from '../../http/acabado-api ';
+import { fetchAcabados, crearAcabado, getAcabadoById } from '../../http/acabado-api ';
 import { fetchTiposDeMaterial } from '../../http/tipo_de_material-api';
 
 const route = useRoute();
@@ -2114,9 +2113,6 @@ const guardarNuevoCliente = async () => {
     }
 
     try {
-        // Importar la función de creación
-        const { crearCliente } = await import('../../http/clientes-api');
-        
         // Crear en la API
         const datosNuevoCliente = {
             nombre: nuevoCliente.value.nombre.trim(),
@@ -2213,9 +2209,6 @@ const guardarEdicionCliente = async () => {
     }
 
     try {
-        // Importar la función de actualización
-        const { actualizarCliente } = await import('../../http/clientes-api');
-        
         // Actualizar en la API
         const datosActualizados = {
             nombre: clienteEditando.value.nombre.trim(),
@@ -2368,16 +2361,6 @@ const abrirModalEditarComponente = async (componente) => {
         console.log('🔍 componente.componente_id:', componente.componente_id);
         console.log('🔍 componente.id:', componente.id);
         
-        // Importar las APIs necesarias
-        const { getComponenteById } = await import('../../http/componentes-api');
-        const { fetchMaterialesPorComponente } = await import('../../http/materiales_por_componente-api.js');
-        const { fetchCantidadPorHerraje } = await import('../../http/cantidad_por_herraje-api.js');
-        const { fetchHorasDeManoDeObraPorComponentes } = await import('../../http/horas_por_mano_de_obra_por_componente-api.js');
-        const { fetchMateriales } = await import('../../http/materiales-api.js');
-        const { fetchHerrajes } = await import('../../http/herrajes-api.js');
-        const { fetchClientes: fetchManoDeObra } = await import('../../http/mano_de_obra-api .js');
-        const { fetchAcabados, getAcabadoById } = await import('../../http/acabado-api .js');
-        
         // Cargar datos base del componente
         const componenteCompletoResponse = await getComponenteById(componente.componente_id);
         const componenteCompleto = componenteCompletoResponse.data || componenteCompletoResponse;
@@ -2429,22 +2412,7 @@ const abrirModalEditarComponente = async (componente) => {
             console.warn('⚠️ Error al cargar herrajes:', err);
         }
         
-        // Cargar horas de mano de obra
-        let horasManoObra = [];
-        try {
-            const todasHorasResponse = await fetchHorasDeManoDeObraPorComponentes();
-            const todasHoras = Array.isArray(todasHorasResponse) ? todasHorasResponse : (todasHorasResponse.data || []);
-            const horasFiltradas = todasHoras.filter(h => h.componente_id === componente.componente_id);
-            
-            // Hacer join con la mano de obra completa
-            horasManoObra = horasFiltradas.map(hora => ({
-                ...hora,
-                mano_obra: todaManoObraData.find(mo => mo.id === hora.mano_de_obra_id)
-            }));
-            console.log('✅ Horas de mano de obra encontradas:', horasManoObra.length);
-        } catch (err) {
-            console.warn('⚠️ Error al cargar horas de mano de obra:', err);
-        }
+        const horasManoObra = [];
         
         // Cargar acabado si existe
         let acabado = null;
@@ -3163,31 +3131,12 @@ const seleccionarYAgregarManoObra = async (manoObra) => {
         // Siempre resetear a 1 hora cuando se cambia la mano de obra
         const horasIniciales = 1;
         
-        // Si ya existe un registro, actualizarlo; si no, crear uno nuevo
-        if (componenteEditando.value.horas_mano_obra_id) {
-            // Actualizar registro existente
-            await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
-                mano_de_obra_id: manoObra.id,
-                componente_id: componenteEditando.value.componente_id,
-                horas: horasIniciales
-            });
-        } else {
-            // Crear nuevo registro
-            const response = await crearHoras({
-                mano_de_obra_id: manoObra.id,
-                componente_id: componenteEditando.value.componente_id,
-                horas: horasIniciales
-            });
-            
-            // Guardar el ID del nuevo registro
-            componenteEditando.value.horas_mano_obra_id = (response.data || response).id;
-        }
-        
         componenteEditando.value = { 
             ...componenteEditando.value, 
             mano_de_obra: manoObra, 
             mano_de_obra_id: manoObra.id,
-            horas_mano_obra: horasIniciales
+            horas_mano_obra: horasIniciales,
+            horas_mano_obra_id: null
         };
         
         await recalcularCostoComponente();
@@ -3233,18 +3182,7 @@ const guardarNuevaManoDeObra = async () => {
         const response = await crearManoDeObra(datos);
         const manoDeObraCreada = response.data || response;
 
-        // Eliminar la mano de obra anterior si existe
-        if (componenteEditando.value.horas_mano_obra_id) {
-            await eliminarHoras(componenteEditando.value.horas_mano_obra_id);
-        }
-
-        // Crear la relación con el componente
         const horasIniciales = 1;
-        const responseRelacion = await crearHoras({
-            mano_de_obra_id: manoDeObraCreada.id,
-            componente_id: componenteEditando.value.componente_id,
-            horas: horasIniciales
-        });
 
         // Asignar la mano de obra al componente
         componenteEditando.value = {
@@ -3252,7 +3190,7 @@ const guardarNuevaManoDeObra = async () => {
             mano_de_obra: manoDeObraCreada,
             mano_de_obra_id: manoDeObraCreada.id,
             horas_mano_obra: horasIniciales,
-            horas_mano_obra_id: (responseRelacion.data || responseRelacion).id
+            horas_mano_obra_id: null
         };
 
         // Recalcular el costo del componente
@@ -3268,11 +3206,6 @@ const guardarNuevaManoDeObra = async () => {
 
 const eliminarManoDeObra = async () => {
     try {
-        // Si existe un registro en la BD, eliminarlo
-        if (componenteEditando.value.horas_mano_obra_id) {
-            await eliminarHoras(componenteEditando.value.horas_mano_obra_id);
-        }
-        
         componenteEditando.value = { 
             ...componenteEditando.value, 
             mano_de_obra: null, 
@@ -3292,19 +3225,6 @@ const aumentarHorasManoDeObra = async () => {
     const nuevasHoras = (componenteEditando.value.horas_mano_obra || 1) + 1;
     
     try {
-        if (componenteEditando.value.horas_mano_obra_id) {
-            // Extraer el ID numérico de mano_de_obra
-            const manoDeObraId = typeof componenteEditando.value.mano_de_obra_id === 'object' 
-                ? componenteEditando.value.mano_de_obra_id.id 
-                : componenteEditando.value.mano_de_obra_id;
-            
-            await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
-                mano_de_obra_id: manoDeObraId,
-                componente_id: componenteEditando.value.componente_id,
-                horas: nuevasHoras
-            });
-        }
-        
         componenteEditando.value = {
             ...componenteEditando.value,
             horas_mano_obra: nuevasHoras
@@ -3322,19 +3242,6 @@ const disminuirHorasManoDeObra = async () => {
         const nuevasHoras = horasActuales - 1;
         
         try {
-            if (componenteEditando.value.horas_mano_obra_id) {
-                // Extraer el ID numérico de mano_de_obra
-                const manoDeObraId = typeof componenteEditando.value.mano_de_obra_id === 'object' 
-                    ? componenteEditando.value.mano_de_obra_id.id 
-                    : componenteEditando.value.mano_de_obra_id;
-                
-                await actualizarHoras(componenteEditando.value.horas_mano_obra_id, {
-                    mano_de_obra_id: manoDeObraId,
-                    componente_id: componenteEditando.value.componente_id,
-                    horas: nuevasHoras
-                });
-            }
-            
             componenteEditando.value = {
                 ...componenteEditando.value,
                 horas_mano_obra: nuevasHoras

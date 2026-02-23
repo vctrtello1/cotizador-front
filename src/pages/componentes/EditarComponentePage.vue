@@ -561,10 +561,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
 import { useCantidadPorHerraje } from '@/stores/cantidad-por-herraje';
-import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
 import { useMateriales } from '@/stores/materiales';
 import { useHerrajes } from '@/stores/herrajes';
 import { useManosDeObraStore } from '@/stores/mano-de-obra';
@@ -573,7 +573,6 @@ const router = useRouter();
 const route = useRoute();
 const storeMaterialesPorComponente = useMaterialesPorComponente();
 const storeCantidadPorHerraje = useCantidadPorHerraje();
-const storeHorasPorManoDeObra = useHorasPorManoDeObraComponente();
 const storeMateriales = useMateriales();
 const storeHerrajes = useHerrajes();
 const storeManosDeObra = useManosDeObraStore();
@@ -753,21 +752,14 @@ const cargarHerrajesPorComponente = async () => {
 // Cargar horas de mano de obra por componente
 const cargarHorasManoDeObra = async () => {
     try {
-        const componenteId = parseInt(route.params.id);
-        await storeHorasPorManoDeObra.fetchHorasPorManoDeObraComponenteAction();
-        
-        const todasLasHoras = storeHorasPorManoDeObra.horasPorManoDeObraComponente;
-        horasManoDeObra.value = todasLasHoras.filter(h => parseInt(h.componente_id) === componenteId);
-        
-        // Si no hay horas pero hay mano de obra, crear registro inicial
-        if (horasManoDeObra.value.length === 0 && formData.value.mano_de_obra?.id) {
-            await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction({
-                componente_id: componenteId,
+        if (formData.value.mano_de_obra?.id) {
+            horasManoDeObra.value = [{
+                componente_id: parseInt(route.params.id),
                 mano_de_obra_id: formData.value.mano_de_obra.id,
-                horas: 1
-            });
-            // Recargar
-            await cargarHorasManoDeObra();
+                horas: Math.max(1, Math.floor(horaActual.value?.horas || 1))
+            }];
+        } else {
+            horasManoDeObra.value = [];
         }
     } catch (err) {
         console.error('Error cargando horas de mano de obra:', err);
@@ -892,13 +884,9 @@ const guardarCambiosHoras = async () => {
 
         console.log('📝 Datos a enviar:', datosHora);
 
-        if (hora.id) {
-            console.log('🔄 Actualizando horas ID:', hora.id);
-            await storeHorasPorManoDeObra.actualizarHorasPorManoDeObraAction(hora.id, datosHora);
-        } else {
-            console.log('🆕 Creando nuevas horas');
-            await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction(datosHora);
-        }
+        hora.componente_id = datosHora.componente_id;
+        hora.mano_de_obra_id = datosHora.mano_de_obra_id;
+        hora.horas = datosHora.horas;
         console.log('✅ Horas guardadas correctamente');
     } catch (err) {
         console.error('Error guardando horas:', err);
@@ -1030,7 +1018,6 @@ const guardarCantidadHerraje = (herraje) => guardarCantidad(herraje, 'herraje');
 // Cargar catálogos de forma genérica
 const cargarCatalogo = async (endpoint, targetRef) => {
     try {
-        const api = (await import('@/http/apl')).default;
         const response = await api.get(endpoint);
         const data = response.data.data || response.data || [];
         targetRef.value = Array.isArray(data) ? data : [];
@@ -1152,7 +1139,6 @@ const agregarHerraje = async (herraje) => {
 // Cargar acabados disponibles
 const cargarAcabados = async () => {
     try {
-        const api = (await import('@/http/apl')).default;
         const response = await api.get('/acabados');
         const data = response.data.data || response.data || [];
         acabadosDisponibles.value = Array.isArray(data) ? data : [];
@@ -1166,7 +1152,6 @@ const cargarAcabados = async () => {
 // Cargar mano de obra disponible
 const cargarManoDeObraDisponible = async () => {
     try {
-        const api = (await import('@/http/apl')).default;
         const response = await api.get('/mano-de-obras');
         const data = response.data.data || response.data || [];
         manoDeObraDisponible.value = Array.isArray(data) ? data : [];
@@ -1213,8 +1198,7 @@ const agregarManoDeObra = async (manoDeObra) => {
         
         console.log('📤 1️⃣ Guardando cambio de mano de obra en el servidor...');
         console.log('   Datos:', datos);
-        
-        const api = (await import('@/http/apl')).default;
+
         const response = await api.put(`/componentes/${route.params.id}`, datos);
         console.log('✅ 1️⃣ Respuesta del servidor - cambio guardado:', response);
         
@@ -1233,27 +1217,9 @@ const agregarManoDeObra = async (manoDeObra) => {
         };
         console.log('✅ 2️⃣ Mano de obra actualizada en estado local');
         
-        // Crear registro de horas automáticamente
-        console.log('📋 3️⃣ Creando registro de horas de mano de obra por componente...');
-        try {
-            const horasData = {
-                componente_id: parseInt(route.params.id),
-                mano_de_obra_id: manoDeObra.id,
-                horas: 1  // Crear con 1 hora inicial
-            };
-            console.log('   Datos de horas:', horasData);
-            
-            const horasResponse = await storeHorasPorManoDeObra.crearHorasPorManoDeObraAction(horasData);
-            console.log('✅ 3️⃣ Registro de horas creado:', horasResponse);
-        } catch (err) {
-            console.error('⚠️ 3️⃣ Error creando registro de horas:', err);
-            console.error('   Continuando sin horas iniciales...');
-        }
-        
-        // Recargar horas desde el servidor
-        console.log('🔄 4️⃣ Recargando horas desde el servidor...');
+        console.log('📋 3️⃣ Reiniciando horas en estado local...');
         await cargarHorasManoDeObra();
-        console.log('✅ 4️⃣ Horas recargadas:', horasManoDeObra.value.length);
+        console.log('✅ 3️⃣ Horas reiniciadas:', horasManoDeObra.value.length);
         
         // Cerrar modal y limpiar búsqueda
         console.log('🚪 5️⃣ Cerrando modal...');
@@ -1354,8 +1320,7 @@ const guardarComponente = async () => {
         }
         
         console.log('Guardando cambios del componente:', datos);
-        
-        const api = (await import('@/http/apl')).default;
+
         await api.put(`/componentes/${route.params.id}`, datos);
         
         console.log('✅ Componente actualizado correctamente');

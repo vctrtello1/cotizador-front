@@ -295,7 +295,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { getModuloById, actualizarModulo, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
 import { crearAcabado } from '@/http/acabado-api .js';
 import { crearCliente as crearManoDeObra } from '@/http/mano_de_obra-api .js';
-import { useHorasPorManoDeObraComponente } from '@/stores/horas-por-mano-de-obra-componente';
 
 const router = useRouter();
 const route = useRoute();
@@ -552,30 +551,7 @@ const guardarModulo = async () => {
         console.log('Propiedades disponibles:', Object.keys(moduloGuardado));
         console.log('Componentes en respuesta:', moduloGuardado.componentes);
         
-        // Guardar horas en la API SOLO para los componentes NUEVOS
         if (moduloGuardado.componentes && moduloGuardado.componentes.length > 0) {
-            const storeHoras = useHorasPorManoDeObraComponente();
-            
-            // Identificar cuáles son componentes nuevos (no estaban en componentesOriginales)
-            const idsOriginales = componentesOriginales.value.map(c => c.id);
-            
-            for (let componente of moduloGuardado.componentes) {
-                // Solo guardar horas si es un componente nuevo
-                if (!idsOriginales.includes(componente.id)) {
-                    try {
-                        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-                            componente.id,
-                            componente.mano_de_obra_id,
-                            { horas: 1 }
-                        );
-                        console.log(`✅ Horas guardadas para componente nuevo ${componente.id}`);
-                    } catch (err) {
-                        console.warn(`⚠️ No se pudo guardar horas para componente ${componente.id}:`, err);
-                    }
-                }
-            }
-            
-            // Actualizar los componentes originales para futuras ediciones
             componentesOriginales.value = JSON.parse(JSON.stringify(formData.value.componentes));
         } else {
             console.warn('⚠️ No hay componentes en la respuesta del servidor');
@@ -927,14 +903,6 @@ const seleccionarManoDeObra = async (mano) => {
         
         await actualizarModulo(route.params.id, datosModulo);
         
-        // Guardar la nueva mano de obra con 1 hora
-        const storeHoras = useHorasPorManoDeObraComponente();
-        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-            componenteActual.value.id,
-            mano.id,
-            { horas: 1 }
-        );
-        
         mostrarMensaje('✅ Mano de obra actualizada', 'success', 1000);
     } catch (err) {
         console.error('❌ Error al guardar mano de obra:', err);
@@ -973,28 +941,10 @@ const decrementarHoras = async (mano) => {
     await guardarHorasEnAPI(mano);
 };
 
-// Guardar horas en la API
+// Guardar horas en estado local
 const guardarHorasEnAPI = async (mano) => {
-    if (!mano || !componenteActual.value.id) return;
-    
-    try {
-        const storeHoras = useHorasPorManoDeObraComponente();
-        
-        // Actualizar horas en el store con el ID del componente
-        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-            componenteActual.value.id, 
-            mano.id, 
-            { horas: mano.horas || 0 }
-        );
-        
-        mostrarMensaje('✅ Horas actualizadas', 'success', 1500);
-    } catch (err) {
-        console.error('Error guardando horas:', err);
-        // No mostrar error si es porque el registro no existe (es normal en nuevos módulos)
-        if (err.response?.status !== 404) {
-            mostrarMensaje('⚠️ Horas actualizadas localmente', 'warning', 1500);
-        }
-    }
+    if (!mano) return;
+    mostrarMensaje('✅ Horas actualizadas', 'success', 1000);
 };
 
 // Guardar cambios de cantidad en la API
@@ -1066,19 +1016,6 @@ const guardarCantidad = async () => {
 // Confirmar selección de mano de obra y guardar horas
 const confirmarManoDeObra = async () => {
     const manoSeleccionada = manosDeObra.value.find(m => m.id === componenteActual.value.mano_de_obra_id);
-    
-    // Guardar horas en la API
-    try {
-        const storeHoras = useHorasPorManoDeObraComponente();
-        await storeHoras.actualizarHorasPorManoDeObraComponenteAction(
-            componenteActual.value.id,
-            manoSeleccionada.id,
-            { horas: manoSeleccionada.horas || 1 }
-        );
-        console.log('✅ Mano de obra guardada en API');
-    } catch (err) {
-        console.warn('⚠️ No se pudo guardar mano de obra en API:', err);
-    }
     
     mostrarMensaje('✅ Mano de obra confirmada', 'success', 1500);
 };
