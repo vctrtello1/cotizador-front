@@ -1,31 +1,35 @@
-import api from "./apl";
-
 export const fetchModulosPorCotizacion = async () => {
-  const response = await api.get("tableros-por-componente");
-  return response.data;
+  return [];
 };
 
 export const getModulosPorCotizacionId = async (cotizacionId) => {
-  const response = await api.get(`/tableros-por-componente/${cotizacionId}`);
-  return response.data;
+  return [];
 };
 
 export const getModuloPorCotizacionById = async (id) => {
-  const response = await api.get(`/tableros-por-componente/${id}`);
-  return response.data;
+  return null;
 };
 
 export const crearModuloPorCotizacion = async (datos) => {
-  const response = await api.post("/tableros-por-componente", datos);
-  return response.data;
+  return {
+    data: null,
+    deprecated: true,
+    message: "El dominio de tableros por componente fue eliminado en backend.",
+  };
 };
 
 export const actualizarModuloPorCotizacion = async (id, datos) => {
-  const response = await api.put(`/tableros-por-componente/${id}`, datos);
-  return response.data;
+  return {
+    data: null,
+    deprecated: true,
+    message: "El dominio de tableros por componente fue eliminado en backend.",
+  };
 };
 
 export const eliminarModuloPorCotizacion = async (id) => {
-  const response = await api.delete(`/tableros-por-componente/${id}`);
-  return response.data;
+  return {
+    success: true,
+    deprecated: true,
+    message: "El dominio de tableros por componente fue eliminado en backend.",
+  };
 };

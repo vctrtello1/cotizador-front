@@ -68,13 +68,6 @@
                         <strong class="stat-value">{{ acabadoCubreCantosDelComponente.length }} <small>tipos</small> · {{ totalCantidadCubreCantos }} <small>u</small></strong>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📋</div>
-                    <div class="stat-content">
-                        <span class="stat-label">Materiales</span>
-                        <strong class="stat-value">{{ materialesDelComponente.length }} <small>tipos</small></strong>
-                    </div>
-                </div>
                 <div class="stat-card stat-card--highlight">
                     <div class="stat-icon">💰</div>
                     <div class="stat-content">
@@ -326,69 +319,6 @@
                 </div>
             </div>
 
-            <!-- Materiales Asociados -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">📋 Materiales Asociados</h2>
-                    <button type="button" class="btn-action-header" @click="mostrarModalMateriales = true">
-                        + Gestionar
-                    </button>
-                </div>
-
-                <div v-if="materialesDelComponente.length > 0">
-                    <div class="tableros-metrics">
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ materialesDelComponente.length }}</span>
-                            <span class="metric-label">Tipos</span>
-                        </div>
-                        <div class="metric-pill metric-pill--accent">
-                            <span class="metric-number">${{ formatCurrency(materialesDelComponente.reduce((sum, m) => sum + ((m.material?.costo_unitario || 0) * (m.cantidad || 1)), 0)) }}</span>
-                            <span class="metric-label">Costo total</span>
-                        </div>
-                    </div>
-
-                    <div
-                        v-for="mat in materialesDelComponente"
-                        :key="`mat-inline-${mat.id}`"
-                        class="tablero-card"
-                    >
-                        <div class="tablero-card-left">
-                            <div class="tablero-avatar">📋</div>
-                            <div class="tablero-info">
-                                <div class="tablero-name">{{ mat.material?.nombre || 'Material' }}</div>
-                                <div class="tablero-code">{{ mat.material?.codigo || '' }}</div>
-                            </div>
-                        </div>
-                        <div class="tablero-card-center">
-                            <div class="tablero-pricing">
-                                <span class="tablero-unit-price">${{ formatCurrency(mat.material?.costo_unitario || 0) }} <small>c/u</small></span>
-                                <span class="tablero-subtotal">${{ formatCurrency((mat.material?.costo_unitario || 0) * (mat.cantidad || 1)) }}</span>
-                            </div>
-                        </div>
-                        <div class="tablero-card-right">
-                            <div class="quantity-controls-compact">
-                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidad(mat)" title="Disminuir">−</button>
-                                <input
-                                    v-model.number="mat.cantidad"
-                                    type="number" min="1" step="1" placeholder="1"
-                                    @blur="guardarCantidadMaterial(mat)"
-                                    @keyup.enter="guardarCantidadMaterial(mat)"
-                                    class="qty-input"
-                                />
-                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidad(mat)" title="Aumentar">+</button>
-                            </div>
-                            <button type="button" class="btn-delete-sm" @click="removerMaterial(mat.id)" title="Eliminar">🗑</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-icon">📋</div>
-                    <p>No hay materiales asignados</p>
-                    <button type="button" class="btn-empty-action" @click="mostrarModalMateriales = true">+ Agregar Material</button>
-                </div>
-            </div>
-
             <!-- Acciones -->
             <div class="form-actions form-actions--sticky">
                 <button type="button" class="btn-secondary" @click="$router.back()">
@@ -400,119 +330,6 @@
                 </button>
             </div>
         </form>
-
-        <!-- Modal Materiales -->
-        <div v-if="mostrarModalMateriales" class="modal-overlay" @click.self="mostrarModalMateriales = false">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">📋 Editar Materiales</h3>
-                </div>
-                <div class="modal-body">
-                    <!-- Sección para agregar nuevo material -->
-                    <div class="add-section">
-                        <button 
-                            type="button" 
-                            class="btn-add-material"
-                            @click="abrirSelectorMateriales()"
-                        >+ Agregar Material</button>
-                    </div>
-
-                    <!-- Sección de materiales seleccionados -->
-                    <div v-if="materialesDelComponente && materialesDelComponente.length > 0" class="selected-items">
-                        <h4 class="items-subtitle">Materiales Seleccionados</h4>
-                        <div class="items-grid">
-                            <div v-for="material in materialesDelComponente" :key="material.id" class="selected-item-edit">
-                                <div class="item-info">
-                                    <div class="item-name">{{ material.material?.nombre }}</div>
-                                    <div class="item-code">{{ material.material?.codigo }}</div>
-                                    <div class="item-price">${{ formatCurrency(material.material?.costo_unitario) }}</div>
-                                </div>
-                                <div class="quantity-input-group">
-                                    <label :for="`qty-material-${material.id}`">Cantidad (unidades)</label>
-                                    <div class="quantity-controls">
-                                        <button 
-                                            type="button"
-                                            class="btn-qty-control btn-qty-minus"
-                                            @click="decrementarCantidad(material)"
-                                            title="Disminuir"
-                                        >−</button>
-                                        <input 
-                                            :id="`qty-material-${material.id}`"
-                                            v-model.number="material.cantidad"
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            placeholder="1"
-                                            @blur="guardarCantidadMaterial(material)"
-                                            @keyup.enter="guardarCantidadMaterial(material)"
-                                            class="quantity-input"
-                                        />
-                                        <button 
-                                            type="button"
-                                            class="btn-qty-control btn-qty-plus"
-                                            @click="incrementarCantidad(material)"
-                                            title="Aumentar"
-                                        >+</button>
-                                    </div>
-                                </div>
-                                <button class="btn-remove" @click="removerMaterial(material.id)" title="Remover">×</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="empty-list">
-                        <p>📭 No hay materiales seleccionados</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalMateriales = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Selector de Materiales -->
-        <div v-if="mostrarSelectorMateriales" class="modal-overlay" @click.self="mostrarSelectorMateriales = false">
-            <div class="modal-content modal-content-large">
-                <div class="modal-header">
-                    <h3 class="modal-title">📋 Seleccionar Materiales</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="search-section">
-                        <input 
-                            v-model="busquedaMaterial"
-                            type="text"
-                            class="search-input"
-                            placeholder="🔍 Buscar material..."
-                        />
-                    </div>
-                    <div class="materiales-grid">
-                        <div 
-                            v-for="material in materialesFiltrados"
-                            :key="material.id"
-                            class="material-card"
-                            @click="agregarMaterial(material)"
-                        >
-                            <div class="card-header">
-                                <div class="card-name">{{ material.nombre }}</div>
-                                <div class="card-badge">{{ material.codigo }}</div>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-label">Precio Unitario</p>
-                                <p class="card-price">${{ formatCurrency(material.costo_unitario || material.precio_unitario) }}</p>
-                            </div>
-                            <div class="card-footer">
-                                <button class="btn-select">+ Seleccionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="materialesFiltrados.length === 0" class="empty-list">
-                        <p>📭 No hay materiales disponibles</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarSelectorMateriales = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
 
         <!-- Selector de Tableros -->
         <EntitySelectorModal
@@ -566,22 +383,19 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
-import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
-import { useMateriales } from '@/stores/materiales';
+
 import { useTablerosPorComponenteStore } from '@/stores/tableros-por-componente';
 import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-componente';
 import { useEstructuraStore } from '@/stores/estructura';
 import { useAcabadoCubreCantosPorComponenteStore } from '@/stores/acabado-cubre-cantos-por-componente';
 import { useAcabadoCubreCantosStore } from '@/stores/acabado-cubre-cantos';
 import { useEntidadPorComponente } from '@/composables/useEntidadPorComponente';
-import EntityCardList from '@/components/EntityCardList.vue';
 import EntitySelectorModal from '@/components/EntitySelectorModal.vue';
 
 const router = useRouter();
 const route = useRoute();
 const componenteId = computed(() => Number.parseInt(route.params.id, 10) || 0);
-const storeMaterialesPorComponente = useMaterialesPorComponente();
-const storeMateriales = useMateriales();
+
 const storeTablerosPorComponente = useTablerosPorComponenteStore();
 const storeEstructurasPorComponente = useEstructurasPorComponenteStore();
 const storeEstructuras = useEstructuraStore();
@@ -594,7 +408,6 @@ const formData = ref({
     codigo: '',
     descripcion: '',
     costo_unitario: '',
-    materiales: [],
 });
 
 const errors = ref({});
@@ -620,15 +433,7 @@ const cerrarMensaje = () => {
     mensaje.value = null;
     tipoMensaje.value = null;
 };
-const materialesDelComponente = ref([]);
 
-// Modales (materiales)
-const mostrarModalMateriales = ref(false);
-const mostrarSelectorMateriales = ref(false);
-
-// Datos para seleccionar materiales
-const materialesDisponibles = ref([]);
-const busquedaMaterial = ref('');
 
 const createDebouncedRef = (sourceRef, delay = 180) => {
     const debounced = ref(sourceRef.value);
@@ -641,7 +446,6 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
     return debounced;
 };
 
-const busquedaMaterialDebounced = createDebouncedRef(busquedaMaterial);
 
 // ===== Catálogos disponibles para entidades =====
 const tablerosDisponibles = ref([]);
@@ -773,12 +577,10 @@ const cargarComponente = async () => {
             codigo: data.codigo || '',
             descripcion: data.descripcion || '',
             costo_unitario: data.costo_unitario || data.costo_total || '',
-            materiales: data.materiales || [],
         };
         
         // Cargar catálogos relacionados en paralelo
         await Promise.all([
-            cargarMaterialesPorComponente(),
             cargarTablerosPorComponente(async () => {
                 if (!tablerosDisponibles.value.length) {
                     await cargarCatalogo('/acabado-tableros', tablerosDisponibles);
@@ -805,102 +607,10 @@ const cargarComponente = async () => {
     }
 };
 
-// Cargar materiales por componente
-const cargarMaterialesPorComponente = async () => {
-    try {
-        // Cargar todos los materiales y sus relaciones con el componente
-        await Promise.all([
-            storeMateriales.fetchMaterialesAction(),
-            storeMaterialesPorComponente.fetchMaterialesPorComponenteAction(),
-        ]);
-        
-        // Filtrar y enriquecer con datos del material
-        if (!componenteId.value) {
-            materialesDelComponente.value = [];
-            return;
-        }
-
-        const materialesRelacion = storeMaterialesPorComponente.getMaterialesPorComponente(componenteId.value);
-        
-        materialesDelComponente.value = materialesRelacion.map(rel => ({
-            ...rel,
-            material: storeMateriales.materiales.find(m => m.id === rel.material_id) || {}
-        }));
-    } catch (err) {
-        console.error('Error cargando materiales por componente:', err);
-    }
-};
-
 // Formatear moneda
 const formatCurrency = (value) => {
     if (!value) return '0.00';
     return parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
-
-const removerMaterial = async (materialId) => {
-    try {
-        // Encontrar el registro de material-por-componente para este material
-        const materialComp = materialesDelComponente.value.find(m => m.id === materialId);
-        
-        if (materialComp && materialComp.id) {
-            // Eliminar del backend
-            await storeMaterialesPorComponente.eliminarMaterialPorComponenteAction(materialComp.id);
-            
-            // Actualizar lista local
-            materialesDelComponente.value = materialesDelComponente.value.filter(m => m.id !== materialComp.id);
-            mostrarMensaje('✅ Material eliminado', 'success', 2000);
-        }
-    } catch (err) {
-        console.error('Error eliminando material:', err);
-        mostrarMensaje('❌ Error al eliminar material', 'error', 3000);
-    }
-};
-
-// Incrementar cantidad de material
-const incrementarCantidad = (item) => {
-    if (item && typeof item.cantidad === 'number') {
-        item.cantidad = Math.floor(item.cantidad) + 1;
-    } else if (item) {
-        item.cantidad = 2;
-    }
-    if (item && item.material_id) {
-        guardarCantidadMaterial(item);
-    }
-};
-
-// Decrementar cantidad de material
-const decrementarCantidad = (item) => {
-    if (item && typeof item.cantidad === 'number' && item.cantidad > 1) {
-        item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
-    }
-    if (item && item.material_id) {
-        guardarCantidadMaterial(item);
-    }
-};
-
-const guardarCantidadMaterial = async (item) => {
-    if (!item || !item.id) return;
-    
-    const cantidadFinal = Math.round(item.cantidad || 1);
-    const maxCantidad = 50;
-    
-    if (cantidadFinal > maxCantidad) {
-        mostrarMensaje(`📦 La cantidad máxima permitida es ${maxCantidad} unidades`, 'warning', 3000);
-        item.cantidad = maxCantidad;
-        return;
-    }
-    
-    item.cantidad = cantidadFinal;
-    
-    try {
-        const itemComp = materialesDelComponente.value.find(i => i.id === item.id);
-        if (!itemComp?.id) return;
-
-        await storeMaterialesPorComponente.actualizarMaterialPorComponenteAction(itemComp.id, { cantidad: cantidadFinal });
-    } catch (err) {
-        console.error('Error guardando cantidad de material:', err);
-        mostrarMensaje('❌ Error al actualizar cantidad de material', 'error', 3000);
-    }
 };
 
 // Cargar catálogos de forma genérica
@@ -921,7 +631,6 @@ const abrirSelector = async (endpoint, catalogRef, showRef) => {
     showRef.value = true;
 };
 
-const abrirSelectorMateriales = () => abrirSelector('/materiales', materialesDisponibles, mostrarSelectorMateriales);
 const abrirSelectorTableros = () => abrirSelector('/acabado-tableros', tablerosDisponibles, mostrarSelectorTableros);
 const abrirSelectorEstructuras = async () => {
     await storeEstructuras.fetchEstructuras();
@@ -953,11 +662,6 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
 };
 
 // Computed properties para filtros
-const materialesFiltrados = computed(() => {
-    const materialesAgregados = materialesDelComponente.value.map(m => m.material_id);
-    return filtrarCatalogo(materialesDisponibles.value, busquedaMaterialDebounced.value, materialesAgregados);
-});
-
 const tablerosFiltrados = computed(() => {
     const tablerosAgregados = tablerosDelComponente.value.map(t => t.tablero_id);
     return filtrarCatalogo(tablerosDisponibles.value, busquedaTableroDebounced.value, tablerosAgregados);
@@ -973,41 +677,6 @@ const cubreCantosFiltrados = computed(() => {
     return filtrarCatalogo(cubreCantosDisponibles.value, busquedaCubreCantoDebounced.value, cubreCantosAgregados);
 });
 
-// Métodos simplificados
-const agregarMaterial = async (material) => {
-    try {
-        if (!material || !material.id) return;
-        
-        const yaExiste = materialesDelComponente.value.some(m => m.material_id === material.id);
-        if (yaExiste) {
-            mostrarMensaje('⚠️ Este material ya está agregado', 'warning', 2000);
-            return;
-        }
-        
-        const resultado = await storeMaterialesPorComponente.crearMaterialPorComponenteAction({
-            componente_id: componenteId.value,
-            material_id: material.id,
-            cantidad: 1
-        });
-        
-        const datosResultado = resultado.data || resultado;
-        materialesDelComponente.value.push({
-            id: datosResultado.id,
-            componente_id: datosResultado.componente_id,
-            material_id: datosResultado.material_id,
-            cantidad: datosResultado.cantidad,
-            created_at: datosResultado.created_at,
-            material: { ...material }
-        });
-        
-        mostrarMensaje('✅ Material agregado', 'success', 2000);
-        mostrarSelectorMateriales.value = false;
-        busquedaMaterial.value = '';
-    } catch (err) {
-        console.error('Error agregando material:', err);
-        mostrarMensaje('❌ Error al agregar material', 'error', 3000);
-    }
-};
 
 // Validar formulario
 const validar = () => {
