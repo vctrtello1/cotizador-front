@@ -1,18 +1,29 @@
 <template>
-    <div class="form-container">
+    <div class="editar-componente-container">
         <!-- Header -->
-        <div class="form-header">
-            <div class="header-content">
-                <h1 class="form-title">✏️ Editar Componente</h1>
-                <p class="form-subtitle">Actualiza los detalles de este componente</p>
+        <div class="page-header">
+            <div class="header-left">
+                <button class="btn-back" @click="$router.push('/componentes')">
+                    <span class="back-arrow">←</span> Volver
+                </button>
+                <div class="header-text">
+                    <h1 class="page-title">Editar Componente</h1>
+                    <p class="header-subtitle">{{ formData.nombre || 'Cargando...' }}</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-code">{{ formData.codigo || '---' }}</span>
             </div>
         </div>
 
         <!-- Mensaje de error -->
-        <div v-if="error" class="error-message">
-            <span>⚠️ {{ error }}</span>
-            <button @click="error = null" class="error-close">✕</button>
-        </div>
+        <transition name="fade">
+            <div v-if="error" class="alert alert-error">
+                <span class="alert-icon">⚠️</span>
+                <span class="alert-text">{{ error }}</span>
+                <button @click="error = null" class="alert-close">×</button>
+            </div>
+        </transition>
 
         <!-- Mensaje personalizado (warning/success/info) -->
         <transition name="slide-down">
@@ -26,97 +37,175 @@
 
         <!-- Loading -->
         <div v-if="cargando" class="loading-state">
+            <div class="spinner"></div>
             <p>Cargando componente...</p>
         </div>
 
         <!-- Formulario -->
-        <form v-else @submit.prevent="guardarComponente" class="form-content">
-            <div class="form-group">
-                <label for="nombre">Nombre *</label>
-                <input
-                    v-model="formData.nombre"
-                    type="text"
-                    id="nombre"
-                    placeholder="Ej: Tablero MDF"
-                    required
-                />
-                <span v-if="errors.nombre" class="error-text">{{ errors.nombre }}</span>
+        <form v-else @submit.prevent="guardarComponente">
+            <!-- Resumen superior -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-content">
+                        <span class="stat-label">Componente</span>
+                        <strong class="stat-value">{{ formData.codigo || 'Sin código' }}</strong>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🪵</div>
+                    <div class="stat-content">
+                        <span class="stat-label">Tableros</span>
+                        <strong class="stat-value">{{ tablerosDelComponente.length }} <small>tipos</small> · {{ totalCantidadTableros }} <small>u</small></strong>
+                    </div>
+                </div>
+                <div class="stat-card stat-card--highlight">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <span class="stat-label">Costo tableros</span>
+                        <strong class="stat-value">${{ formatCurrency(totalCostoTableros) }}</strong>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="codigo">Código</label>
-                <input
-                    v-model="formData.codigo"
-                    type="text"
-                    id="codigo"
-                    placeholder="Ej: TAB_MDF_001"
-                />
+            <!-- Datos Generales -->
+            <div class="info-card">
+                <h2 class="section-title">📌 Datos Generales</h2>
+                <div class="info-grid">
+                    <div class="form-group">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input
+                            v-model="formData.nombre"
+                            type="text"
+                            id="nombre"
+                            class="form-input"
+                            placeholder="Ej: Tablero MDF"
+                            required
+                        />
+                        <span v-if="errors.nombre" class="error-text">{{ errors.nombre }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="codigo" class="form-label">Código</label>
+                        <input
+                            v-model="formData.codigo"
+                            type="text"
+                            id="codigo"
+                            class="form-input"
+                            placeholder="Ej: TAB_MDF_001"
+                        />
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea
+                            v-model="formData.descripcion"
+                            id="descripcion"
+                            class="form-input textarea-input"
+                            placeholder="Descripción detallada del componente"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="descripcion">Descripción</label>
-                <textarea
-                    v-model="formData.descripcion"
-                    id="descripcion"
-                    placeholder="Descripción detallada del componente"
-                    rows="4"
-                ></textarea>
-            </div>
+            <!-- Tableros Asociados -->
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">🪵 Tableros Asociados</h2>
+                    <button
+                        type="button"
+                        class="btn-action-header"
+                        @click="mostrarModalTableros = true"
+                        :title="detalleTablerosCompleto"
+                    >
+                        + Gestionar
+                    </button>
+                </div>
 
-            <div class="form-group">
-                <label>Tableros del Componente</label>
-                <button
-                    type="button"
-                    class="btn-add-material"
-                    @click="mostrarModalTableros = true"
-                    :title="detalleTablerosCompleto"
-                >
-                    🪵 Gestionar Tableros ({{ tablerosDelComponente.length }})
-                    <span v-if="resumenTablerosSeleccionados" class="tableros-inline-summary">• {{ resumenTablerosSeleccionados }}</span>
-                </button>
-
-                <div v-if="tablerosDelComponente.length" class="selected-items tableros-vista-panel">
-                    <h4 class="items-subtitle">Resumen de Tableros</h4>
-                    <div class="tableros-resumen-grid">
-                        <div class="tableros-resumen-item">
-                            <span class="tableros-resumen-label">Tipos</span>
-                            <strong class="tableros-resumen-value">{{ tablerosDelComponente.length }}</strong>
+                <transition-group name="list" tag="div" v-if="tablerosDelComponente.length">
+                    <!-- Resumen métricas -->
+                    <div key="resumen" class="tableros-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ tablerosDelComponente.length }}</span>
+                            <span class="metric-label">Tipos</span>
                         </div>
-                        <div class="tableros-resumen-item">
-                            <span class="tableros-resumen-label">Unidades</span>
-                            <strong class="tableros-resumen-value">{{ totalCantidadTableros }}</strong>
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ totalCantidadTableros }}</span>
+                            <span class="metric-label">Unidades</span>
                         </div>
-                        <div class="tableros-resumen-item tableros-resumen-item--total">
-                            <span class="tableros-resumen-label">Costo total</span>
-                            <strong class="tableros-resumen-value">${{ formatCurrency(totalCostoTableros) }}</strong>
+                        <div class="metric-pill metric-pill--accent">
+                            <span class="metric-number">${{ formatCurrency(totalCostoTableros) }}</span>
+                            <span class="metric-label">Costo total</span>
                         </div>
                     </div>
 
-                    <div class="items-grid">
-                        <div v-for="tablero in tablerosOrdenadosParaVista" :key="`vista-tablero-${tablero.id}`" class="selected-item-edit">
-                            <div class="item-info">
-                                <div class="item-name">{{ obtenerNombreTablero(tablero) }}</div>
-                                <div class="item-code">{{ obtenerCodigoTablero(tablero) }}</div>
-                                <div class="item-price">${{ formatCurrency(obtenerCostoUnitarioTablero(tablero)) }} c/u</div>
-                                <div class="item-subtotal">{{ tablero.cantidad }} u • Subtotal: ${{ formatCurrency(obtenerSubtotalTablero(tablero)) }}</div>
+                    <!-- Lista de tableros -->
+                    <div v-for="tablero in tablerosOrdenadosParaVista" :key="`vista-tablero-${tablero.id}`" class="tablero-card">
+                        <div class="tablero-card-left">
+                            <div class="tablero-avatar">🪵</div>
+                            <div class="tablero-info">
+                                <div class="tablero-name">{{ obtenerNombreTablero(tablero) }}</div>
+                                <div class="tablero-code">{{ obtenerCodigoTablero(tablero) }}</div>
                             </div>
                         </div>
+                        <div class="tablero-card-center">
+                            <div class="tablero-pricing">
+                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioTablero(tablero)) }} <small>c/u</small></span>
+                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalTablero(tablero)) }}</span>
+                            </div>
+                        </div>
+                        <div class="tablero-card-right">
+                            <div class="quantity-controls-compact">
+                                <button
+                                    type="button"
+                                    class="btn-qty btn-qty--minus"
+                                    @click="decrementarCantidadTablero(tablero)"
+                                    title="Disminuir"
+                                >−</button>
+                                <input
+                                    :id="`qty-tablero-vista-${tablero.id}`"
+                                    v-model.number="tablero.cantidad"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    placeholder="1"
+                                    @blur="guardarCantidadTablero(tablero)"
+                                    @keyup.enter="guardarCantidadTablero(tablero)"
+                                    class="qty-input"
+                                />
+                                <button
+                                    type="button"
+                                    class="btn-qty btn-qty--plus"
+                                    @click="incrementarCantidadTablero(tablero)"
+                                    title="Aumentar"
+                                >+</button>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn-delete-sm"
+                                @click="removerTablero(tablero.id)"
+                                title="Eliminar tablero"
+                            >🗑</button>
+                        </div>
                     </div>
-                </div>
+                </transition-group>
 
-                <div v-else class="empty-list tableros-vista-empty">
-                    <p>📭 No hay tableros asignados a este componente</p>
+                <div v-else class="empty-state-inline">
+                    <div class="empty-icon">📭</div>
+                    <p>No hay tableros asignados</p>
+                    <button type="button" class="btn-empty-action" @click="mostrarModalTableros = true">+ Agregar tablero</button>
                 </div>
             </div>
 
-
+            <!-- Acciones -->
             <div class="form-actions">
                 <button type="button" class="btn-secondary" @click="$router.back()">
-                    <span>✕ Cancelar</span>
+                    ← Cancelar
                 </button>
                 <button type="submit" class="btn-primary" :disabled="guardando">
                     <span v-if="guardando">⏳ Guardando...</span>
-                    <span v-else>✓ Guardar Cambios</span>
+                    <span v-else>💾 Guardar Cambios</span>
                 </button>
             </div>
         </form>
@@ -1423,91 +1512,173 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.form-container {
-    max-width: 600px;
+/* ========== Container ========== */
+.editar-componente-container {
+    max-width: 900px;
     margin: 0 auto;
-    padding: 2rem;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    padding: 40px 20px;
     min-height: 100vh;
 }
 
-.form-header {
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
-    border-bottom: 2px solid #d4a574;
-}
-
-.header-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #5a4037;
-    margin: 0;
-}
-
-.form-subtitle {
-    font-size: 0.95rem;
-    color: #8b7355;
-    margin: 0;
-    font-weight: 500;
-}
-
-.error-message {
-    padding: 1.2rem 1.5rem;
-    margin-bottom: 1.5rem;
-    background-color: #ffebee;
-    color: #c62828;
-    border: 2px solid #ef5350;
-    border-radius: 8px;
+/* ========== Header ========== */
+.page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 32px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f7f6 100%);
+    padding: 24px 28px;
+    border-radius: 12px;
+    border: 1px solid #e8e3dd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
+}
+
+.btn-back:hover {
+    background: linear-gradient(135deg, #c89564 0%, #b88454 100%);
+    transform: translateX(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+}
+
+.back-arrow {
+    font-size: 16px;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #2c2c2c;
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.header-subtitle {
+    font-size: 14px;
+    color: #888;
+    margin: 0;
     font-weight: 500;
 }
 
-.error-close {
+.header-badges {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.badge-code {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.25);
+}
+
+/* ========== Alerts ========== */
+.alert {
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    font-size: 14px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.alert-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.alert-text {
+    flex: 1;
+}
+
+.alert-close {
     background: none;
     border: none;
-    color: inherit;
+    font-size: 22px;
     cursor: pointer;
-    font-size: 1.4rem;
+    color: inherit;
     padding: 0;
-    width: 32px;
-    height: 32px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: 0.2s;
 }
 
-.error-close:hover {
-    opacity: 0.7;
+.alert-close:hover {
+    opacity: 1;
 }
 
-/* Mensaje personalizado */
+.alert-error {
+    background: #fff5f5;
+    color: #c53030;
+    border: 1px solid #feb2b2;
+    border-left: 4px solid #e53e3e;
+}
+
+/* ========== Toast Messages ========== */
 .custom-message {
-    padding: 1rem 1.5rem;
-    margin-bottom: 1.5rem;
-    border-radius: 10px;
+    padding: 14px 20px;
+    border-radius: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     animation: slideDown 0.3s ease-out;
     position: fixed;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
     width: 90%;
-    max-width: 500px;
+    max-width: 480px;
     z-index: 2000;
     margin: 0;
+    backdrop-filter: blur(8px);
 }
 
 .message-content {
@@ -1594,51 +1765,189 @@ onMounted(async () => {
     transform: translateY(-20px);
 }
 
+/* ========== Loading ========== */
 .loading-state {
     text-align: center;
-    padding: 4rem 2rem;
-    background-color: white;
+    padding: 80px 24px;
+    background: white;
     border-radius: 12px;
-    color: #999;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #ede7e0;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #ede7e0;
+    border-top-color: #d4a574;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .loading-state p {
-    font-size: 1.1rem;
+    font-size: 15px;
     margin: 0;
+    color: #8b7355;
+    font-weight: 500;
+}
+
+/* ========== Stats Bar ========== */
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #e8e3dd;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.stat-card--highlight {
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border-color: #d4a574;
+}
+
+.stat-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
     color: #8b7355;
 }
 
-.form-content {
+.stat-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #5a4037;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stat-value small {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b7355;
+}
+
+/* ========== Info Card ========== */
+.info-card {
     background: white;
-    padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid #ede6dd;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #ede7e0;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #5a4037;
+    margin: 0 0 20px 0;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #f5f1ed;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #f5f1ed;
+}
+
+.section-header .section-title {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.btn-action-header {
+    padding: 8px 18px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
+    white-space: nowrap;
+}
+
+.btn-action-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.35);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
 }
 
 .form-group {
-    margin-bottom: 1.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.form-group:last-of-type {
-    margin-bottom: 2.5rem;
+.form-group.full-width {
+    grid-column: 1 / -1;
 }
 
-.form-group label {
-    display: block;
-    margin-bottom: 0.75rem;
+.form-label {
     font-weight: 600;
     color: #5a4037;
-    font-size: 0.95rem;
-    letter-spacing: 0.4px;
+    font-size: 14px;
+    letter-spacing: 0.3px;
 }
 
-.form-group input,
-.form-group textarea {
+.form-input {
     width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #d4a574;
+    padding: 12px 16px;
+    border: 2px solid #e0d5c7;
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
@@ -1648,81 +1957,337 @@ onMounted(async () => {
     color: #5a4037;
 }
 
-.form-group input::placeholder,
-.form-group textarea::placeholder {
-    color: #d4a574;
-    opacity: 0.6;
+.form-input::placeholder {
+    color: #c4a882;
+    opacity: 0.7;
 }
 
-.form-group input:hover,
-.form-group textarea:hover {
+.form-input:hover {
+    border-color: #d4a574;
     background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
-    border-color: #c89564;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.form-input:focus {
     outline: none;
     background: white;
     border-color: #c89564;
-    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.2);
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.15);
+}
+
+.textarea-input {
+    resize: vertical;
+    min-height: 70px;
 }
 
 .error-text {
     display: block;
     color: #c62828;
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
+    font-size: 13px;
 }
 
+/* ========== Tableros Section ========== */
+.tableros-metrics {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.metric-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #f5f1ed;
+    border-radius: 20px;
+    border: 1px solid #e8e3dd;
+}
+
+.metric-pill--accent {
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    border-color: #d4a574;
+}
+
+.metric-number {
+    font-size: 14px;
+    font-weight: 800;
+    color: #5a4037;
+}
+
+.metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b7355;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tablero-card {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    background: white;
+    border: 1px solid #e8e3dd;
+    border-radius: 10px;
+    gap: 16px;
+    margin-bottom: 10px;
+    transition: all 0.25s ease;
+}
+
+.tablero-card:hover {
+    border-color: #d4a574;
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.12);
+}
+
+.tablero-card-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.tablero-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    border: 1px solid #e8e3dd;
+}
+
+.tablero-info {
+    min-width: 0;
+}
+
+.tablero-name {
+    font-weight: 700;
+    color: #2c2c2c;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tablero-code {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.tablero-card-center {
+    flex-shrink: 0;
+}
+
+.tablero-pricing {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.tablero-unit-price {
+    font-size: 12px;
+    color: #8b7355;
+    font-weight: 500;
+}
+
+.tablero-unit-price small {
+    font-size: 10px;
+}
+
+.tablero-subtotal {
+    font-size: 15px;
+    font-weight: 800;
+    color: #2e7d32;
+}
+
+.tablero-card-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.quantity-controls-compact {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 2px solid #e8e3dd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f9f7f4;
+}
+
+.btn-qty {
+    width: 32px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: #5a4037;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.btn-qty:hover {
+    background: #e8e3dd;
+}
+
+.btn-qty--minus:hover {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.btn-qty--plus:hover {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.qty-input {
+    width: 48px;
+    height: 34px;
+    border: none;
+    border-left: 1px solid #e8e3dd;
+    border-right: 1px solid #e8e3dd;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #5a4037;
+    background: white;
+    -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.qty-input:focus {
+    outline: none;
+    background: #fffdf9;
+}
+
+.btn-delete-sm {
+    width: 34px;
+    height: 34px;
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 8px;
+    color: #c53030;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.btn-delete-sm:hover {
+    background: #fed7d7;
+    border-color: #fc8181;
+    transform: scale(1.08);
+}
+
+/* ========== Empty State ========== */
+.empty-state-inline {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.empty-state-inline .empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.empty-state-inline p {
+    margin: 0 0 16px;
+    font-size: 15px;
+    color: #888;
+    font-weight: 500;
+}
+
+.btn-empty-action {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.25);
+}
+
+.btn-empty-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(212, 165, 116, 0.35);
+}
+
+/* ========== Form Actions ========== */
 .form-actions {
     display: flex;
-    gap: 1rem;
-    justify-content: space-between;
+    gap: 14px;
+    justify-content: flex-end;
+    padding-top: 8px;
 }
 
 .btn-primary,
 .btn-secondary {
-    flex: 1;
-    padding: 12px 24px;
+    padding: 14px 28px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 15px;
     cursor: pointer;
     transition: all 0.3s;
-    font-weight: 600;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .btn-primary {
     background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
     color: white;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 3px 10px rgba(76, 175, 80, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 6px 18px rgba(76, 175, 80, 0.35);
 }
 
 .btn-primary:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
 }
 
 .btn-secondary {
-    background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(158, 158, 158, 0.2);
+    background: white;
+    color: #666;
+    border: 2px solid #e0d5c7;
+    box-shadow: none;
 }
 
 .btn-secondary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
+    background: #f5f1ed;
+    border-color: #d4a574;
+    color: #5a4037;
 }
 
 /* Modal Styles */
@@ -1777,8 +2342,8 @@ onMounted(async () => {
 }
 
 .modal-header {
-    padding: 24px 28px;
-    border-bottom: 2px solid #e8ddd7;
+    padding: 22px 24px;
+    border-bottom: 2px solid #f0ebe5;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1837,6 +2402,31 @@ onMounted(async () => {
     letter-spacing: 0.5px;
 }
 
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.list-enter-active {
+    transition: all 0.3s ease;
+}
+.list-leave-active {
+    transition: all 0.25s ease;
+}
+.list-enter-from {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
 .items-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -1885,13 +2475,9 @@ onMounted(async () => {
 .quantity-input-group label {
     font-size: 11px;
     font-weight: 700;
-    color: #5a4037;
+    color: #8b7355;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .quantity-input {
@@ -2017,94 +2603,33 @@ onMounted(async () => {
     color: #2e7d32;
 }
 
-.tableros-inline-summary {
-    max-width: 260px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 12px;
-    opacity: 0.95;
-}
-
-.tableros-vista-panel {
-    margin-top: 12px;
-    padding: 12px;
-    border: 1px solid #e8ddd7;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #fffdf9 0%, #fffcf8 100%);
-}
-
-.tableros-vista-empty {
-    margin-top: 12px;
-    padding: 14px 12px;
-    border: 1px dashed #d4a574;
-    border-radius: 8px;
-    background: #fffdf9;
-}
-
-.tableros-resumen-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: 14px;
-}
-
-.tableros-resumen-item {
-    padding: 10px 12px;
-    border: 1px solid #e8ddd7;
-    border-radius: 8px;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.tableros-resumen-item--total {
-    border-color: #d4a574;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-}
-
-.tableros-resumen-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #8b7355;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.tableros-resumen-value {
-    font-size: 14px;
-    color: #5a4037;
-}
-
 .btn-remove {
-    background: linear-gradient(135deg, #ffebee 0%, #ffdddd 100%);
-    color: #c62828;
-    border: 2px solid #c62828;
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
-    font-size: 20px;
+    background: #fff5f5;
+    color: #c53030;
+    border: 1px solid #fed7d7;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 18px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s;
     font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 4px rgba(198, 40, 40, 0.1);
+    box-shadow: none;
 }
 
 .btn-remove:hover {
-    background: linear-gradient(135deg, #ff9999 0%, #ff8888 100%);
-    color: white;
-    border-color: #a01010;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(198, 40, 40, 0.25);
+    background: #fed7d7;
+    color: #c53030;
+    border-color: #fc8181;
+    transform: scale(1.08);
+    box-shadow: none;
 }
 
 .btn-remove:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(198, 40, 40, 0.15);
+    transform: scale(0.95);
 }
 
 .horas-summary {
@@ -2141,13 +2666,9 @@ onMounted(async () => {
 .counter-label {
     font-size: 11px;
     font-weight: 700;
-    color: #5a4037;
+    color: #8b7355;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
     margin-bottom: 6px;
 }
 
@@ -2749,5 +3270,77 @@ onMounted(async () => {
 
 .btn-add-material:active {
     transform: translateY(0);
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+    .editar-componente-container {
+        padding: 16px 12px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 18px 16px;
+    }
+
+    .header-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .stats-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .info-card {
+        padding: 18px 14px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tablero-card {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tablero-card-left {
+        flex: 1 1 100%;
+    }
+
+    .tablero-card-center {
+        flex: 1;
+    }
+
+    .tablero-card-right {
+        flex: 0 0 auto;
+    }
+
+    .tableros-metrics {
+        flex-direction: column;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 20px;
+    }
+
+    .tablero-pricing {
+        align-items: flex-start;
+    }
 }
 </style>
