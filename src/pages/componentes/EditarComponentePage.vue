@@ -74,6 +74,39 @@
                     🪵 Gestionar Tableros ({{ tablerosDelComponente.length }})
                     <span v-if="resumenTablerosSeleccionados" class="tableros-inline-summary">• {{ resumenTablerosSeleccionados }}</span>
                 </button>
+
+                <div v-if="tablerosDelComponente.length" class="selected-items tableros-vista-panel">
+                    <h4 class="items-subtitle">Resumen de Tableros</h4>
+                    <div class="tableros-resumen-grid">
+                        <div class="tableros-resumen-item">
+                            <span class="tableros-resumen-label">Tipos</span>
+                            <strong class="tableros-resumen-value">{{ tablerosDelComponente.length }}</strong>
+                        </div>
+                        <div class="tableros-resumen-item">
+                            <span class="tableros-resumen-label">Unidades</span>
+                            <strong class="tableros-resumen-value">{{ totalCantidadTableros }}</strong>
+                        </div>
+                        <div class="tableros-resumen-item tableros-resumen-item--total">
+                            <span class="tableros-resumen-label">Costo total</span>
+                            <strong class="tableros-resumen-value">${{ formatCurrency(totalCostoTableros) }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="items-grid">
+                        <div v-for="tablero in tablerosOrdenadosParaVista" :key="`vista-tablero-${tablero.id}`" class="selected-item-edit">
+                            <div class="item-info">
+                                <div class="item-name">{{ obtenerNombreTablero(tablero) }}</div>
+                                <div class="item-code">{{ obtenerCodigoTablero(tablero) }}</div>
+                                <div class="item-price">${{ formatCurrency(obtenerCostoUnitarioTablero(tablero)) }} c/u</div>
+                                <div class="item-subtotal">{{ tablero.cantidad }} u • Subtotal: ${{ formatCurrency(obtenerSubtotalTablero(tablero)) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="empty-list tableros-vista-empty">
+                    <p>📭 No hay tableros asignados a este componente</p>
+                </div>
             </div>
 
 
@@ -783,6 +816,12 @@ const resumenTablerosSeleccionados = computed(() => {
     }
 
     return `${nombresUnicos.slice(0, maxVisibles).join(', ')} +${nombresUnicos.length - maxVisibles}`;
+});
+
+const tablerosOrdenadosParaVista = computed(() => {
+    return [...tablerosDelComponente.value].sort((a, b) => {
+        return obtenerNombreTablero(a).localeCompare(obtenerNombreTablero(b), 'es', { sensitivity: 'base' });
+    });
 });
 
 const obtenerCostoUnitarioTablero = (registro) => {
@@ -1985,6 +2024,22 @@ onMounted(async () => {
     white-space: nowrap;
     font-size: 12px;
     opacity: 0.95;
+}
+
+.tableros-vista-panel {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #e8ddd7;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fffdf9 0%, #fffcf8 100%);
+}
+
+.tableros-vista-empty {
+    margin-top: 12px;
+    padding: 14px 12px;
+    border: 1px dashed #d4a574;
+    border-radius: 8px;
+    background: #fffdf9;
 }
 
 .tableros-resumen-grid {
