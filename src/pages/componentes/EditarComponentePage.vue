@@ -79,11 +79,20 @@
                     </div>
                     <span class="stat-amount">${{ formatCurrency(totalCostoCubreCantos) }}</span>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🪵</div>
+                    <div class="stat-content">
+                        <span class="stat-label">Acabado Tableros</span>
+                        <strong class="stat-value">{{ acabadoTablerosDelComponente.length }} <small>tipos</small></strong>
+                        <span class="stat-detail">{{ totalCantidadAcabadoTableros }} unidades</span>
+                    </div>
+                    <span class="stat-amount">${{ formatCurrency(totalCostoAcabadoTableros) }}</span>
+                </div>
                 <div class="stat-card stat-card--highlight">
                     <div class="stat-icon stat-icon--total">💰</div>
                     <div class="stat-content">
                         <span class="stat-label">Costo total</span>
-                        <strong class="stat-value stat-value--total">${{ formatCurrency(totalCostoEstructuras + totalCostoCubreCantos) }}</strong>
+                        <strong class="stat-value stat-value--total">${{ formatCurrency(totalCostoEstructuras + totalCostoCubreCantos + totalCostoAcabadoTableros) }}</strong>
                     </div>
                 </div>
             </div>
@@ -315,6 +324,89 @@
                 </div>
             </div>
 
+            <!-- Acabado Tableros Asociados -->
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🪵</span>
+                        Acabado Tableros Asociados
+                        <span v-if="acabadoTablerosDelComponente.length" class="section-count">{{ acabadoTablerosDelComponente.length }}</span>
+                    </h2>
+                    <button type="button" class="btn-action-header" @click="abrirSelectorAcabadoTableros">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Agregar
+                    </button>
+                </div>
+
+                <div v-if="acabadoTablerosDelComponente.length > 0">
+                    <div class="tableros-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ acabadoTablerosDelComponente.length }}</span>
+                            <span class="metric-label">Tipos</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ totalCantidadAcabadoTableros }}</span>
+                            <span class="metric-label">Unidades</span>
+                        </div>
+                        <div class="metric-pill metric-pill--accent">
+                            <span class="metric-number">${{ formatCurrency(totalCostoAcabadoTableros) }}</span>
+                            <span class="metric-label">Costo total</span>
+                        </div>
+                    </div>
+
+                    <TransitionGroup name="entity-list" tag="div" class="entity-list">
+                        <div
+                            v-for="item in acabadoTablerosOrdenadosParaVista"
+                            :key="`at-inline-${item.id}`"
+                            class="entity-row"
+                        >
+                            <div class="entity-row-left">
+                                <div class="entity-avatar">🪵</div>
+                                <div class="entity-info">
+                                    <div class="entity-name">{{ obtenerNombreAcabadoTablero(item) }}</div>
+                                    <div class="entity-code">{{ obtenerCodigoAcabadoTablero(item) }}</div>
+                                </div>
+                            </div>
+                            <div class="entity-row-center">
+                                <div class="entity-pricing">
+                                    <span class="entity-unit-price">${{ formatCurrency(obtenerCostoUnitarioAcabadoTablero(item)) }} <small>c/u</small></span>
+                                    <span class="entity-subtotal">${{ formatCurrency(obtenerSubtotalAcabadoTablero(item)) }}</span>
+                                </div>
+                            </div>
+                            <div class="entity-row-right">
+                                <div class="quantity-controls-compact">
+                                    <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadAcabadoTablero(item)" title="Disminuir">−</button>
+                                    <input
+                                        v-model.number="item.cantidad"
+                                        type="number" min="1" step="1" placeholder="1"
+                                        @blur="guardarCantidadAcabadoTablero(item)"
+                                        @keyup.enter="guardarCantidadAcabadoTablero(item)"
+                                        class="qty-input"
+                                    />
+                                    <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadAcabadoTablero(item)" title="Aumentar">+</button>
+                                </div>
+                                <button type="button" class="btn-delete-sm" @click="removerAcabadoTablero(item)" title="Eliminar">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </TransitionGroup>
+                </div>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-illustration">
+                        <span class="empty-icon">🪵</span>
+                        <div class="empty-rings"></div>
+                    </div>
+                    <p class="empty-title">Sin acabado tableros asignados</p>
+                    <p class="empty-desc">Agrega acabados de tablero para las superficies del componente</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorAcabadoTableros">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Agregar Acabado Tablero
+                    </button>
+                </div>
+            </div>
+
             <!-- Acciones -->
             <div class="form-actions form-actions--sticky">
                 <button type="button" class="btn-secondary" @click="$router.back()">
@@ -362,6 +454,21 @@
             @seleccionar="agregarCubreCanto"
             @update:busqueda="busquedaCubreCanto = $event"
         />
+
+        <!-- Selector de Acabado Tableros -->
+        <EntitySelectorModal
+            :visible="mostrarSelectorAcabadoTableros"
+            icon="🪵"
+            titulo="Seleccionar Acabado Tableros"
+            label-singular="Acabado Tablero"
+            :busqueda="busquedaAcabadoTablero"
+            :items-filtrados="acabadoTablerosFiltrados"
+            :format-currency="formatCurrency"
+            :obtener-precio="(item) => item.costo_unitario || item.costo || item.precio || 0"
+            @close="mostrarSelectorAcabadoTableros = false"
+            @seleccionar="agregarAcabadoTablero"
+            @update:busqueda="busquedaAcabadoTablero = $event"
+        />
     </div>
 </template>
 
@@ -374,6 +481,8 @@ import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-compo
 import { useEstructuraStore } from '@/stores/estructura';
 import { useAcabadoCubreCantosPorComponenteStore } from '@/stores/acabado-cubre-cantos-por-componente';
 import { useAcabadoCubreCantosStore } from '@/stores/acabado-cubre-cantos';
+import { useAcabadoTableroPorComponenteStore } from '@/stores/acabado-tablero-por-componente';
+import { useAcabadoTableroStore } from '@/stores/acabado-tablero';
 import { useEntidadPorComponente } from '@/composables/useEntidadPorComponente';
 import EntitySelectorModal from '@/components/EntitySelectorModal.vue';
 
@@ -384,6 +493,8 @@ const storeEstructurasPorComponente = useEstructurasPorComponenteStore();
 const storeEstructuras = useEstructuraStore();
 const storeAcabadoCubreCantosPorComponente = useAcabadoCubreCantosPorComponenteStore();
 const storeAcabadoCubreCantos = useAcabadoCubreCantosStore();
+const storeAcabadoTableroPorComponente = useAcabadoTableroPorComponenteStore();
+const storeAcabadoTableros = useAcabadoTableroStore();
 
 // Estado
 const formData = ref({
@@ -433,8 +544,10 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
 // ===== Catálogos disponibles para entidades =====
 const estructurasDisponibles = ref([]);
 const cubreCantosDisponibles = ref([]);
+const acabadoTablerosDisponibles = ref([]);
 const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles.value || []).map(e => [e.id, e])));
 const cubreCantosDisponiblesMap = computed(() => new Map((cubreCantosDisponibles.value || []).map(c => [c.id, c])));
+const acabadoTablerosDisponiblesMap = computed(() => new Map((acabadoTablerosDisponibles.value || []).map(t => [t.id, t])));
 
 // ===== Composables de entidades por componente =====
 const {
@@ -507,8 +620,44 @@ const {
     mostrarMensaje,
 });
 
+const {
+    items: acabadoTablerosDelComponente,
+    mostrarSelector: mostrarSelectorAcabadoTableros,
+    busqueda: busquedaAcabadoTablero,
+    obtenerId: obtenerIdAcabadoTableroRelacion,
+    obtenerNombre: obtenerNombreAcabadoTablero,
+    obtenerCodigo: obtenerCodigoAcabadoTablero,
+    obtenerCostoUnitario: obtenerCostoUnitarioAcabadoTablero,
+    obtenerSubtotal: obtenerSubtotalAcabadoTablero,
+    itemsOrdenados: acabadoTablerosOrdenadosParaVista,
+    totalCantidad: totalCantidadAcabadoTableros,
+    totalCosto: totalCostoAcabadoTableros,
+    cargar: cargarAcabadoTablerosPorComponente,
+    agregar: agregarAcabadoTablero,
+    guardarCantidad: guardarCantidadAcabadoTablero,
+    incrementarCantidad: incrementarCantidadAcabadoTablero,
+    decrementarCantidad: decrementarCantidadAcabadoTablero,
+    remover: removerAcabadoTablero,
+} = useEntidadPorComponente({
+    label: 'Acabado Tablero',
+    primaryIdField: 'acabado_tablero_id',
+    alternateIdField: null,
+    nestedKeys: ['acabado_tablero', 'acabadoTablero'],
+    idAccessors: ['acabado_tablero_id', 'acabadoTablero.id', 'acabado_tablero.id'],
+    costFields: ['costo_unitario', 'costo', 'precio'],
+    disponiblesMap: acabadoTablerosDisponiblesMap,
+    store: storeAcabadoTableroPorComponente,
+    storeCrear: 'crearAcabadoTableroPorComponente',
+    storeActualizar: 'actualizarAcabadoTableroPorComponente',
+    storeEliminar: 'eliminarAcabadoTableroPorComponente',
+    storeFetch: 'fetchAcabadoTablerosPorComponente',
+    componenteId,
+    mostrarMensaje,
+});
+
 const busquedaEstructuraDebounced = createDebouncedRef(busquedaEstructura);
 const busquedaCubreCantoDebounced = createDebouncedRef(busquedaCubreCanto);
+const busquedaAcabadoTableroDebounced = createDebouncedRef(busquedaAcabadoTablero);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -538,6 +687,12 @@ const cargarComponente = async () => {
                     cubreCantosDisponibles.value = storeAcabadoCubreCantos.acabadoCubreCantos || [];
                 }
             }),
+            cargarAcabadoTablerosPorComponente(async () => {
+                if (!acabadoTablerosDisponibles.value.length) {
+                    await storeAcabadoTableros.fetchAcabadoTableros();
+                    acabadoTablerosDisponibles.value = storeAcabadoTableros.acabadoTableros || [];
+                }
+            }),
         ]);
     } catch (err) {
         error.value = 'Error al cargar el componente';
@@ -562,6 +717,11 @@ const abrirSelectorCubreCantos = async () => {
     await storeAcabadoCubreCantos.fetchAcabadoCubreCantos();
     cubreCantosDisponibles.value = storeAcabadoCubreCantos.acabadoCubreCantos || [];
     mostrarSelectorCubreCantos.value = true;
+};
+const abrirSelectorAcabadoTableros = async () => {
+    await storeAcabadoTableros.fetchAcabadoTableros();
+    acabadoTablerosDisponibles.value = storeAcabadoTableros.acabadoTableros || [];
+    mostrarSelectorAcabadoTableros.value = true;
 };
 
 // Helper para filtrar por búsqueda y por items existentes
@@ -591,6 +751,11 @@ const estructurasFiltradas = computed(() => {
 const cubreCantosFiltrados = computed(() => {
     const cubreCantosAgregados = acabadoCubreCantosDelComponente.value.map(c => obtenerIdCubreCantoRelacion(c));
     return filtrarCatalogo(cubreCantosDisponibles.value, busquedaCubreCantoDebounced.value, cubreCantosAgregados);
+});
+
+const acabadoTablerosFiltrados = computed(() => {
+    const tablerosAgregados = acabadoTablerosDelComponente.value.map(t => obtenerIdAcabadoTableroRelacion(t));
+    return filtrarCatalogo(acabadoTablerosDisponibles.value, busquedaAcabadoTableroDebounced.value, tablerosAgregados);
 });
 
 
