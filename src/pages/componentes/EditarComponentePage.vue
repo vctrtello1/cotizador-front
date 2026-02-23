@@ -63,6 +63,17 @@
                 ></textarea>
             </div>
 
+            <div class="form-group">
+                <label>Tableros del Componente</label>
+                <button
+                    type="button"
+                    class="btn-add-material"
+                    @click="mostrarModalTableros = true"
+                >
+                    🪵 Gestionar Tableros ({{ tablerosDelComponente.length }})
+                </button>
+            </div>
+
 
             <div class="form-actions">
                 <button type="button" class="btn-secondary" @click="$router.back()">
@@ -400,6 +411,117 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Tableros -->
+        <div v-if="mostrarModalTableros" class="modal-overlay" @click.self="mostrarModalTableros = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">🪵 Editar Tableros</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="add-section">
+                        <button
+                            type="button"
+                            class="btn-add-material"
+                            @click="abrirSelectorTableros"
+                        >+ Agregar Tablero</button>
+                    </div>
+
+                    <div v-if="tablerosDelComponente && tablerosDelComponente.length > 0" class="selected-items">
+                        <h4 class="items-subtitle">Tableros Seleccionados</h4>
+                        <div class="items-grid">
+                            <div v-for="tablero in tablerosDelComponente" :key="tablero.id" class="selected-item-edit">
+                                <div class="item-info">
+                                    <div class="item-name">{{ obtenerNombreTablero(tablero) }}</div>
+                                    <div class="item-code">{{ obtenerCodigoTablero(tablero) }}</div>
+                                    <div class="item-price">${{ formatCurrency(tablero.tablero?.costo_unitario || tablero.tablero?.costo || 0) }}</div>
+                                </div>
+                                <div class="quantity-input-group">
+                                    <label :for="`qty-tablero-${tablero.id}`">Cantidad (unidades)</label>
+                                    <div class="quantity-controls">
+                                        <button
+                                            type="button"
+                                            class="btn-qty-control btn-qty-minus"
+                                            @click="decrementarCantidadTablero(tablero)"
+                                            title="Disminuir"
+                                        >−</button>
+                                        <input
+                                            :id="`qty-tablero-${tablero.id}`"
+                                            v-model.number="tablero.cantidad"
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            placeholder="1"
+                                            @blur="guardarCantidadTablero(tablero)"
+                                            @keyup.enter="guardarCantidadTablero(tablero)"
+                                            class="quantity-input"
+                                        />
+                                        <button
+                                            type="button"
+                                            class="btn-qty-control btn-qty-plus"
+                                            @click="incrementarCantidadTablero(tablero)"
+                                            title="Aumentar"
+                                        >+</button>
+                                    </div>
+                                </div>
+                                <button class="btn-remove" @click="removerTablero(tablero.id)" title="Remover">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="empty-list">
+                        <p>📭 No hay tableros seleccionados</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarModalTableros = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Selector de Tableros -->
+        <div v-if="mostrarSelectorTableros" class="modal-overlay" @click.self="mostrarSelectorTableros = false">
+            <div class="modal-content modal-content-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">🪵 Seleccionar Tableros</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="search-section">
+                        <input
+                            v-model="busquedaTablero"
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar tablero..."
+                        />
+                    </div>
+                    <div class="materiales-grid">
+                        <div
+                            v-for="tablero in tablerosFiltrados"
+                            :key="tablero.id"
+                            class="material-card"
+                            @click="agregarTablero(tablero)"
+                        >
+                            <div class="card-header">
+                                <div class="card-name">{{ tablero.nombre }}</div>
+                                <div class="card-badge">{{ tablero.codigo }}</div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-label">Costo Unitario</p>
+                                <p class="card-price">${{ formatCurrency(tablero.costo_unitario || tablero.costo || 0) }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-select">+ Seleccionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="tablerosFiltrados.length === 0" class="empty-list">
+                        <p>📭 No hay tableros disponibles</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarSelectorTableros = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -410,12 +532,14 @@ import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
 import { useMateriales } from '@/stores/materiales';
+import { useTablerosPorComponenteStore } from '@/stores/tableros-por-componente';
 
 const router = useRouter();
 const route = useRoute();
 const componenteId = computed(() => Number.parseInt(route.params.id, 10) || 0);
 const storeMaterialesPorComponente = useMaterialesPorComponente();
 const storeMateriales = useMateriales();
+const storeTablerosPorComponente = useTablerosPorComponenteStore();
 
 // Estado
 const formData = ref({
@@ -453,16 +577,22 @@ const cerrarMensaje = () => {
     tipoMensaje.value = null;
 };
 const materialesDelComponente = ref([]);
+const tablerosDelComponente = ref([]);
 
 // Modales
 const mostrarModalMateriales = ref(false);
 const mostrarModalManoDeObra = ref(false);
 const mostrarModalAcabado = ref(false);
+const mostrarModalTableros = ref(false);
 const mostrarSelectorMateriales = ref(false);
+const mostrarSelectorTableros = ref(false);
 
 // Datos para seleccionar materiales
 const materialesDisponibles = ref([]);
 const busquedaMaterial = ref('');
+const tablerosDisponibles = ref([]);
+const busquedaTablero = ref('');
+const campoIdTableroRelacion = ref('tablero_id');
 
 // Total de horas calculado dinámicamente
 const totalHoras = computed(() => {
@@ -499,8 +629,10 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
 };
 
 const busquedaMaterialDebounced = createDebouncedRef(busquedaMaterial);
+const busquedaTableroDebounced = createDebouncedRef(busquedaTablero);
 const busquedaManoDeObraDebounced = createDebouncedRef(busquedaManoDeObra);
 const busquedaAcabadoDebounced = createDebouncedRef(busquedaAcabado);
+const tablerosDisponiblesMap = computed(() => new Map((tablerosDisponibles.value || []).map(tablero => [tablero.id, tablero])));
 
 // Horas de mano de obra por componente
 const horasManoDeObra = ref([]);
@@ -535,7 +667,10 @@ const cargarComponente = async () => {
         };
         
         // Cargar catálogos relacionados en paralelo
-        await cargarMaterialesPorComponente();
+        await Promise.all([
+            cargarMaterialesPorComponente(),
+            cargarTablerosPorComponente(),
+        ]);
     } catch (err) {
         error.value = 'Error al cargar el componente';
         console.error(err);
@@ -567,6 +702,75 @@ const cargarMaterialesPorComponente = async () => {
         }));
     } catch (err) {
         console.error('Error cargando materiales por componente:', err);
+    }
+};
+
+const obtenerIdTableroRelacion = (registro) => {
+    return registro?.tablero_id
+        ?? registro?.acabado_tablero_id
+        ?? registro?.tablero?.id
+        ?? registro?.acabado_tablero?.id
+        ?? registro?.tableroId
+        ?? null;
+};
+
+const normalizarTableroRelacion = (registro) => {
+    const tableroId = obtenerIdTableroRelacion(registro);
+    const tablero = registro?.tablero
+        || registro?.acabado_tablero
+        || tablerosDisponiblesMap.value.get(tableroId)
+        || {};
+
+    return {
+        ...registro,
+        tablero_id: tableroId,
+        cantidad: Number(registro?.cantidad || 1),
+        tablero,
+    };
+};
+
+const obtenerNombreTablero = (registro) => {
+    const tableroId = obtenerIdTableroRelacion(registro);
+    const tablero = registro?.tablero
+        || registro?.acabado_tablero
+        || tablerosDisponiblesMap.value.get(tableroId)
+        || null;
+
+    return tablero?.nombre || `Tablero #${tableroId || 'N/A'}`;
+};
+
+const obtenerCodigoTablero = (registro) => {
+    const tableroId = obtenerIdTableroRelacion(registro);
+    const tablero = registro?.tablero
+        || registro?.acabado_tablero
+        || tablerosDisponiblesMap.value.get(tableroId)
+        || null;
+
+    return tablero?.codigo || '—';
+};
+
+const cargarTablerosPorComponente = async () => {
+    try {
+        if (!tablerosDisponibles.value.length) {
+            await cargarCatalogo('/acabado-tableros', tablerosDisponibles);
+        }
+
+        const response = await storeTablerosPorComponente.fetchTablerosPorComponente();
+        const data = Array.isArray(response) ? response : [];
+
+        const primerRegistro = data[0] || null;
+        if (primerRegistro?.acabado_tablero_id !== undefined) {
+            campoIdTableroRelacion.value = 'acabado_tablero_id';
+        } else {
+            campoIdTableroRelacion.value = 'tablero_id';
+        }
+
+        tablerosDelComponente.value = data
+            .filter(item => Number(item?.componente_id) === componenteId.value)
+            .map(normalizarTableroRelacion);
+    } catch (err) {
+        console.error('Error cargando tableros por componente:', err);
+        tablerosDelComponente.value = [];
     }
 };
 
@@ -773,6 +977,7 @@ const abrirSelector = async (endpoint, catalogRef, showRef) => {
 };
 
 const abrirSelectorMateriales = () => abrirSelector('/materiales', materialesDisponibles, mostrarSelectorMateriales);
+const abrirSelectorTableros = () => abrirSelector('/acabado-tableros', tablerosDisponibles, mostrarSelectorTableros);
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
@@ -796,6 +1001,11 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
 const materialesFiltrados = computed(() => {
     const materialesAgregados = materialesDelComponente.value.map(m => m.material_id);
     return filtrarCatalogo(materialesDisponibles.value, busquedaMaterialDebounced.value, materialesAgregados);
+});
+
+const tablerosFiltrados = computed(() => {
+    const tablerosAgregados = tablerosDelComponente.value.map(t => t.tablero_id);
+    return filtrarCatalogo(tablerosDisponibles.value, busquedaTableroDebounced.value, tablerosAgregados);
 });
 
 // Métodos simplificados
@@ -831,6 +1041,96 @@ const agregarMaterial = async (material) => {
     } catch (err) {
         console.error('Error agregando material:', err);
         mostrarMensaje('❌ Error al agregar material', 'error', 3000);
+    }
+};
+
+const crearPayloadTablero = (tableroId, cantidad = 1) => ({
+    componente_id: componenteId.value,
+    [campoIdTableroRelacion.value]: tableroId,
+    cantidad,
+});
+
+const agregarTablero = async (tablero) => {
+    try {
+        if (!tablero || !tablero.id) return;
+
+        const yaExiste = tablerosDelComponente.value.some(t => t.tablero_id === tablero.id);
+        if (yaExiste) {
+            mostrarMensaje('⚠️ Este tablero ya está agregado', 'warning', 2000);
+            return;
+        }
+
+        let resultado;
+        try {
+            resultado = await storeTablerosPorComponente.crearTableroPorComponente(crearPayloadTablero(tablero.id, 1));
+        } catch (err) {
+            if (campoIdTableroRelacion.value === 'tablero_id') {
+                campoIdTableroRelacion.value = 'acabado_tablero_id';
+                resultado = await storeTablerosPorComponente.crearTableroPorComponente(crearPayloadTablero(tablero.id, 1));
+            } else {
+                throw err;
+            }
+        }
+
+        const datosResultado = normalizarTableroRelacion(resultado?.data || resultado || {});
+        tablerosDelComponente.value.push({
+            ...datosResultado,
+            tablero_id: tablero.id,
+            cantidad: Number(datosResultado.cantidad || 1),
+            tablero: { ...tablero },
+        });
+
+        mostrarMensaje('✅ Tablero agregado', 'success', 2000);
+        mostrarSelectorTableros.value = false;
+        busquedaTablero.value = '';
+    } catch (err) {
+        console.error('Error agregando tablero:', err);
+        mostrarMensaje('❌ Error al agregar tablero', 'error', 3000);
+    }
+};
+
+const guardarCantidadTablero = async (item) => {
+    if (!item || !item.id) return;
+
+    const cantidadFinal = Math.round(item.cantidad || 1);
+    if (cantidadFinal < 1) {
+        item.cantidad = 1;
+        return;
+    }
+
+    item.cantidad = cantidadFinal;
+
+    try {
+        await storeTablerosPorComponente.actualizarTableroPorComponente(item.id, { cantidad: cantidadFinal });
+    } catch (err) {
+        console.error('Error guardando cantidad de tablero:', err);
+        mostrarMensaje('❌ Error al actualizar cantidad de tablero', 'error', 3000);
+    }
+};
+
+const incrementarCantidadTablero = (item) => {
+    if (!item) return;
+    item.cantidad = Math.floor(item.cantidad || 1) + 1;
+    guardarCantidadTablero(item);
+};
+
+const decrementarCantidadTablero = (item) => {
+    if (!item || !item.cantidad || item.cantidad <= 1) return;
+    item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
+    guardarCantidadTablero(item);
+};
+
+const removerTablero = async (tableroRelacionId) => {
+    try {
+        const tableroRel = tablerosDelComponente.value.find(t => t.id === tableroRelacionId);
+        if (!tableroRel?.id) return;
+
+        await storeTablerosPorComponente.eliminarTableroPorComponente(tableroRel.id);
+        tablerosDelComponente.value = tablerosDelComponente.value.filter(t => t.id !== tableroRel.id);
+        mostrarMensaje('✅ Tablero eliminado', 'success', 2000);
+    } catch (err) {
+        console.error('Error eliminando tablero:', err);
+        mostrarMensaje('❌ Error al eliminar tablero', 'error', 3000);
     }
 };
 
