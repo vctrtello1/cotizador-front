@@ -292,7 +292,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { crearModulo, getModuloById, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
-import { crearAcabado } from '@/http/acabado-api .js';
+import { crearAcabado } from '@/http/acabado-api';
 import { crearCliente as crearManoDeObra } from '@/http/mano_de_obra-api .js';
 
 const router = useRouter();

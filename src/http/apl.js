@@ -1,5 +1,17 @@
 import axios from "axios";
 
+const enableHttpDebug = import.meta.env.DEV && import.meta.env.VITE_HTTP_DEBUG === 'true';
+const debugLog = (...args) => {
+  if (enableHttpDebug) {
+    console.log(...args);
+  }
+};
+const debugWarn = (...args) => {
+  if (enableHttpDebug) {
+    console.warn(...args);
+  }
+};
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
   headers: {
@@ -19,10 +31,10 @@ export async function obtenerTokenCsrf() {
       baseUrl.replace('/api/v1', '') + "/sanctum/csrf-cookie",
       { withCredentials: true }
     );
-    console.log('Token CSRF obtenido via /sanctum/csrf-cookie');
+    debugLog('Token CSRF obtenido via /sanctum/csrf-cookie');
     return true;
   } catch (err) {
-    console.warn('Sanctum CSRF no disponible en /sanctum/csrf-cookie');
+    debugWarn('Sanctum CSRF no disponible en /sanctum/csrf-cookie');
     
     try {
       // Intentar endpoint sin /api/v1
@@ -30,10 +42,10 @@ export async function obtenerTokenCsrf() {
         baseUrl.replace('/api/v1', '') + "/api/sanctum/csrf-cookie",
         { withCredentials: true }
       );
-      console.log('Token CSRF obtenido via /api/sanctum/csrf-cookie');
+      debugLog('Token CSRF obtenido via /api/sanctum/csrf-cookie');
       return true;
     } catch (err2) {
-      console.warn('Sanctum CSRF no disponible');
+      debugWarn('Sanctum CSRF no disponible');
       
       try {
         // Intentar endpoint personalizado sin baseURL duplicado
@@ -43,11 +55,11 @@ export async function obtenerTokenCsrf() {
         );
         if (response.data?.token) {
           localStorage.setItem('csrf_token', response.data.token);
-          console.log('Token CSRF obtenido del servidor personalizado');
+          debugLog('Token CSRF obtenido del servidor personalizado');
         }
         return true;
       } catch (err3) {
-        console.warn('No se pudo obtener token CSRF automáticamente');
+        debugWarn('No se pudo obtener token CSRF automáticamente');
         return false;
       }
     }
@@ -64,15 +76,15 @@ api.interceptors.request.use(
       if (csrfToken) {
         config.headers['X-CSRF-Token'] = csrfToken;
         config.headers['X-XSRF-TOKEN'] = csrfToken;
-        console.log('Token CSRF enviado en header:', csrfToken.substring(0, 20) + '...');
+        debugLog('Token CSRF enviado en header:', csrfToken.substring(0, 20) + '...');
       } else {
-        console.warn('No se encontró token CSRF en cookies para enviar');
+        debugWarn('No se encontró token CSRF en cookies para enviar');
       }
       
       // Log del payload enviado
-      if (config.data) {
-        console.log(`📤 ${config.method.toUpperCase()} ${config.url}:`);
-        console.log('Payload completo:', JSON.stringify(config.data, null, 2));
+      if (enableHttpDebug && config.data) {
+        debugLog(`📤 ${config.method.toUpperCase()} ${config.url}:`);
+        debugLog('Payload completo:', JSON.stringify(config.data, null, 2));
       }
     }
     
@@ -89,11 +101,11 @@ function getCsrfFromCookie() {
   for (let cookie of cookies) {
     const [name, value] = cookie.trim().split('=');
     if (name === 'XSRF-TOKEN') {
-      console.log('Token XSRF encontrado en cookie:', value.substring(0, 20) + '...');
+      debugLog('Token XSRF encontrado en cookie:', value.substring(0, 20) + '...');
       return decodeURIComponent(value);
     }
   }
-  console.warn('Token XSRF no encontrado en cookies');
+  debugWarn('Token XSRF no encontrado en cookies');
   return null;
 }
 

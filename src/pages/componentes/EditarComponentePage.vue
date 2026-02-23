@@ -626,16 +626,10 @@ const guardarCambiosHoras = async () => {
     
     guardandoHoras.value = true;
     try {
-        // Filtrar para obtener el registro de la mano de obra ACTUAL
         const manoDeObraId = formData.value.mano_de_obra?.id;
-        console.log('🔍 Buscando registro para mano_de_obra_id:', manoDeObraId);
-
-        // Encontrar el registro que corresponde a la mano de obra actual
         const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
-        console.log('✅ Registro encontrado:', hora);
 
         if (!hora) {
-            console.log('❌ No hay registro para esta mano de obra');
             guardandoHoras.value = false;
             return;
         }
@@ -660,12 +654,9 @@ const guardarCambiosHoras = async () => {
             horas: horasFinales
         };
 
-        console.log('📝 Datos a enviar:', datosHora);
-
         hora.componente_id = datosHora.componente_id;
         hora.mano_de_obra_id = datosHora.mano_de_obra_id;
         hora.horas = datosHora.horas;
-        console.log('✅ Horas guardadas correctamente');
     } catch (err) {
         console.error('Error guardando horas:', err);
     } finally {
@@ -688,7 +679,6 @@ const incrementarHora = async (index) => {
         }
         
         hora.horas = Math.floor((hora.horas || 0)) + 1;
-        console.log(`✅ Horas incrementadas:`, hora.horas);
         await guardarCambiosHoras();
     }
 };
@@ -702,7 +692,6 @@ const decrementarHora = async (index) => {
     if (hora) {
         const nuevasHoras = Math.max(0, (hora.horas || 0) - 1);
         hora.horas = nuevasHoras;
-        console.log(`✅ Horas decrementadas:`, hora.horas);
         await guardarCambiosHoras();
     }
 };
@@ -840,7 +829,6 @@ const cargarAcabados = async () => {
         const response = await api.get('/acabados');
         const data = response.data.data || response.data || [];
         acabadosDisponibles.value = Array.isArray(data) ? data : [];
-        console.log('Acabados disponibles:', acabadosDisponibles.value);
     } catch (err) {
         console.error('Error al cargar acabados:', err);
         acabadosDisponibles.value = [];
@@ -853,7 +841,6 @@ const cargarManoDeObraDisponible = async () => {
         const response = await api.get('/mano-de-obras');
         const data = response.data.data || response.data || [];
         manoDeObraDisponible.value = Array.isArray(data) ? data : [];
-        console.log('Mano de obra disponible:', manoDeObraDisponible.value);
     } catch (err) {
         console.error('Error al cargar mano de obra:', err);
         manoDeObraDisponible.value = [];
@@ -878,8 +865,6 @@ const agregarManoDeObra = async (manoDeObra) => {
     if (!manoDeObra) return;
     
     try {
-        console.log('📝 Seleccionando mano de obra:', manoDeObra.nombre);
-        
         // Preparar datos para enviar al servidor
         const datos = {
             nombre: formData.value.nombre.trim(),
@@ -893,19 +878,11 @@ const agregarManoDeObra = async (manoDeObra) => {
         if (formData.value.acabado && formData.value.acabado.id) {
             datos.acabado_id = formData.value.acabado.id;
         }
-        
-        console.log('📤 1️⃣ Guardando cambio de mano de obra en el servidor...');
-        console.log('   Datos:', datos);
 
         const response = await api.put(`/componentes/${route.params.id}`, datos);
-        console.log('✅ 1️⃣ Respuesta del servidor - cambio guardado:', response);
-        
-        // Solo si el servidor confirmó, actualizar el estado local
-        console.log('📝 2️⃣ Actualizando mano de obra en el estado local...');
         
         // Limpiar horas de la mano de obra anterior
         if (formData.value.mano_de_obra && formData.value.mano_de_obra.id !== manoDeObra.id) {
-            console.log('   Limpiando horas de mano de obra anterior');
             limpiarHorasManoDeObraAnterior();
         }
         
@@ -913,25 +890,16 @@ const agregarManoDeObra = async (manoDeObra) => {
         formData.value.mano_de_obra = {
             ...manoDeObra
         };
-        console.log('✅ 2️⃣ Mano de obra actualizada en estado local');
-        
-        console.log('📋 3️⃣ Reiniciando horas en estado local...');
         await cargarHorasManoDeObra();
-        console.log('✅ 3️⃣ Horas reiniciadas:', horasManoDeObra.value.length);
-        
+
         // Cerrar modal y limpiar búsqueda
-        console.log('🚪 5️⃣ Cerrando modal...');
         mostrarSelectorManoDeObra.value = false;
         busquedaManoDeObra.value = '';
-        console.log('✅ 5️⃣ Modal cerrado');
-        
-        console.log('🎉 Mano de obra actualizada exitosamente');
     } catch (err) {
         console.error('❌ Error al guardar cambio de mano de obra:', err);
         console.error('   Status:', err.response?.status);
         console.error('   Data:', err.response?.data);
         error.value = 'Error al cambiar la mano de obra: ' + (err.response?.data?.message || err.message);
-        console.log('📌 Modal se mantiene abierto para que puedas reintentar');
     }
 };
 
@@ -1017,11 +985,7 @@ const guardarComponente = async () => {
             datos.acabado_id = formData.value.acabado.id;
         }
         
-        console.log('Guardando cambios del componente:', datos);
-
         await api.put(`/componentes/${route.params.id}`, datos);
-        
-        console.log('✅ Componente actualizado correctamente');
         router.push('/componentes');
     } catch (err) {
         error.value = 'Error al guardar los cambios';

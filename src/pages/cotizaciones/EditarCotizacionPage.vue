@@ -1448,7 +1448,7 @@ import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotiz
 import { fetchMateriales, crearMaterial, actualizarMaterial } from '../../http/materiales-api';
 import { fetchMaterialesPorComponente, crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
 import { fetchClientes as fetchManoDeObra, crearCliente as crearManoDeObra } from '../../http/mano_de_obra-api ';
-import { fetchAcabados, crearAcabado, getAcabadoById } from '../../http/acabado-api ';
+import { fetchAcabados, crearAcabado, getAcabadoById } from '../../http/acabado-api';
 import { fetchTiposDeMaterial } from '../../http/tipo_de_material-api';
 
 const route = useRoute();
@@ -2845,8 +2845,6 @@ const recalcularCostoComponente = async () => {
             const componente = modulo.componentes?.find(c => c.id === componenteEditando.value.id);
             if (componente) componente.precio_unitario = costoTotal;
         });
-        
-        console.log('💰 Costo recalculado:', { materiales: costoMateriales, manoObra: costoManoObra, acabado: costoAcabado, total: costoTotal });
     } catch (err) {
         console.error('❌ Error al recalcular costo:', err);
     }

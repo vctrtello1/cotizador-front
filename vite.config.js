@@ -10,12 +10,19 @@ export default defineConfig(({ command }) => ({
     vue(),
     command === 'serve' ? vueDevTools() : null,
   ].filter(Boolean),
+  esbuild: command === 'build'
+    ? {
+        drop: ['debugger'],
+        pure: ['console.log', 'console.info', 'console.debug'],
+      }
+    : undefined,
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
   build: {
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
         manualChunks: {

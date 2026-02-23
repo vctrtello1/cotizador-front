@@ -138,7 +138,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { crearComponente, fetchComponentes } from '@/http/componentes-api';
-import { fetchAcabados } from '@/http/acabado-api .js';
+import { fetchAcabados } from '@/http/acabado-api';
 import { fetchClientes as fetchManoDeObra } from '@/http/mano_de_obra-api .js';
 
 const router = useRouter();
