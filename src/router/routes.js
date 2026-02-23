@@ -69,21 +69,6 @@ export const routes = [
         component: () => import("@/pages/materiales/EditarMaterial.vue"),
     },
     {
-        path: "/mano-de-obra",
-        name: "ManoDeObra",
-        component: () => import("@/pages/mano-de-obra/ManoDeObraPage.vue"),
-    },
-    {
-        path: "/nuevo-mano-de-obra",
-        name: "NuevoManoDeObra",
-        component: () => import("@/pages/mano-de-obra/NuevoManoDeObraPage.vue"),
-    },
-    {
-        path: "/editar-mano-de-obra/:id",
-        name: "EditarManoDeObra",
-        component: () => import("@/pages/mano-de-obra/EditarManoDeObraPage.vue"),
-    },
-    {
         path: "/estructuras",
         name: "Estructuras",
         component: () => import("@/pages/estructuras/EstructurasPage.vue"),

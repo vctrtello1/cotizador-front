@@ -404,19 +404,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
 import { useMateriales } from '@/stores/materiales';
-import { useManosDeObraStore } from '@/stores/mano-de-obra';
 
 const router = useRouter();
 const route = useRoute();
+const componenteId = computed(() => Number.parseInt(route.params.id, 10) || 0);
 const storeMaterialesPorComponente = useMaterialesPorComponente();
 const storeMateriales = useMateriales();
-const storeManosDeObra = useManosDeObraStore();
 
 // Estado
 const formData = ref({
@@ -484,11 +483,16 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
     const debounced = ref(sourceRef.value);
     let timeoutId;
 
-    watch(sourceRef, (value) => {
+    const stopWatching = watch(sourceRef, (value) => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
             debounced.value = value;
         }, delay);
+    });
+
+    onBeforeUnmount(() => {
+        clearTimeout(timeoutId);
+        stopWatching();
     });
 
     return debounced;
@@ -505,7 +509,7 @@ const horasManoDeObra = ref([]);
 const cargarComponente = async () => {
     try {
         cargando.value = true;
-        const response = await getComponenteById(route.params.id);
+        const response = await getComponenteById(componenteId.value || route.params.id);
         const data = response.data || response;
         
         // Mano de obra: puede venir como objeto completo o como ID
@@ -515,7 +519,8 @@ const cargarComponente = async () => {
             if (typeof data.mano_de_obra_id === 'object' && data.mano_de_obra_id.id) {
                 manoDeObraData = data.mano_de_obra_id;
             } else if (typeof data.mano_de_obra_id === 'number' || typeof data.mano_de_obra_id === 'string') {
-                manoDeObraData = await storeManosDeObra.getManosDeObraByIdStore(data.mano_de_obra_id);
+                const manoDeObraResponse = await api.get(`/mano-de-obras/${data.mano_de_obra_id}`);
+                manoDeObraData = manoDeObraResponse.data?.data || manoDeObraResponse.data || null;
             }
         }
         
@@ -543,12 +548,18 @@ const cargarComponente = async () => {
 const cargarMaterialesPorComponente = async () => {
     try {
         // Cargar todos los materiales y sus relaciones con el componente
-        await storeMateriales.fetchMaterialesAction();
-        await storeMaterialesPorComponente.fetchMaterialesPorComponenteAction();
+        await Promise.all([
+            storeMateriales.fetchMaterialesAction(),
+            storeMaterialesPorComponente.fetchMaterialesPorComponenteAction(),
+        ]);
         
         // Filtrar y enriquecer con datos del material
-        const componenteId = parseInt(route.params.id);
-        const materialesRelacion = storeMaterialesPorComponente.getMaterialesPorComponente(componenteId);
+        if (!componenteId.value) {
+            materialesDelComponente.value = [];
+            return;
+        }
+
+        const materialesRelacion = storeMaterialesPorComponente.getMaterialesPorComponente(componenteId.value);
         
         materialesDelComponente.value = materialesRelacion.map(rel => ({
             ...rel,
@@ -564,7 +575,7 @@ const cargarHorasManoDeObra = async () => {
     try {
         if (formData.value.mano_de_obra?.id) {
             horasManoDeObra.value = [{
-                componente_id: parseInt(route.params.id),
+                componente_id: componenteId.value,
                 mano_de_obra_id: formData.value.mano_de_obra.id,
                 horas: Math.max(1, Math.floor(horaActual.value?.horas || 1))
             }];
@@ -649,7 +660,7 @@ const guardarCambiosHoras = async () => {
         hora.horas = horasFinales; // Actualizar el estado local también
         
         const datosHora = {
-            componente_id: parseInt(route.params.id),
+            componente_id: componenteId.value,
             mano_de_obra_id: manoDeObraId,
             horas: horasFinales
         };
@@ -665,7 +676,7 @@ const guardarCambiosHoras = async () => {
 };
 
 // Incrementar horas de la mano de obra actual
-const incrementarHora = async (index) => {
+const incrementarHora = async () => {
     // Encontrar el registro de la mano de obra actual
     const manoDeObraId = formData.value.mano_de_obra?.id;
     const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
@@ -684,7 +695,7 @@ const incrementarHora = async (index) => {
 };
 
 // Decrementar horas de la mano de obra actual
-const decrementarHora = async (index) => {
+const decrementarHora = async () => {
     // Encontrar el registro de la mano de obra actual
     const manoDeObraId = formData.value.mano_de_obra?.id;
     const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
@@ -799,7 +810,7 @@ const agregarMaterial = async (material) => {
         }
         
         const resultado = await storeMaterialesPorComponente.crearMaterialPorComponenteAction({
-            componente_id: parseInt(route.params.id),
+            componente_id: componenteId.value,
             material_id: material.id,
             cantidad: 1
         });
@@ -879,7 +890,7 @@ const agregarManoDeObra = async (manoDeObra) => {
             datos.acabado_id = formData.value.acabado.id;
         }
 
-        const response = await api.put(`/componentes/${route.params.id}`, datos);
+        await api.put(`/componentes/${componenteId.value || route.params.id}`, datos);
         
         // Limpiar horas de la mano de obra anterior
         if (formData.value.mano_de_obra && formData.value.mano_de_obra.id !== manoDeObra.id) {
@@ -985,7 +996,7 @@ const guardarComponente = async () => {
             datos.acabado_id = formData.value.acabado.id;
         }
         
-        await api.put(`/componentes/${route.params.id}`, datos);
+        await api.put(`/componentes/${componenteId.value || route.params.id}`, datos);
         router.push('/componentes');
     } catch (err) {
         error.value = 'Error al guardar los cambios';

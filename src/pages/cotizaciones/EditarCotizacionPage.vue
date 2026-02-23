@@ -1438,7 +1438,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes, crearCliente, actualizarCliente } from '../../http/clientes-api';
@@ -1551,11 +1551,16 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
     const debounced = ref(sourceRef.value);
     let timeoutId;
 
-    watch(sourceRef, (value) => {
+    const stopWatching = watch(sourceRef, (value) => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
             debounced.value = value;
         }, delay);
+    });
+
+    onBeforeUnmount(() => {
+        clearTimeout(timeoutId);
+        stopWatching();
     });
 
     return debounced;
@@ -1570,9 +1575,13 @@ const modulosAsignados = computed(() => {
 });
 
 const modulosDisponibles = computed(() => {
-    const idsAsignados = modulosAsignados.value.map(m => m.id);
-    return modulos.value.filter(m => !idsAsignados.includes(m.id));
+    const idsAsignados = new Set(modulosAsignados.value.map(m => m.id));
+    return modulos.value.filter(m => !idsAsignados.has(m.id));
 });
+
+const modulosById = computed(() => new Map((modulos.value || []).map(modulo => [modulo.id, modulo])));
+const componentesById = computed(() => new Map((componentes.value || []).map(componente => [componente.id, componente])));
+const modulosCotizacionById = computed(() => new Map((cotizacion.value?.modulos || []).map(modulo => [modulo.id, modulo])));
 
 const componentesDisponiblesParaModulo = computed(() => {
     if (!moduloParaAgregarComponente.value) return [];
@@ -1591,12 +1600,12 @@ const todosComponentesDisponibles = computed(() => {
 
 const componentesFiltrados = computed(() => {
     const lista = moduloParaAgregarComponente.value ? componentesDisponiblesParaModulo.value : todosComponentesDisponibles.value;
+    const termino = busquedaComponenteDebounced.value?.trim().toLowerCase();
     
-    if (!busquedaComponenteDebounced.value) {
+    if (!termino) {
         return lista;
     }
-    
-    const termino = busquedaComponenteDebounced.value.toLowerCase();
+
     return lista.filter(c => 
         c.nombre.toLowerCase().includes(termino) ||
         c.codigo?.toLowerCase().includes(termino) ||
@@ -1605,11 +1614,12 @@ const componentesFiltrados = computed(() => {
 });
 
 const clientesFiltrados = computed(() => {
-    if (!busquedaClienteDebounced.value) {
+    const termino = busquedaClienteDebounced.value?.trim().toLowerCase();
+
+    if (!termino) {
         return clientes.value;
     }
-    
-    const termino = busquedaClienteDebounced.value.toLowerCase();
+
     return clientes.value.filter(c => 
         c.nombre.toLowerCase().includes(termino) ||
         c.empresa?.toLowerCase().includes(termino) ||
@@ -1624,16 +1634,17 @@ const todosLosComponentes = computed(() => {
     if (cotizacion.value?.modulos && Array.isArray(cotizacion.value.modulos)) {
         cotizacion.value.modulos.forEach((modulo, moduloIndex) => {
             if (modulo.componentes && Array.isArray(modulo.componentes)) {
-                for (const comp of modulo.componentes) {
+                modulo.componentes.forEach((comp, componenteIndex) => {
                     componentes.push({
                         ...comp,
                         // Normalizar precio_unitario: usar costo_total si precio_unitario no existe
                         precio_unitario: comp.precio_unitario ?? comp.costo_total ?? comp.componente?.costo_total ?? 0,
                         modulo_id: modulo.id,
                         modulo_nombre: modulo.nombre,
-                        modulo_index: moduloIndex
+                        modulo_index: moduloIndex,
+                        componente_index: componenteIndex,
                     });
-                }
+                });
             }
         });
     }
@@ -1652,6 +1663,11 @@ const totalCotizacion = computed(() => {
     }, 0);
 });
 
+const currencyFormatter = new Intl.NumberFormat('es-MX', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
 const formatCurrency = (value) => {
     if (value === null || value === undefined || value === '') return '0.00';
     const cleaned = typeof value === 'string'
@@ -1659,10 +1675,7 @@ const formatCurrency = (value) => {
         : value;
     const num = Number(cleaned);
     if (isNaN(num)) return '0.00';
-    return num.toLocaleString('es-MX', { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
-    });
+    return currencyFormatter.format(num);
 };
 
 // Helper function to format dates in Spanish locale
@@ -1872,43 +1885,46 @@ const eliminarComponente = async (componente, modulo, compIndex) => {
     }
 };
 
+const obtenerComponenteDesdeItemPlano = (comp) => {
+    const modulo = cotizacion.value.modulos?.[comp.modulo_index];
+    if (!modulo) return { modulo: null, componente: null };
+
+    let componente = modulo.componentes?.[comp.componente_index];
+    if (!componente || componente.id !== comp.id) {
+        componente = modulo.componentes?.find(c => c.id === comp.id) || null;
+    }
+
+    return { modulo, componente };
+};
+
 const actualizarCantidadComponenteFlat = async (comp) => {
-    const modulo = cotizacion.value.modulos[comp.modulo_index];
-    if (modulo) {
-        const componente = modulo.componentes.find(c => c.id === comp.id);
-        if (componente) {
-            // Sincronizar la cantidad del componente en el módulo con la del comp plano
-            componente.cantidad = comp.cantidad;
-            await actualizarCantidadComponente(componente, modulo);
-            // Forzar reactividad para actualizar el subtotal
-            cotizacion.value.modulos = [...cotizacion.value.modulos];
-        }
+    const { modulo, componente } = obtenerComponenteDesdeItemPlano(comp);
+    if (modulo && componente) {
+        // Sincronizar la cantidad del componente en el módulo con la del comp plano
+        componente.cantidad = comp.cantidad;
+        await actualizarCantidadComponente(componente, modulo);
+        // Forzar reactividad para actualizar el subtotal
+        cotizacion.value.modulos = [...cotizacion.value.modulos];
     }
 };
 
 const incrementarCantidadComponenteFlat = async (comp) => {
-    const modulo = cotizacion.value.modulos[comp.modulo_index];
-    if (modulo) {
-        const componente = modulo.componentes.find(c => c.id === comp.id);
-        if (componente) {
-            componente.cantidad = (componente.cantidad || 1) + 1;
-            await actualizarCantidadComponente(componente, modulo);
-            // Forzar reactividad para actualizar el subtotal
-            cotizacion.value.modulos = [...cotizacion.value.modulos];
-        }
+    const { modulo, componente } = obtenerComponenteDesdeItemPlano(comp);
+    if (modulo && componente) {
+        componente.cantidad = (componente.cantidad || 1) + 1;
+        await actualizarCantidadComponente(componente, modulo);
+        // Forzar reactividad para actualizar el subtotal
+        cotizacion.value.modulos = [...cotizacion.value.modulos];
     }
 };
 
 const decrementarCantidadComponenteFlat = async (comp) => {
-    const modulo = cotizacion.value.modulos[comp.modulo_index];
-    if (modulo) {
-        const componente = modulo.componentes.find(c => c.id === comp.id);
-        if (componente && componente.cantidad > 1) {
-            componente.cantidad--;
-            await actualizarCantidadComponente(componente, modulo);
-            // Forzar reactividad para actualizar el subtotal
-            cotizacion.value.modulos = [...cotizacion.value.modulos];
-        }
+    const { modulo, componente } = obtenerComponenteDesdeItemPlano(comp);
+    if (modulo && componente && componente.cantidad > 1) {
+        componente.cantidad--;
+        await actualizarCantidadComponente(componente, modulo);
+        // Forzar reactividad para actualizar el subtotal
+        cotizacion.value.modulos = [...cotizacion.value.modulos];
     }
 };
 
@@ -2839,12 +2855,15 @@ const recalcularCostoComponente = async () => {
         const costoAcabado = parseFloat(componenteEditando.value.acabado?.costo || 0);
         const costoTotal = costoMateriales + costoManoObra + costoAcabado;
         
-        componenteEditando.value = { ...componenteEditando.value, precio_unitario: costoTotal };
-        
-        cotizacion.value.modulos.forEach(modulo => {
-            const componente = modulo.componentes?.find(c => c.id === componenteEditando.value.id);
-            if (componente) componente.precio_unitario = costoTotal;
-        });
+        componenteEditando.value.precio_unitario = costoTotal;
+
+        for (const modulo of (cotizacion.value.modulos || [])) {
+            for (const componente of (modulo.componentes || [])) {
+                if (componente.id === componenteEditando.value.id) {
+                    componente.precio_unitario = costoTotal;
+                }
+            }
+        }
     } catch (err) {
         console.error('❌ Error al recalcular costo:', err);
     }
@@ -3166,7 +3185,7 @@ const confirmarAgregarComponente = async () => {
         console.log('🔵 Agregando componente:', componente.nombre, 'al módulo ID:', moduloId);
         
         // Buscar el módulo por ID (puede haber sido reconstruido)
-        const modulo = cotizacion.value.modulos.find(m => m.id === moduloId);
+        const modulo = modulosCotizacionById.value.get(moduloId);
         if (!modulo) {
             error.value = 'Error: El módulo no está en la cotización. Agrega el módulo primero.';
             setTimeout(() => { error.value = null; }, 5000);
@@ -3275,7 +3294,7 @@ const seleccionarModulo = async (modulo) => {
     } catch (err) {
         console.error('Error al obtener módulo:', err);
         // Fallback: usar el módulo local si falla la API
-        const moduloLocal = modulos.value.find(m => m.id === modulo.id) || modulo;
+        const moduloLocal = modulosById.value.get(modulo.id) || modulo;
         
         moduloSeleccionadoModal.value = { ...moduloLocal };
         cantidadNuevaModulo.value = 1;
@@ -3517,7 +3536,7 @@ const sincronizarComponentesExistentes = async () => {
             if (compApi.modulo_id) {
                 if (!modulosPorId.has(compApi.modulo_id)) {
                     // Buscar el módulo completo en el store de módulos
-                    const moduloCompleto = modulos.value.find(m => m.id === compApi.modulo_id);
+                    const moduloCompleto = modulosById.value.get(compApi.modulo_id);
                     
                     if (moduloCompleto) {
                         console.log(`✅ Módulo ${moduloCompleto.nombre} encontrado para componente ${compApi.componente_id}`);
@@ -3536,7 +3555,7 @@ const sincronizarComponentesExistentes = async () => {
                 const moduloEnMapa = modulosPorId.get(compApi.modulo_id);
                 if (moduloEnMapa) {
                     // Buscar el componente completo en el store de componentes
-                    let componenteCompleto = componentes.value.find(c => c.id === compApi.componente_id);
+                    let componenteCompleto = componentesById.value.get(compApi.componente_id);
                     
                     // Si no se encuentra en componentes.value, usar los datos de compApi.componente
                     if (!componenteCompleto && compApi.componente) {
