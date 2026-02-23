@@ -69,8 +69,10 @@
                     type="button"
                     class="btn-add-material"
                     @click="mostrarModalTableros = true"
+                    :title="detalleTablerosCompleto"
                 >
                     🪵 Gestionar Tableros ({{ tablerosDelComponente.length }})
+                    <span v-if="resumenTablerosSeleccionados" class="tableros-inline-summary">• {{ resumenTablerosSeleccionados }}</span>
                 </button>
             </div>
 
@@ -429,12 +431,27 @@
 
                     <div v-if="tablerosDelComponente && tablerosDelComponente.length > 0" class="selected-items">
                         <h4 class="items-subtitle">Tableros Seleccionados</h4>
+                        <div class="tableros-resumen-grid">
+                            <div class="tableros-resumen-item">
+                                <span class="tableros-resumen-label">Tipos</span>
+                                <strong class="tableros-resumen-value">{{ tablerosDelComponente.length }}</strong>
+                            </div>
+                            <div class="tableros-resumen-item">
+                                <span class="tableros-resumen-label">Unidades</span>
+                                <strong class="tableros-resumen-value">{{ totalCantidadTableros }}</strong>
+                            </div>
+                            <div class="tableros-resumen-item tableros-resumen-item--total">
+                                <span class="tableros-resumen-label">Costo total</span>
+                                <strong class="tableros-resumen-value">${{ formatCurrency(totalCostoTableros) }}</strong>
+                            </div>
+                        </div>
                         <div class="items-grid">
                             <div v-for="tablero in tablerosDelComponente" :key="tablero.id" class="selected-item-edit">
                                 <div class="item-info">
                                     <div class="item-name">{{ obtenerNombreTablero(tablero) }}</div>
                                     <div class="item-code">{{ obtenerCodigoTablero(tablero) }}</div>
-                                    <div class="item-price">${{ formatCurrency(tablero.tablero?.costo_unitario || tablero.tablero?.costo || 0) }}</div>
+                                    <div class="item-price">${{ formatCurrency(obtenerCostoUnitarioTablero(tablero)) }} c/u</div>
+                                    <div class="item-subtotal">Subtotal: ${{ formatCurrency(obtenerSubtotalTablero(tablero)) }}</div>
                                 </div>
                                 <div class="quantity-input-group">
                                     <label :for="`qty-tablero-${tablero.id}`">Cantidad (unidades)</label>
@@ -748,6 +765,58 @@ const obtenerCodigoTablero = (registro) => {
 
     return tablero?.codigo || '—';
 };
+
+const resumenTablerosSeleccionados = computed(() => {
+    if (!tablerosDelComponente.value.length) return '';
+
+    const nombresUnicos = [];
+    for (const tablero of tablerosDelComponente.value) {
+        const nombre = obtenerNombreTablero(tablero);
+        if (!nombresUnicos.includes(nombre)) {
+            nombresUnicos.push(nombre);
+        }
+    }
+
+    const maxVisibles = 2;
+    if (nombresUnicos.length <= maxVisibles) {
+        return nombresUnicos.join(', ');
+    }
+
+    return `${nombresUnicos.slice(0, maxVisibles).join(', ')} +${nombresUnicos.length - maxVisibles}`;
+});
+
+const obtenerCostoUnitarioTablero = (registro) => {
+    const tableroId = obtenerIdTableroRelacion(registro);
+    const tablero = registro?.tablero
+        || registro?.acabado_tablero
+        || tablerosDisponiblesMap.value.get(tableroId)
+        || null;
+
+    return Number(tablero?.costo_unitario ?? tablero?.costo ?? 0) || 0;
+};
+
+const obtenerSubtotalTablero = (registro) => {
+    const cantidad = Number(registro?.cantidad || 0) || 0;
+    return obtenerCostoUnitarioTablero(registro) * cantidad;
+};
+
+const totalCantidadTableros = computed(() => {
+    return tablerosDelComponente.value.reduce((sum, tablero) => sum + (Number(tablero?.cantidad || 0) || 0), 0);
+});
+
+const totalCostoTableros = computed(() => {
+    return tablerosDelComponente.value.reduce((sum, tablero) => sum + obtenerSubtotalTablero(tablero), 0);
+});
+
+const detalleTablerosCompleto = computed(() => {
+    if (!tablerosDelComponente.value.length) {
+        return 'Sin tableros seleccionados';
+    }
+
+    return tablerosDelComponente.value
+        .map(tablero => `${obtenerNombreTablero(tablero)} (${Number(tablero?.cantidad || 0)} u)`)
+        .join(' · ');
+});
 
 const cargarTablerosPorComponente = async () => {
     try {
@@ -1900,6 +1969,57 @@ onMounted(async () => {
     font-size: 13px;
     color: #d4a574;
     font-weight: 600;
+}
+
+.item-subtotal {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2e7d32;
+}
+
+.tableros-inline-summary {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0.95;
+}
+
+.tableros-resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.tableros-resumen-item {
+    padding: 10px 12px;
+    border: 1px solid #e8ddd7;
+    border-radius: 8px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tableros-resumen-item--total {
+    border-color: #d4a574;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+}
+
+.tableros-resumen-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8b7355;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.tableros-resumen-value {
+    font-size: 14px;
+    color: #5a4037;
 }
 
 .btn-remove {
