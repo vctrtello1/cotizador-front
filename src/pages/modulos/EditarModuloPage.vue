@@ -78,7 +78,6 @@
                             <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
                                 <p><strong>Cantidad:</strong> {{ comp.cantidad }}</p>
                                 <p><strong>Acabado:</strong> {{ obtenerNombreAcabado(comp.acabado_id) }}</p>
-                                <p><strong>Mano de Obra:</strong> {{ obtenerNombreManodeObra(comp.mano_de_obra_id) }}</p>
                             </div>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
@@ -178,15 +177,6 @@
                         </button>
                     </div>
 
-                    <div class="modal-item">
-                        <label class="modal-label">Mano de Obra *</label>
-                        <button 
-                            class="btn-select-modal"
-                            @click="abrirModalManoDeObra"
-                        >
-                            {{ obtenerNombreManodeObra(componenteActual.mano_de_obra_id) || 'Seleccionar mano de obra...' }}
-                        </button>
-                    </div>
                 </div>
 
             </div>
@@ -226,75 +216,14 @@
             </div>
         </div>
 
-        <!-- Modal para seleccionar Mano de Obra -->
-        <div v-if="mostrarModalSeleccionarManoDeObra" class="modal-overlay" @click.self="mostrarModalSeleccionarManoDeObra = false">
-            <div class="modal-content modal-seleccion">
-                <div class="modal-header">
-                    <h3>Seleccionar Mano de Obra</h3>
-                    <button class="modal-close" @click="mostrarModalSeleccionarManoDeObra = false">✕</button>
-                </div>
-
-                <div class="modal-body modal-seleccion-body">
-                    <div v-if="manosDeObra.length === 0" class="empty-state">
-                        <p>No hay manos de obra disponibles</p>
-                    </div>
-
-                    <div v-else class="items-lista">
-                        <div 
-                            v-for="mano in manosDeObra" 
-                            :key="mano.id" 
-                            class="item-seleccion"
-                            :class="{ 'item-seleccionado': componenteActual.mano_de_obra_id == mano.id }"
-                            @click="seleccionarManoDeObra(mano)"
-                        >
-                            <div class="item-info">
-                                <h4>{{ mano.nombre }}</h4>
-                                <p class="item-codigo">{{ mano.codigo }}</p>
-                                <p v-if="mano.descripcion" class="item-descripcion">{{ mano.descripcion }}</p>
-                                <div class="item-details">
-                                    <div class="detail-row">
-                                        <span class="detail-label">Costo/hora:</span>
-                                        <strong class="detail-value">${{ formatCurrency(mano.costo_hora) }}</strong>
-                                    </div>
-                                    <div class="detail-row">
-                                        <span class="detail-label">Horas asignadas:</span>
-                                        <div class="horas-editor">
-                                            <button class="btn-horas-moins" @click.stop="decrementarHoras(mano)">−</button>
-                                            <input 
-                                                v-model.number="mano.horas" 
-                                                type="number" 
-                                                min="0"
-                                                step="1"
-                                                class="input-horas"
-                                                @click.stop
-                                                @change.stop
-                                            >
-                                            <span class="horas-unit">hrs</span>
-                                            <button class="btn-horas-plus" @click.stop="incrementarHoras(mano)">+</button>
-                                        </div>
-                                    </div>
-                                    <div class="detail-row total">
-                                        <span class="detail-label">Subtotal:</span>
-                                        <strong class="detail-value">${{ formatCurrency(mano.costo_hora * (mano.horas || 0)) }}</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="componenteActual.mano_de_obra_id == mano.id" class="item-checkmark">✓</div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getModuloById, actualizarModulo, fetchAcabados, fetchManosDeObra, fetchModulos } from '@/http/modulos-api';
+import { getModuloById, actualizarModulo, fetchAcabados, fetchModulos } from '@/http/modulos-api';
 import { crearAcabado } from '@/http/acabado-api';
-import { crearCliente as crearManoDeObra } from '@/http/mano_de_obra-api .js';
 
 const router = useRouter();
 const route = useRoute();
@@ -312,7 +241,6 @@ const componentesOriginales = ref([]);
 
 // Catálogos
 const acabados = ref([]);
-const manosDeObra = ref([]);
 const todosLosComponentes = ref([]);
 const componenteSeleccionado = ref('');
 
@@ -320,15 +248,13 @@ const componenteSeleccionado = ref('');
 const mostrarModal = ref(false);
 const mostrarModalComponentes = ref(false);
 const mostrarModalSeleccionarAcabado = ref(false);
-const mostrarModalSeleccionarManoDeObra = ref(false);
 const indiceComponenteActual = ref(-1);  // Índice del componente siendo editado
 const componenteActual = ref({
     id: null,
     nombre: '',
     codigo: '',
     cantidad: 1,
-    acabado_id: '',
-    mano_de_obra_id: ''
+    acabado_id: ''
 });
 
 // Estado de UI
@@ -417,10 +343,6 @@ const validarFormulario = () => {
             error.value = 'Todos los componentes deben tener un acabado';
             return false;
         }
-        if (!componente.mano_de_obra_id) {
-            error.value = 'Todos los componentes deben tener mano de obra';
-            return false;
-        }
     }
 
     return valido;
@@ -433,8 +355,7 @@ const agregarComponente = () => {
         codigo: '',
         descripcion: '',
         cantidad: 1,
-        acabado_id: null,
-        mano_de_obra_id: null
+        acabado_id: null
     });
 };
 
@@ -453,8 +374,7 @@ const eliminarComponente = async (idx) => {
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
                 cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
+                acabado_id: Number(comp.acabado_id)
             }))
         };
         
@@ -481,22 +401,14 @@ const abrirModalEdicionComponente = (componente, idx) => {
 const calcularCostoTotal = () => {
     return formData.value.componentes.reduce((total, comp) => {
         const acabado = acabados.value.find(a => a.id === Number(comp.acabado_id));
-        const mano = manosDeObra.value.find(m => m.id === Number(comp.mano_de_obra_id));
         const costoAcabado = parseFloat(acabado?.costo || 0);
-        const costoMano = parseFloat(mano?.costo_total || 0);
-        const costUnit = costoAcabado + costoMano;
-        return total + (costUnit * (comp.cantidad || 0));
+        return total + (costoAcabado * (comp.cantidad || 0));
     }, 0);
 };
 
 const obtenerNombreAcabado = (acabadoId) => {
     const acabado = acabados.value.find(a => a.id === Number(acabadoId));
     return acabado?.nombre || 'Sin seleccionar';
-};
-
-const obtenerNombreManodeObra = (manoId) => {
-    const mano = manosDeObra.value.find(m => m.id === Number(manoId));
-    return mano?.nombre || 'Sin seleccionar';
 };
 
 const formatCurrency = (value) => {
@@ -526,8 +438,7 @@ const guardarModulo = async () => {
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
                 cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
+                acabado_id: Number(comp.acabado_id)
             }))
         };
 
@@ -585,8 +496,7 @@ const cargarModulo = async () => {
             codigo: comp.codigo,
             descripcion: comp.descripcion,
             cantidad: comp.cantidad || 1,
-            acabado_id: typeof comp.acabado_id === 'object' ? comp.acabado_id.id : comp.acabado_id,
-            mano_de_obra_id: typeof comp.mano_de_obra_id === 'object' ? comp.mano_de_obra_id.id : comp.mano_de_obra_id
+            acabado_id: typeof comp.acabado_id === 'object' ? comp.acabado_id.id : comp.acabado_id
         }));
         
         // Guardar los componentes originales para detectar cuáles son nuevos
@@ -604,13 +514,9 @@ const cargarModulo = async () => {
 const cargarCatalogos = async () => {
     try {
         cargandoCatalogos.value = true;
-        const [acabadosRes, manosDeObraRes] = await Promise.all([
-            fetchAcabados(),
-            fetchManosDeObra()
-        ]);
+        const acabadosRes = await fetchAcabados();
 
         acabados.value = acabadosRes.data || [];
-        manosDeObra.value = manosDeObraRes.data || [];
         
         // Cargar todos los componentes disponibles
         cargarTodosLosComponentes();
@@ -640,8 +546,7 @@ const cargarTodosLosComponentes = async () => {
                             codigo: comp.codigo,
                             descripcion: comp.descripcion,
                             cantidad: 1,
-                            acabado_id: null,
-                            mano_de_obra_id: null
+                            acabado_id: null
                         });
                     }
                 });
@@ -700,28 +605,6 @@ const abrirModalConfiguracion = async (componente) => {
             }
         }
         
-        // Buscar o crear la mano de obra estándar
-        let manoDeObraEstandar = manosDeObra.value.find(m => m.nombre && m.nombre.toLowerCase().includes('estándar'));
-        
-        if (!manoDeObraEstandar) {
-            // Si no existe, intentar crearla
-            try {
-                const nuevaMano = await crearManoDeObra({
-                    nombre: 'Mano de Obra Estándar',
-                    codigo: 'MO_EST',
-                    descripcion: 'Mano de obra estándar',
-                    costo_hora: 0
-                });
-                
-                // Agregar a la lista de manos de obra
-                const manoCreada = nuevaMano.data || nuevaMano;
-                manosDeObra.value.push(manoCreada);
-                manoDeObraEstandar = manoCreada;
-            } catch (err) {
-                console.warn('⚠️ No se pudo crear mano de obra estándar:', err);
-            }
-        }
-        
         // Crear el componente con valores por defecto
         const nuevoComponente = {
             id: componente.id,
@@ -729,14 +612,13 @@ const abrirModalConfiguracion = async (componente) => {
             codigo: componente.codigo,
             descripcion: componente.descripcion,
             cantidad: 1,
-            acabado_id: acabadoEstandar?.id ? Number(acabadoEstandar.id) : null,
-            mano_de_obra_id: manoDeObraEstandar?.id ? Number(manoDeObraEstandar.id) : null
+            acabado_id: acabadoEstandar?.id ? Number(acabadoEstandar.id) : null
         };
         
         // Validar que tenga valores por defecto
-        if (!nuevoComponente.acabado_id || !nuevoComponente.mano_de_obra_id) {
+        if (!nuevoComponente.acabado_id) {
             mostrarMensaje('⚠️ No se pudieron crear los valores por defecto', 'error', 2000);
-            console.error('Faltan valores por defecto:', { acabadoEstandar, manoDeObraEstandar });
+            console.error('Faltan valores por defecto:', { acabadoEstandar });
             return;
         }
         
@@ -751,8 +633,7 @@ const abrirModalConfiguracion = async (componente) => {
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
                 cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
+                acabado_id: Number(comp.acabado_id)
             }))
         };
         
@@ -777,8 +658,8 @@ const abrirModalConfiguracion = async (componente) => {
 
 // Guardar componente (nuevo o editado) en la API
 const guardarComponente = async () => {
-    if (!componenteActual.value.acabado_id || !componenteActual.value.mano_de_obra_id) {
-        error.value = 'Debe seleccionar acabado y mano de obra';
+    if (!componenteActual.value.acabado_id) {
+        error.value = 'Debe seleccionar un acabado';
         return;
     }
     
@@ -801,8 +682,7 @@ const guardarComponente = async () => {
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
                 cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
+                acabado_id: Number(comp.acabado_id)
             }))
         };
         
@@ -831,8 +711,7 @@ const cerrarModal = () => {
         nombre: '',
         codigo: '',
         cantidad: 1,
-        acabado_id: '',
-        mano_de_obra_id: ''
+        acabado_id: ''
     };
 };
 
@@ -857,8 +736,7 @@ const seleccionarAcabado = async (acabado) => {
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
                 cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
+                acabado_id: Number(comp.acabado_id)
             }))
         };
         
@@ -871,80 +749,6 @@ const seleccionarAcabado = async (acabado) => {
     } finally {
         cargando.value = false;
     }
-};
-
-// Seleccionar mano de obra
-const seleccionarManoDeObra = async (mano) => {
-    try {
-        cargando.value = true;
-        
-        // Seleccionar la nueva mano de obra e inicializar en 1 hora
-        mano.horas = 1;
-        componenteActual.value.mano_de_obra_id = mano.id;
-        componenteActual.value.mano_de_obra_horas = 1;
-        
-        // Actualizar en formData
-        if (indiceComponenteActual.value !== -1) {
-            formData.value.componentes[indiceComponenteActual.value].mano_de_obra_id = mano.id;
-        }
-        
-        // Guardar en la API inmediatamente
-        const datosModulo = {
-            nombre: formData.value.nombre,
-            codigo: formData.value.codigo,
-            descripcion: formData.value.descripcion,
-            componentes: formData.value.componentes.map(comp => ({
-                id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
-            }))
-        };
-        
-        await actualizarModulo(route.params.id, datosModulo);
-        
-        mostrarMensaje('✅ Mano de obra actualizada', 'success', 1000);
-    } catch (err) {
-        console.error('❌ Error al guardar mano de obra:', err);
-        mostrarMensaje('Error al guardar mano de obra', 'error', 2000);
-    } finally {
-        cargando.value = false;
-    }
-};
-
-// Abrir modal de mano de obra con horas inicializadas en 1
-const abrirModalManoDeObra = () => {
-    // Inicializar horas en 1 para todas las manos de obra
-    manosDeObra.value.forEach(mano => {
-        if (!mano.horas) {
-            mano.horas = 1;
-        }
-    });
-    mostrarModalSeleccionarManoDeObra.value = true;
-};
-
-// Incrementar horas de mano de obra
-const incrementarHoras = async (mano) => {
-    if (!mano) return;
-    
-    mano.horas = (mano.horas || 0) + 1;
-    componenteActual.value.mano_de_obra_id = mano.id;
-    await guardarHorasEnAPI(mano);
-};
-
-// Decrementar horas de mano de obra
-const decrementarHoras = async (mano) => {
-    if (!mano || (mano.horas || 0) <= 1) return;  // No bajar de 1 hora
-    
-    mano.horas = (mano.horas || 0) - 1;
-    componenteActual.value.mano_de_obra_id = mano.id;
-    await guardarHorasEnAPI(mano);
-};
-
-// Guardar horas en estado local
-const guardarHorasEnAPI = async (mano) => {
-    if (!mano) return;
-    mostrarMensaje('✅ Horas actualizadas', 'success', 1000);
 };
 
 // Guardar cambios de cantidad en la API
@@ -974,8 +778,7 @@ const guardarCambiosComponente = async () => {
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
                 cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id),
-                mano_de_obra_id: Number(comp.mano_de_obra_id)
+                acabado_id: Number(comp.acabado_id)
             }))
         };
         
@@ -1011,13 +814,6 @@ const guardarCantidad = async () => {
         componenteActual.value.cantidad = 1;
     }
     await guardarCambiosComponente();
-};
-
-// Confirmar selección de mano de obra y guardar horas
-const confirmarManoDeObra = async () => {
-    const manoSeleccionada = manosDeObra.value.find(m => m.id === componenteActual.value.mano_de_obra_id);
-    
-    mostrarMensaje('✅ Mano de obra confirmada', 'success', 1500);
 };
 
 // Actualizar estado de carga general

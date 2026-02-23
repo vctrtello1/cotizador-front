@@ -139,7 +139,6 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { crearComponente, fetchComponentes } from '@/http/componentes-api';
 import { fetchAcabados } from '@/http/acabado-api';
-import { fetchClientes as fetchManoDeObra } from '@/http/mano_de_obra-api .js';
 
 const router = useRouter();
 
@@ -151,13 +150,11 @@ const formData = ref({
     unidad_medida: 'Pieza',
     cantidad_disponible: 100,
     costo_unitario: 50.00,
-    acabado_id: null,
-    mano_de_obra_id: null
+    acabado_id: null
 });
 
-// Acabados y mano de obra disponibles
+// Acabados disponibles
 const acabados = ref([]);
-const manosDeObra = ref([]);
 
 // Estado de UI
 const error = ref(null);
@@ -267,8 +264,7 @@ const guardarComponente = async () => {
             unidad_medida: formData.value.unidad_medida,
             cantidad_disponible: formData.value.cantidad_disponible,
             costo_unitario: formData.value.costo_unitario,
-            acabado_id: formData.value.acabado_id,
-            mano_de_obra_id: formData.value.mano_de_obra_id
+            acabado_id: formData.value.acabado_id
         };
 
         console.log('Guardando componente:', datosComponente);
@@ -323,20 +319,6 @@ onMounted(async () => {
         console.error('Error cargando acabados:', err);
     }
     
-    // Cargar mano de obra disponible
-    try {
-        const response = await fetchManoDeObra();
-        manosDeObra.value = Array.isArray(response) ? response : (response.data || []);
-        console.log('Manos de obra cargadas:', manosDeObra.value);
-        
-        // Usar la primera mano de obra disponible si existe
-        if (manosDeObra.value.length > 0) {
-            formData.value.mano_de_obra_id = manosDeObra.value[0].id;
-            console.log('Mano de obra por defecto asignada:', manosDeObra.value[0].id);
-        }
-    } catch (err) {
-        console.error('Error cargando mano de obra:', err);
-    }
     
     // Actualizar nombres con número incremental
     formData.value.nombre = `Componente Nuevo ${numeroComponente}`;

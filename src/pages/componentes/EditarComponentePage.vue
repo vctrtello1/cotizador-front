@@ -66,11 +66,18 @@
                         <strong class="stat-value">{{ estructurasDelComponente.length }} <small>tipos</small> · {{ totalCantidadEstructuras }} <small>u</small></strong>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎨</div>
+                    <div class="stat-content">
+                        <span class="stat-label">Cubre Cantos</span>
+                        <strong class="stat-value">{{ acabadoCubreCantosDelComponente.length }} <small>tipos</small> · {{ totalCantidadCubreCantos }} <small>u</small></strong>
+                    </div>
+                </div>
                 <div class="stat-card stat-card--highlight">
                     <div class="stat-icon">💰</div>
                     <div class="stat-content">
                         <span class="stat-label">Costo total</span>
-                        <strong class="stat-value">${{ formatCurrency(totalCostoTableros + totalCostoEstructuras) }}</strong>
+                        <strong class="stat-value">${{ formatCurrency(totalCostoTableros + totalCostoEstructuras + totalCostoCubreCantos) }}</strong>
                     </div>
                 </div>
             </div>
@@ -117,181 +124,70 @@
             </div>
 
             <!-- Tableros Asociados -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">🪵 Tableros Asociados</h2>
-                    <button
-                        type="button"
-                        class="btn-action-header"
-                        @click="mostrarModalTableros = true"
-                        :title="detalleTablerosCompleto"
-                    >
-                        + Gestionar
-                    </button>
-                </div>
-
-                <transition-group name="list" tag="div" v-if="tablerosDelComponente.length">
-                    <!-- Resumen métricas -->
-                    <div key="resumen" class="tableros-metrics">
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ tablerosDelComponente.length }}</span>
-                            <span class="metric-label">Tipos</span>
-                        </div>
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ totalCantidadTableros }}</span>
-                            <span class="metric-label">Unidades</span>
-                        </div>
-                        <div class="metric-pill metric-pill--accent">
-                            <span class="metric-number">${{ formatCurrency(totalCostoTableros) }}</span>
-                            <span class="metric-label">Costo total</span>
-                        </div>
-                    </div>
-
-                    <!-- Lista de tableros -->
-                    <div v-for="tablero in tablerosOrdenadosParaVista" :key="`vista-tablero-${tablero.id}`" class="tablero-card">
-                        <div class="tablero-card-left">
-                            <div class="tablero-avatar">🪵</div>
-                            <div class="tablero-info">
-                                <div class="tablero-name">{{ obtenerNombreTablero(tablero) }}</div>
-                                <div class="tablero-code">{{ obtenerCodigoTablero(tablero) }}</div>
-                            </div>
-                        </div>
-                        <div class="tablero-card-center">
-                            <div class="tablero-pricing">
-                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioTablero(tablero)) }} <small>c/u</small></span>
-                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalTablero(tablero)) }}</span>
-                            </div>
-                        </div>
-                        <div class="tablero-card-right">
-                            <div class="quantity-controls-compact">
-                                <button
-                                    type="button"
-                                    class="btn-qty btn-qty--minus"
-                                    @click="decrementarCantidadTablero(tablero)"
-                                    title="Disminuir"
-                                >−</button>
-                                <input
-                                    :id="`qty-tablero-vista-${tablero.id}`"
-                                    v-model.number="tablero.cantidad"
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    placeholder="1"
-                                    @blur="guardarCantidadTablero(tablero)"
-                                    @keyup.enter="guardarCantidadTablero(tablero)"
-                                    class="qty-input"
-                                />
-                                <button
-                                    type="button"
-                                    class="btn-qty btn-qty--plus"
-                                    @click="incrementarCantidadTablero(tablero)"
-                                    title="Aumentar"
-                                >+</button>
-                            </div>
-                            <button
-                                type="button"
-                                class="btn-delete-sm"
-                                @click="removerTablero(tablero.id)"
-                                title="Eliminar tablero"
-                            >🗑</button>
-                        </div>
-                    </div>
-                </transition-group>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-icon">📭</div>
-                    <p>No hay tableros asignados</p>
-                    <button type="button" class="btn-empty-action" @click="mostrarModalTableros = true">+ Agregar tablero</button>
-                </div>
-            </div>
+            <EntityCardList
+                icon="🪵"
+                titulo="Tableros Asociados"
+                label-singular="tablero"
+                key-prefix="tablero"
+                :items="tablerosDelComponente"
+                :items-ordenados="tablerosOrdenadosParaVista"
+                :total-cantidad="totalCantidadTableros"
+                :total-costo="totalCostoTableros"
+                :obtener-nombre="obtenerNombreTablero"
+                :obtener-codigo="obtenerCodigoTablero"
+                :obtener-costo-unitario="obtenerCostoUnitarioTablero"
+                :obtener-subtotal="obtenerSubtotalTablero"
+                :format-currency="formatCurrency"
+                @gestionar="abrirSelectorTableros"
+                @incrementar="incrementarCantidadTablero"
+                @decrementar="decrementarCantidadTablero"
+                @guardar-cantidad="guardarCantidadTablero"
+                @remover="removerTablero"
+            />
 
             <!-- Estructuras Asociadas -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">🏗️ Estructuras Asociadas</h2>
-                    <button
-                        type="button"
-                        class="btn-action-header"
-                        @click="abrirSelectorEstructuras"
-                    >
-                        + Gestionar
-                    </button>
-                </div>
+            <EntityCardList
+                icon="🏗️"
+                titulo="Estructuras Asociadas"
+                label-singular="estructura"
+                key-prefix="estructura"
+                :items="estructurasDelComponente"
+                :items-ordenados="estructurasOrdenadasParaVista"
+                :total-cantidad="totalCantidadEstructuras"
+                :total-costo="totalCostoEstructuras"
+                :obtener-nombre="obtenerNombreEstructura"
+                :obtener-codigo="obtenerCodigoEstructura"
+                :obtener-costo-unitario="obtenerCostoUnitarioEstructura"
+                :obtener-subtotal="obtenerSubtotalEstructura"
+                :format-currency="formatCurrency"
+                @gestionar="abrirSelectorEstructuras"
+                @incrementar="incrementarCantidadEstructura"
+                @decrementar="decrementarCantidadEstructura"
+                @guardar-cantidad="guardarCantidadEstructura"
+                @remover="removerEstructura"
+            />
 
-                <transition-group name="list" tag="div" v-if="estructurasDelComponente.length">
-                    <!-- Resumen métricas -->
-                    <div key="resumen-est" class="tableros-metrics">
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ estructurasDelComponente.length }}</span>
-                            <span class="metric-label">Tipos</span>
-                        </div>
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ totalCantidadEstructuras }}</span>
-                            <span class="metric-label">Unidades</span>
-                        </div>
-                        <div class="metric-pill metric-pill--accent">
-                            <span class="metric-number">${{ formatCurrency(totalCostoEstructuras) }}</span>
-                            <span class="metric-label">Costo total</span>
-                        </div>
-                    </div>
-
-                    <!-- Lista de estructuras -->
-                    <div v-for="estructura in estructurasOrdenadasParaVista" :key="`vista-estructura-${estructura.id}`" class="tablero-card">
-                        <div class="tablero-card-left">
-                            <div class="tablero-avatar">🏗️</div>
-                            <div class="tablero-info">
-                                <div class="tablero-name">{{ obtenerNombreEstructura(estructura) }}</div>
-                                <div class="tablero-code">{{ obtenerCodigoEstructura(estructura) }}</div>
-                            </div>
-                        </div>
-                        <div class="tablero-card-center">
-                            <div class="tablero-pricing">
-                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(estructura)) }} <small>c/u</small></span>
-                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalEstructura(estructura)) }}</span>
-                            </div>
-                        </div>
-                        <div class="tablero-card-right">
-                            <div class="quantity-controls-compact">
-                                <button
-                                    type="button"
-                                    class="btn-qty btn-qty--minus"
-                                    @click="decrementarCantidadEstructura(estructura)"
-                                    title="Disminuir"
-                                >−</button>
-                                <input
-                                    :id="`qty-estructura-vista-${estructura.id}`"
-                                    v-model.number="estructura.cantidad"
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    placeholder="1"
-                                    @blur="guardarCantidadEstructura(estructura)"
-                                    @keyup.enter="guardarCantidadEstructura(estructura)"
-                                    class="qty-input"
-                                />
-                                <button
-                                    type="button"
-                                    class="btn-qty btn-qty--plus"
-                                    @click="incrementarCantidadEstructura(estructura)"
-                                    title="Aumentar"
-                                >+</button>
-                            </div>
-                            <button
-                                type="button"
-                                class="btn-delete-sm"
-                                @click="removerEstructura(estructura.id)"
-                                title="Eliminar estructura"
-                            >🗑</button>
-                        </div>
-                    </div>
-                </transition-group>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-icon">📭</div>
-                    <p>No hay estructuras asignadas</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorEstructuras">+ Agregar estructura</button>
-                </div>
-            </div>
+            <!-- Acabado Cubre Cantos Asociados -->
+            <EntityCardList
+                icon="🎨"
+                titulo="Cubre Cantos Asociados"
+                label-singular="cubre canto"
+                key-prefix="cc"
+                :items="acabadoCubreCantosDelComponente"
+                :items-ordenados="cubreCantosOrdenadosParaVista"
+                :total-cantidad="totalCantidadCubreCantos"
+                :total-costo="totalCostoCubreCantos"
+                :obtener-nombre="obtenerNombreCubreCanto"
+                :obtener-codigo="obtenerCodigoCubreCanto"
+                :obtener-costo-unitario="obtenerCostoUnitarioCubreCanto"
+                :obtener-subtotal="obtenerSubtotalCubreCanto"
+                :format-currency="formatCurrency"
+                @gestionar="abrirSelectorCubreCantos"
+                @incrementar="incrementarCantidadCubreCanto"
+                @decrementar="decrementarCantidadCubreCanto"
+                @guardar-cantidad="guardarCantidadCubreCanto"
+                @remover="removerCubreCanto"
+            />
 
             <!-- Acciones -->
             <div class="form-actions">
@@ -369,89 +265,6 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn-secondary" @click="mostrarModalMateriales = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Mano de Obra -->
-        <div v-if="mostrarModalManoDeObra" class="modal-overlay" @click.self="mostrarModalManoDeObra = false">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">👷 Editar Mano de Obra</h3>
-                </div>
-                <div class="modal-body">
-                    <div v-if="formData.mano_de_obra" class="selected-items">
-                        <div class="selected-item-full">
-                            <div class="item-info-full">
-                                <div class="item-name">{{ formData.mano_de_obra.nombre }}</div>
-                                <div class="item-code">{{ formData.mano_de_obra.descripcion }}</div>
-                                <div class="info-row">
-                                    <span class="info-label">Costo/hora:</span>
-                                    <span class="info-value">${{ formatCurrency(formData.mano_de_obra.costo_hora) }}</span>
-                                </div>
-                            </div>
-                            <div class="button-group-vertical">
-                                <button class="btn-change-item" @click="abrirSelectorManoDeObra" title="Cambiar">🔄 Cambiar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="add-section">
-                        <button type="button" class="btn-add-material" @click="abrirSelectorManoDeObra">
-                            + Agregar Mano de Obra
-                        </button>
-                    </div>
-
-                    <!-- Sección de Horas -->
-                    <div v-if="formData.mano_de_obra && horaActual" class="selected-items">
-                        <h4 class="items-subtitle">⏱️ Horas Asignadas</h4>
-                        
-                        <!-- Input de horas editable - solo el registro actual -->
-                        <div class="quantity-input-group" style="margin: 15px 0;">
-                            <label for="horas-input">Horas de Mano de Obra</label>
-                            <div class="quantity-controls">
-                                <button 
-                                    type="button"
-                                    class="btn-qty-control btn-qty-minus"
-                                    @click="decrementarHora(0)"
-                                    :disabled="guardandoHoras"
-                                    title="Disminuir"
-                                >−</button>
-                                <input 
-                                    id="horas-input"
-                                    v-model.number="horaActual.horas"
-                                    type="number"
-                                    min="1"
-                                    max="24"
-                                    step="1"
-                                    placeholder="1"
-                                    @blur="guardarCambiosHoras"
-                                    @keyup.enter="guardarCambiosHoras"
-                                    class="quantity-input"
-                                    :disabled="guardandoHoras"
-                                />
-                                <button 
-                                    type="button"
-                                    class="btn-qty-control btn-qty-plus"
-                                    @click="incrementarHora(0)"
-                                    :disabled="guardandoHoras"
-                                    title="Aumentar"
-                                >+</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Resumen de horas -->
-                        <div class="horas-summary">
-                            <p class="horas-cost">
-                                Total: <strong>{{ totalHoras }} horas</strong>
-                            </p>
-                            <p class="horas-cost">
-                                Costo: <strong style="color: #059669;">${{ formatCurrency(calcularCostoManoDeObra()) }}</strong>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalManoDeObra = false">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -537,53 +350,6 @@
             </div>
         </div>
 
-        <!-- Modal Selector de Mano de Obra -->
-        <div v-if="mostrarSelectorManoDeObra" class="modal-overlay" @click.self="mostrarSelectorManoDeObra = false">
-            <div class="modal-content modal-content-large">
-                <div class="modal-header">
-                    <h3 class="modal-title">👷 Seleccionar Mano de Obra</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="search-section">
-                        <input 
-                            v-model="busquedaManoDeObra"
-                            type="text"
-                            class="search-input"
-                            placeholder="🔍 Buscar mano de obra..."
-                        />
-                    </div>
-                    <div class="materiales-grid">
-                        <div 
-                            v-for="manoDeObra in manoDeObraFiltrada"
-                            :key="manoDeObra.id"
-                            class="material-card"
-                            :class="{ 'selected': formData.mano_de_obra?.id === manoDeObra.id }"
-                            @click="agregarManoDeObra(manoDeObra)"
-                        >
-                            <div class="card-header">
-                                <div class="card-name">{{ manoDeObra.nombre }}</div>
-                                <div class="card-badge">{{ manoDeObra.codigo }}</div>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-label">Costo/Hora</p>
-                                <p class="card-price">${{ formatCurrency(manoDeObra.costo_hora) }}</p>
-                            </div>
-                            <div class="card-footer">
-                                <button v-if="formData.mano_de_obra?.id === manoDeObra.id" class="btn-select btn-select-active" disabled>✓ Seleccionado</button>
-                                <button v-else class="btn-select">+ Seleccionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="manoDeObraFiltrada.length === 0" class="empty-list">
-                        <p>📭 No hay mano de obra disponible</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarSelectorManoDeObra = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Modal Selector de Acabados -->
         <div v-if="mostrarSelectorAcabados" class="modal-overlay" @click.self="mostrarSelectorAcabados = false">
             <div class="modal-content modal-content-large">
@@ -631,243 +397,50 @@
             </div>
         </div>
 
-        <!-- Modal Tableros -->
-        <div v-if="mostrarModalTableros" class="modal-overlay" @click.self="mostrarModalTableros = false">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">🪵 Editar Tableros</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="add-section">
-                        <button
-                            type="button"
-                            class="btn-add-material"
-                            @click="abrirSelectorTableros"
-                        >+ Agregar Tablero</button>
-                    </div>
+        <!-- Selector de Tableros -->
+        <EntitySelectorModal
+            :visible="mostrarSelectorTableros"
+            icon="🪵"
+            titulo="Seleccionar Tableros"
+            label-singular="Tablero"
+            :busqueda="busquedaTablero"
+            :items-filtrados="tablerosFiltrados"
+            :format-currency="formatCurrency"
+            :obtener-precio="(item) => item.costo_unitario || item.costo || 0"
+            @close="mostrarSelectorTableros = false"
+            @seleccionar="agregarTablero"
+            @update:busqueda="busquedaTablero = $event"
+        />
 
-                    <div v-if="tablerosDelComponente && tablerosDelComponente.length > 0" class="selected-items">
-                        <h4 class="items-subtitle">Tableros Seleccionados</h4>
-                        <div class="tableros-resumen-grid">
-                            <div class="tableros-resumen-item">
-                                <span class="tableros-resumen-label">Tipos</span>
-                                <strong class="tableros-resumen-value">{{ tablerosDelComponente.length }}</strong>
-                            </div>
-                            <div class="tableros-resumen-item">
-                                <span class="tableros-resumen-label">Unidades</span>
-                                <strong class="tableros-resumen-value">{{ totalCantidadTableros }}</strong>
-                            </div>
-                            <div class="tableros-resumen-item tableros-resumen-item--total">
-                                <span class="tableros-resumen-label">Costo total</span>
-                                <strong class="tableros-resumen-value">${{ formatCurrency(totalCostoTableros) }}</strong>
-                            </div>
-                        </div>
-                        <div class="items-grid">
-                            <div v-for="tablero in tablerosDelComponente" :key="tablero.id" class="selected-item-edit">
-                                <div class="item-info">
-                                    <div class="item-name">{{ obtenerNombreTablero(tablero) }}</div>
-                                    <div class="item-code">{{ obtenerCodigoTablero(tablero) }}</div>
-                                    <div class="item-price">${{ formatCurrency(obtenerCostoUnitarioTablero(tablero)) }} c/u</div>
-                                    <div class="item-subtotal">Subtotal: ${{ formatCurrency(obtenerSubtotalTablero(tablero)) }}</div>
-                                </div>
-                                <div class="quantity-input-group">
-                                    <label :for="`qty-tablero-${tablero.id}`">Cantidad (unidades)</label>
-                                    <div class="quantity-controls">
-                                        <button
-                                            type="button"
-                                            class="btn-qty-control btn-qty-minus"
-                                            @click="decrementarCantidadTablero(tablero)"
-                                            title="Disminuir"
-                                        >−</button>
-                                        <input
-                                            :id="`qty-tablero-${tablero.id}`"
-                                            v-model.number="tablero.cantidad"
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            placeholder="1"
-                                            @blur="guardarCantidadTablero(tablero)"
-                                            @keyup.enter="guardarCantidadTablero(tablero)"
-                                            class="quantity-input"
-                                        />
-                                        <button
-                                            type="button"
-                                            class="btn-qty-control btn-qty-plus"
-                                            @click="incrementarCantidadTablero(tablero)"
-                                            title="Aumentar"
-                                        >+</button>
-                                    </div>
-                                </div>
-                                <button class="btn-remove" @click="removerTablero(tablero.id)" title="Remover">×</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="empty-list">
-                        <p>📭 No hay tableros seleccionados</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalTableros = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
+        <!-- Selector de Estructuras -->
+        <EntitySelectorModal
+            :visible="mostrarSelectorEstructuras"
+            icon="🏗️"
+            titulo="Seleccionar Estructuras"
+            label-singular="Estructura"
+            :busqueda="busquedaEstructura"
+            :items-filtrados="estructurasFiltradas"
+            :format-currency="formatCurrency"
+            :obtener-precio="(item) => item.costo_unitario || item.costo || item.precio || 0"
+            @close="mostrarSelectorEstructuras = false"
+            @seleccionar="agregarEstructura"
+            @update:busqueda="busquedaEstructura = $event"
+        />
 
-        <!-- Modal Selector de Tableros -->
-        <div v-if="mostrarSelectorTableros" class="modal-overlay" @click.self="mostrarSelectorTableros = false">
-            <div class="modal-content modal-content-large">
-                <div class="modal-header">
-                    <h3 class="modal-title">🪵 Seleccionar Tableros</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="search-section">
-                        <input
-                            v-model="busquedaTablero"
-                            type="text"
-                            class="search-input"
-                            placeholder="🔍 Buscar tablero..."
-                        />
-                    </div>
-                    <div class="materiales-grid">
-                        <div
-                            v-for="tablero in tablerosFiltrados"
-                            :key="tablero.id"
-                            class="material-card"
-                            @click="agregarTablero(tablero)"
-                        >
-                            <div class="card-header">
-                                <div class="card-name">{{ tablero.nombre }}</div>
-                                <div class="card-badge">{{ tablero.codigo }}</div>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-label">Costo Unitario</p>
-                                <p class="card-price">${{ formatCurrency(tablero.costo_unitario || tablero.costo || 0) }}</p>
-                            </div>
-                            <div class="card-footer">
-                                <button class="btn-select">+ Seleccionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="tablerosFiltrados.length === 0" class="empty-list">
-                        <p>📭 No hay tableros disponibles</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarSelectorTableros = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Estructuras -->
-        <div v-if="mostrarModalEstructuras" class="modal-overlay" @click.self="mostrarModalEstructuras = false">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">🏗️ Editar Estructuras</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="add-section">
-                        <button
-                            type="button"
-                            class="btn-add-material"
-                            @click="abrirSelectorEstructuras"
-                        >+ Agregar Estructura</button>
-                    </div>
-
-                    <div v-if="estructurasDelComponente && estructurasDelComponente.length > 0" class="selected-items">
-                        <h4 class="items-subtitle">Estructuras Seleccionadas</h4>
-                        <div class="items-grid">
-                            <div v-for="estructura in estructurasDelComponente" :key="estructura.id" class="selected-item-edit">
-                                <div class="item-info">
-                                    <div class="item-name">{{ obtenerNombreEstructura(estructura) }}</div>
-                                    <div class="item-code">{{ obtenerCodigoEstructura(estructura) }}</div>
-                                    <div class="item-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(estructura)) }} c/u</div>
-                                    <div class="item-subtotal">Subtotal: ${{ formatCurrency(obtenerSubtotalEstructura(estructura)) }}</div>
-                                </div>
-                                <div class="quantity-input-group">
-                                    <label :for="`qty-estructura-${estructura.id}`">Cantidad (unidades)</label>
-                                    <div class="quantity-controls">
-                                        <button
-                                            type="button"
-                                            class="btn-qty-control btn-qty-minus"
-                                            @click="decrementarCantidadEstructura(estructura)"
-                                            title="Disminuir"
-                                        >−</button>
-                                        <input
-                                            :id="`qty-estructura-${estructura.id}`"
-                                            v-model.number="estructura.cantidad"
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            placeholder="1"
-                                            @blur="guardarCantidadEstructura(estructura)"
-                                            @keyup.enter="guardarCantidadEstructura(estructura)"
-                                            class="quantity-input"
-                                        />
-                                        <button
-                                            type="button"
-                                            class="btn-qty-control btn-qty-plus"
-                                            @click="incrementarCantidadEstructura(estructura)"
-                                            title="Aumentar"
-                                        >+</button>
-                                    </div>
-                                </div>
-                                <button class="btn-remove" @click="removerEstructura(estructura.id)" title="Remover">×</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="empty-list">
-                        <p>📭 No hay estructuras seleccionadas</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalEstructuras = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Selector de Estructuras -->
-        <div v-if="mostrarSelectorEstructuras" class="modal-overlay" @click.self="mostrarSelectorEstructuras = false">
-            <div class="modal-content modal-content-large">
-                <div class="modal-header">
-                    <h3 class="modal-title">🏗️ Seleccionar Estructuras</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="search-section">
-                        <input
-                            v-model="busquedaEstructura"
-                            type="text"
-                            class="search-input"
-                            placeholder="🔍 Buscar estructura..."
-                        />
-                    </div>
-                    <div class="materiales-grid">
-                        <div
-                            v-for="estructura in estructurasFiltradas"
-                            :key="estructura.id"
-                            class="material-card"
-                            @click="agregarEstructura(estructura)"
-                        >
-                            <div class="card-header">
-                                <div class="card-name">{{ estructura.nombre }}</div>
-                                <div class="card-badge">{{ estructura.codigo }}</div>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-label">Costo Unitario</p>
-                                <p class="card-price">${{ formatCurrency(estructura.costo_unitario || estructura.costo || estructura.precio || 0) }}</p>
-                            </div>
-                            <div class="card-footer">
-                                <button class="btn-select">+ Seleccionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="estructurasFiltradas.length === 0" class="empty-list">
-                        <p>📭 No hay estructuras disponibles</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarSelectorEstructuras = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
+        <!-- Selector de Cubre Cantos -->
+        <EntitySelectorModal
+            :visible="mostrarSelectorCubreCantos"
+            icon="🎨"
+            titulo="Seleccionar Cubre Cantos"
+            label-singular="Cubre Canto"
+            :busqueda="busquedaCubreCanto"
+            :items-filtrados="cubreCantosFiltrados"
+            :format-currency="formatCurrency"
+            :obtener-precio="(item) => item.costo_unitario || item.costo || item.precio || 0"
+            @close="mostrarSelectorCubreCantos = false"
+            @seleccionar="agregarCubreCanto"
+            @update:busqueda="busquedaCubreCanto = $event"
+        />
     </div>
 </template>
 
@@ -881,6 +454,11 @@ import { useMateriales } from '@/stores/materiales';
 import { useTablerosPorComponenteStore } from '@/stores/tableros-por-componente';
 import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-componente';
 import { useEstructuraStore } from '@/stores/estructura';
+import { useAcabadoCubreCantosPorComponenteStore } from '@/stores/acabado-cubre-cantos-por-componente';
+import { useAcabadoCubreCantosStore } from '@/stores/acabado-cubre-cantos';
+import { useEntidadPorComponente } from '@/composables/useEntidadPorComponente';
+import EntityCardList from '@/components/EntityCardList.vue';
+import EntitySelectorModal from '@/components/EntitySelectorModal.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -890,6 +468,8 @@ const storeMateriales = useMateriales();
 const storeTablerosPorComponente = useTablerosPorComponenteStore();
 const storeEstructurasPorComponente = useEstructurasPorComponenteStore();
 const storeEstructuras = useEstructuraStore();
+const storeAcabadoCubreCantosPorComponente = useAcabadoCubreCantosPorComponenteStore();
+const storeAcabadoCubreCantos = useAcabadoCubreCantosStore();
 
 // Estado
 const formData = ref({
@@ -898,7 +478,6 @@ const formData = ref({
     descripcion: '',
     costo_unitario: '',
     materiales: [],
-    mano_de_obra: null,
     acabado: null,
 });
 
@@ -907,7 +486,6 @@ const error = ref(null);
 const mensaje = ref(null);
 const tipoMensaje = ref(null); // 'success', 'error', 'warning'
 const guardando = ref(false);
-const guardandoHoras = ref(false);
 const cargando = ref(true);
 
 // Función para mostrar mensajes amigables
@@ -927,38 +505,15 @@ const cerrarMensaje = () => {
     tipoMensaje.value = null;
 };
 const materialesDelComponente = ref([]);
-const tablerosDelComponente = ref([]);
-const estructurasDelComponente = ref([]);
 
-// Modales
+// Modales (materiales, acabado)
 const mostrarModalMateriales = ref(false);
-const mostrarModalManoDeObra = ref(false);
 const mostrarModalAcabado = ref(false);
-const mostrarModalTableros = ref(false);
-const mostrarModalEstructuras = ref(false);
 const mostrarSelectorMateriales = ref(false);
-const mostrarSelectorTableros = ref(false);
-const mostrarSelectorEstructuras = ref(false);
 
 // Datos para seleccionar materiales
 const materialesDisponibles = ref([]);
 const busquedaMaterial = ref('');
-const tablerosDisponibles = ref([]);
-const busquedaTablero = ref('');
-const campoIdTableroRelacion = ref('tablero_id');
-const estructurasDisponibles = ref([]);
-const busquedaEstructura = ref('');
-const campoIdEstructuraRelacion = ref('estructura_id');
-
-// Total de horas calculado dinámicamente
-const totalHoras = computed(() => {
-    return horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-});
-
-// Datos para seleccionar mano de obra
-const manoDeObraDisponible = ref([]);
-const busquedaManoDeObra = ref('');
-const mostrarSelectorManoDeObra = ref(false);
 
 // Datos para seleccionar acabados
 const acabadosDisponibles = ref([]);
@@ -968,32 +523,134 @@ const mostrarSelectorAcabados = ref(false);
 const createDebouncedRef = (sourceRef, delay = 180) => {
     const debounced = ref(sourceRef.value);
     let timeoutId;
-
     const stopWatching = watch(sourceRef, (value) => {
         clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-            debounced.value = value;
-        }, delay);
+        timeoutId = setTimeout(() => { debounced.value = value; }, delay);
     });
-
-    onBeforeUnmount(() => {
-        clearTimeout(timeoutId);
-        stopWatching();
-    });
-
+    onBeforeUnmount(() => { clearTimeout(timeoutId); stopWatching(); });
     return debounced;
 };
 
 const busquedaMaterialDebounced = createDebouncedRef(busquedaMaterial);
+const busquedaAcabadoDebounced = createDebouncedRef(busquedaAcabado);
+
+// ===== Catálogos disponibles para entidades =====
+const tablerosDisponibles = ref([]);
+const estructurasDisponibles = ref([]);
+const cubreCantosDisponibles = ref([]);
+const tablerosDisponiblesMap = computed(() => new Map((tablerosDisponibles.value || []).map(t => [t.id, t])));
+const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles.value || []).map(e => [e.id, e])));
+const cubreCantosDisponiblesMap = computed(() => new Map((cubreCantosDisponibles.value || []).map(c => [c.id, c])));
+
+// ===== Composables de entidades por componente =====
+const {
+    items: tablerosDelComponente,
+    mostrarSelector: mostrarSelectorTableros,
+    busqueda: busquedaTablero,
+    obtenerId: obtenerIdTableroRelacion,
+    obtenerNombre: obtenerNombreTablero,
+    obtenerCodigo: obtenerCodigoTablero,
+    obtenerCostoUnitario: obtenerCostoUnitarioTablero,
+    obtenerSubtotal: obtenerSubtotalTablero,
+    itemsOrdenados: tablerosOrdenadosParaVista,
+    totalCantidad: totalCantidadTableros,
+    totalCosto: totalCostoTableros,
+    cargar: cargarTablerosPorComponente,
+    agregar: agregarTablero,
+    guardarCantidad: guardarCantidadTablero,
+    incrementarCantidad: incrementarCantidadTablero,
+    decrementarCantidad: decrementarCantidadTablero,
+    remover: removerTablero,
+} = useEntidadPorComponente({
+    label: 'Tablero',
+    primaryIdField: 'tablero_id',
+    alternateIdField: 'acabado_tablero_id',
+    nestedKeys: ['tablero', 'acabado_tablero'],
+    idAccessors: ['tablero_id', 'acabado_tablero_id', 'tablero.id', 'acabado_tablero.id', 'tableroId'],
+    costFields: ['costo_unitario', 'costo'],
+    disponiblesMap: tablerosDisponiblesMap,
+    store: storeTablerosPorComponente,
+    storeCrear: 'crearTableroPorComponente',
+    storeActualizar: 'actualizarTableroPorComponente',
+    storeEliminar: 'eliminarTableroPorComponente',
+    storeFetch: 'fetchTablerosPorComponente',
+    componenteId,
+    mostrarMensaje,
+});
+
+const {
+    items: estructurasDelComponente,
+    mostrarSelector: mostrarSelectorEstructuras,
+    busqueda: busquedaEstructura,
+    obtenerId: obtenerIdEstructuraRelacion,
+    obtenerNombre: obtenerNombreEstructura,
+    obtenerCodigo: obtenerCodigoEstructura,
+    obtenerCostoUnitario: obtenerCostoUnitarioEstructura,
+    obtenerSubtotal: obtenerSubtotalEstructura,
+    itemsOrdenados: estructurasOrdenadasParaVista,
+    totalCantidad: totalCantidadEstructuras,
+    totalCosto: totalCostoEstructuras,
+    cargar: cargarEstructurasPorComponente,
+    agregar: agregarEstructura,
+    guardarCantidad: guardarCantidadEstructura,
+    incrementarCantidad: incrementarCantidadEstructura,
+    decrementarCantidad: decrementarCantidadEstructura,
+    remover: removerEstructura,
+} = useEntidadPorComponente({
+    label: 'Estructura',
+    primaryIdField: 'estructura_id',
+    alternateIdField: null,
+    nestedKeys: ['estructura'],
+    idAccessors: ['estructura_id', 'estructura.id', 'estructuraId'],
+    costFields: ['costo_unitario', 'costo', 'precio'],
+    disponiblesMap: estructurasDisponiblesMap,
+    store: storeEstructurasPorComponente,
+    storeCrear: 'crearEstructuraPorComponente',
+    storeActualizar: 'actualizarEstructuraPorComponente',
+    storeEliminar: 'eliminarEstructuraPorComponente',
+    storeFetch: 'fetchEstructurasPorComponente',
+    componenteId,
+    mostrarMensaje,
+});
+
+const {
+    items: acabadoCubreCantosDelComponente,
+    mostrarSelector: mostrarSelectorCubreCantos,
+    busqueda: busquedaCubreCanto,
+    obtenerId: obtenerIdCubreCantoRelacion,
+    obtenerNombre: obtenerNombreCubreCanto,
+    obtenerCodigo: obtenerCodigoCubreCanto,
+    obtenerCostoUnitario: obtenerCostoUnitarioCubreCanto,
+    obtenerSubtotal: obtenerSubtotalCubreCanto,
+    itemsOrdenados: cubreCantosOrdenadosParaVista,
+    totalCantidad: totalCantidadCubreCantos,
+    totalCosto: totalCostoCubreCantos,
+    cargar: cargarCubreCantosPorComponente,
+    agregar: agregarCubreCanto,
+    guardarCantidad: guardarCantidadCubreCanto,
+    incrementarCantidad: incrementarCantidadCubreCanto,
+    decrementarCantidad: decrementarCantidadCubreCanto,
+    remover: removerCubreCanto,
+} = useEntidadPorComponente({
+    label: 'Cubre Canto',
+    primaryIdField: 'acabado_cubre_canto_id',
+    alternateIdField: 'acabado_cubre_cantos_id',
+    nestedKeys: ['acabado_cubre_canto', 'acabadoCubreCanto'],
+    idAccessors: ['acabado_cubre_canto_id', 'acabado_cubre_cantos_id', 'acabadoCubreCanto.id', 'acabado_cubre_canto.id'],
+    costFields: ['costo_unitario', 'costo', 'precio'],
+    disponiblesMap: cubreCantosDisponiblesMap,
+    store: storeAcabadoCubreCantosPorComponente,
+    storeCrear: 'crearAcabadoCubreCantoPorComponente',
+    storeActualizar: 'actualizarAcabadoCubreCantoPorComponente',
+    storeEliminar: 'eliminarAcabadoCubreCantoPorComponente',
+    storeFetch: 'fetchAcabadoCubreCantosPorComponente',
+    componenteId,
+    mostrarMensaje,
+});
+
 const busquedaTableroDebounced = createDebouncedRef(busquedaTablero);
 const busquedaEstructuraDebounced = createDebouncedRef(busquedaEstructura);
-const busquedaManoDeObraDebounced = createDebouncedRef(busquedaManoDeObra);
-const busquedaAcabadoDebounced = createDebouncedRef(busquedaAcabado);
-const tablerosDisponiblesMap = computed(() => new Map((tablerosDisponibles.value || []).map(tablero => [tablero.id, tablero])));
-const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles.value || []).map(e => [e.id, e])));
-
-// Horas de mano de obra por componente
-const horasManoDeObra = ref([]);
+const busquedaCubreCantoDebounced = createDebouncedRef(busquedaCubreCanto);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -1002,33 +659,35 @@ const cargarComponente = async () => {
         const response = await getComponenteById(componenteId.value || route.params.id);
         const data = response.data || response;
         
-        // Mano de obra: puede venir como objeto completo o como ID
-        let manoDeObraData = null;
-        if (data.mano_de_obra_id) {
-            // Si es un objeto, usarlo directamente; si es ID, cargar desde API
-            if (typeof data.mano_de_obra_id === 'object' && data.mano_de_obra_id.id) {
-                manoDeObraData = data.mano_de_obra_id;
-            } else if (typeof data.mano_de_obra_id === 'number' || typeof data.mano_de_obra_id === 'string') {
-                const manoDeObraResponse = await api.get(`/mano-de-obras/${data.mano_de_obra_id}`);
-                manoDeObraData = manoDeObraResponse.data?.data || manoDeObraResponse.data || null;
-            }
-        }
-        
         formData.value = {
             nombre: data.nombre || '',
             codigo: data.codigo || '',
             descripcion: data.descripcion || '',
             costo_unitario: data.costo_unitario || data.costo_total || '',
             materiales: data.materiales || [],
-            mano_de_obra: manoDeObraData || null,
             acabado: data.acabado_id || null,
         };
         
         // Cargar catálogos relacionados en paralelo
         await Promise.all([
             cargarMaterialesPorComponente(),
-            cargarTablerosPorComponente(),
-            cargarEstructurasPorComponente(),
+            cargarTablerosPorComponente(async () => {
+                if (!tablerosDisponibles.value.length) {
+                    await cargarCatalogo('/acabado-tableros', tablerosDisponibles);
+                }
+            }),
+            cargarEstructurasPorComponente(async () => {
+                if (!estructurasDisponibles.value.length) {
+                    await storeEstructuras.fetchEstructuras();
+                    estructurasDisponibles.value = storeEstructuras.estructuras || [];
+                }
+            }),
+            cargarCubreCantosPorComponente(async () => {
+                if (!cubreCantosDisponibles.value.length) {
+                    await storeAcabadoCubreCantos.fetchAcabadoCubreCantos();
+                    cubreCantosDisponibles.value = storeAcabadoCubreCantos.acabadoCubreCantos || [];
+                }
+            }),
         ]);
     } catch (err) {
         error.value = 'Error al cargar el componente';
@@ -1064,249 +723,6 @@ const cargarMaterialesPorComponente = async () => {
     }
 };
 
-const obtenerIdTableroRelacion = (registro) => {
-    return registro?.tablero_id
-        ?? registro?.acabado_tablero_id
-        ?? registro?.tablero?.id
-        ?? registro?.acabado_tablero?.id
-        ?? registro?.tableroId
-        ?? null;
-};
-
-const normalizarTableroRelacion = (registro) => {
-    const tableroId = obtenerIdTableroRelacion(registro);
-    const tablero = registro?.tablero
-        || registro?.acabado_tablero
-        || tablerosDisponiblesMap.value.get(tableroId)
-        || {};
-
-    return {
-        ...registro,
-        tablero_id: tableroId,
-        cantidad: Number(registro?.cantidad || 1),
-        tablero,
-    };
-};
-
-const obtenerNombreTablero = (registro) => {
-    const tableroId = obtenerIdTableroRelacion(registro);
-    const tablero = registro?.tablero
-        || registro?.acabado_tablero
-        || tablerosDisponiblesMap.value.get(tableroId)
-        || null;
-
-    return tablero?.nombre || `Tablero #${tableroId || 'N/A'}`;
-};
-
-const obtenerCodigoTablero = (registro) => {
-    const tableroId = obtenerIdTableroRelacion(registro);
-    const tablero = registro?.tablero
-        || registro?.acabado_tablero
-        || tablerosDisponiblesMap.value.get(tableroId)
-        || null;
-
-    return tablero?.codigo || '—';
-};
-
-const resumenTablerosSeleccionados = computed(() => {
-    if (!tablerosDelComponente.value.length) return '';
-
-    const nombresUnicos = [];
-    for (const tablero of tablerosDelComponente.value) {
-        const nombre = obtenerNombreTablero(tablero);
-        if (!nombresUnicos.includes(nombre)) {
-            nombresUnicos.push(nombre);
-        }
-    }
-
-    const maxVisibles = 2;
-    if (nombresUnicos.length <= maxVisibles) {
-        return nombresUnicos.join(', ');
-    }
-
-    return `${nombresUnicos.slice(0, maxVisibles).join(', ')} +${nombresUnicos.length - maxVisibles}`;
-});
-
-const tablerosOrdenadosParaVista = computed(() => {
-    return [...tablerosDelComponente.value].sort((a, b) => {
-        return obtenerNombreTablero(a).localeCompare(obtenerNombreTablero(b), 'es', { sensitivity: 'base' });
-    });
-});
-
-const obtenerCostoUnitarioTablero = (registro) => {
-    const tableroId = obtenerIdTableroRelacion(registro);
-    const tablero = registro?.tablero
-        || registro?.acabado_tablero
-        || tablerosDisponiblesMap.value.get(tableroId)
-        || null;
-
-    return Number(tablero?.costo_unitario ?? tablero?.costo ?? 0) || 0;
-};
-
-const obtenerSubtotalTablero = (registro) => {
-    const cantidad = Number(registro?.cantidad || 0) || 0;
-    return obtenerCostoUnitarioTablero(registro) * cantidad;
-};
-
-const totalCantidadTableros = computed(() => {
-    return tablerosDelComponente.value.reduce((sum, tablero) => sum + (Number(tablero?.cantidad || 0) || 0), 0);
-});
-
-const totalCostoTableros = computed(() => {
-    return tablerosDelComponente.value.reduce((sum, tablero) => sum + obtenerSubtotalTablero(tablero), 0);
-});
-
-const detalleTablerosCompleto = computed(() => {
-    if (!tablerosDelComponente.value.length) {
-        return 'Sin tableros seleccionados';
-    }
-
-    return tablerosDelComponente.value
-        .map(tablero => `${obtenerNombreTablero(tablero)} (${Number(tablero?.cantidad || 0)} u)`)
-        .join(' · ');
-});
-
-// ========== Estructuras helpers ==========
-const obtenerIdEstructuraRelacion = (registro) => {
-    return registro?.estructura_id
-        ?? registro?.estructura?.id
-        ?? registro?.estructuraId
-        ?? null;
-};
-
-const normalizarEstructuraRelacion = (registro) => {
-    const estructuraId = obtenerIdEstructuraRelacion(registro);
-    const estructura = registro?.estructura
-        || estructurasDisponiblesMap.value.get(estructuraId)
-        || {};
-
-    return {
-        ...registro,
-        estructura_id: estructuraId,
-        cantidad: Number(registro?.cantidad || 1),
-        estructura,
-    };
-};
-
-const obtenerNombreEstructura = (registro) => {
-    const estructuraId = obtenerIdEstructuraRelacion(registro);
-    const estructura = registro?.estructura
-        || estructurasDisponiblesMap.value.get(estructuraId)
-        || null;
-    return estructura?.nombre || `Estructura #${estructuraId || 'N/A'}`;
-};
-
-const obtenerCodigoEstructura = (registro) => {
-    const estructuraId = obtenerIdEstructuraRelacion(registro);
-    const estructura = registro?.estructura
-        || estructurasDisponiblesMap.value.get(estructuraId)
-        || null;
-    return estructura?.codigo || '—';
-};
-
-const obtenerCostoUnitarioEstructura = (registro) => {
-    const estructuraId = obtenerIdEstructuraRelacion(registro);
-    const estructura = registro?.estructura
-        || estructurasDisponiblesMap.value.get(estructuraId)
-        || null;
-    return Number(estructura?.costo_unitario ?? estructura?.costo ?? estructura?.precio ?? 0) || 0;
-};
-
-const obtenerSubtotalEstructura = (registro) => {
-    const cantidad = Number(registro?.cantidad || 0) || 0;
-    return obtenerCostoUnitarioEstructura(registro) * cantidad;
-};
-
-const estructurasOrdenadasParaVista = computed(() => {
-    return [...estructurasDelComponente.value].sort((a, b) => {
-        return obtenerNombreEstructura(a).localeCompare(obtenerNombreEstructura(b), 'es', { sensitivity: 'base' });
-    });
-});
-
-const totalCantidadEstructuras = computed(() => {
-    return estructurasDelComponente.value.reduce((sum, e) => sum + (Number(e?.cantidad || 0) || 0), 0);
-});
-
-const totalCostoEstructuras = computed(() => {
-    return estructurasDelComponente.value.reduce((sum, e) => sum + obtenerSubtotalEstructura(e), 0);
-});
-
-const cargarTablerosPorComponente = async () => {
-    try {
-        if (!tablerosDisponibles.value.length) {
-            await cargarCatalogo('/acabado-tableros', tablerosDisponibles);
-        }
-
-        const response = await storeTablerosPorComponente.fetchTablerosPorComponente();
-        const data = Array.isArray(response) ? response : [];
-
-        const primerRegistro = data[0] || null;
-        if (primerRegistro?.acabado_tablero_id !== undefined) {
-            campoIdTableroRelacion.value = 'acabado_tablero_id';
-        } else {
-            campoIdTableroRelacion.value = 'tablero_id';
-        }
-
-        tablerosDelComponente.value = data
-            .filter(item => Number(item?.componente_id) === componenteId.value)
-            .map(normalizarTableroRelacion);
-    } catch (err) {
-        console.error('Error cargando tableros por componente:', err);
-        tablerosDelComponente.value = [];
-    }
-};
-
-// Cargar estructuras por componente
-const cargarEstructurasPorComponente = async () => {
-    try {
-        // Precargar catálogo de estructuras
-        if (!estructurasDisponibles.value.length) {
-            await storeEstructuras.fetchEstructuras();
-            estructurasDisponibles.value = storeEstructuras.estructuras || [];
-        }
-
-        const response = await storeEstructurasPorComponente.fetchEstructurasPorComponente();
-        const data = Array.isArray(response) ? response : [];
-
-        estructurasDelComponente.value = data
-            .filter(item => Number(item?.componente_id) === componenteId.value)
-            .map(normalizarEstructuraRelacion);
-    } catch (err) {
-        console.error('Error cargando estructuras por componente:', err);
-        estructurasDelComponente.value = [];
-    }
-};
-
-// Cargar horas de mano de obra por componente
-const cargarHorasManoDeObra = async () => {
-    try {
-        if (formData.value.mano_de_obra?.id) {
-            horasManoDeObra.value = [{
-                componente_id: componenteId.value,
-                mano_de_obra_id: formData.value.mano_de_obra.id,
-                horas: Math.max(1, Math.floor(horaActual.value?.horas || 1))
-            }];
-        } else {
-            horasManoDeObra.value = [];
-        }
-    } catch (err) {
-        console.error('Error cargando horas de mano de obra:', err);
-        horasManoDeObra.value = [];
-    }
-};
-
-// Calcular costo total de mano de obra
-const calcularCostoManoDeObra = () => {
-    if (!formData.value.mano_de_obra || horasManoDeObra.value.length === 0) {
-        return 0;
-    }
-    
-    const totalHoras = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-    const costoHora = parseFloat(formData.value.mano_de_obra.costo_hora) || 0;
-    
-    return totalHoras * costoHora;
-};
-
 // Formatear moneda
 const formatCurrency = (value) => {
     if (!value) return '0.00';
@@ -1329,88 +745,6 @@ const removerMaterial = async (materialId) => {
     } catch (err) {
         console.error('Error eliminando material:', err);
         mostrarMensaje('❌ Error al eliminar material', 'error', 3000);
-    }
-};
-// Computed para obtener el registro de horas de la mano de obra actual
-const horaActual = computed(() => {
-    const manoDeObraId = formData.value.mano_de_obra?.id;
-    if (!manoDeObraId) return null;
-    return horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId) || null;
-});
-
-// Funciones para editar horas de mano de obra
-const guardarCambiosHoras = async () => {
-    if (guardandoHoras.value) return; // Evitar guardados simultáneos
-    
-    guardandoHoras.value = true;
-    try {
-        const manoDeObraId = formData.value.mano_de_obra?.id;
-        const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
-
-        if (!hora) {
-            guardandoHoras.value = false;
-            return;
-        }
-
-        const horas = Math.floor(hora.horas || 0);
-        
-        // Validar que no exceda 24 horas
-        if (horas > 24) {
-            mostrarMensaje('⏰ El máximo permitido es 24 horas por componente', 'warning', 3000);
-            hora.horas = 24; // Resetear a 24
-            guardandoHoras.value = false;
-            return;
-        }
-
-        // Si horas es 0, establecer a 1
-        const horasFinales = horas === 0 ? 1 : horas;
-        hora.horas = horasFinales; // Actualizar el estado local también
-        
-        const datosHora = {
-            componente_id: componenteId.value,
-            mano_de_obra_id: manoDeObraId,
-            horas: horasFinales
-        };
-
-        hora.componente_id = datosHora.componente_id;
-        hora.mano_de_obra_id = datosHora.mano_de_obra_id;
-        hora.horas = datosHora.horas;
-    } catch (err) {
-        console.error('Error guardando horas:', err);
-    } finally {
-        guardandoHoras.value = false;
-    }
-};
-
-// Incrementar horas de la mano de obra actual
-const incrementarHora = async () => {
-    // Encontrar el registro de la mano de obra actual
-    const manoDeObraId = formData.value.mano_de_obra?.id;
-    const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
-    
-    if (hora) {
-        // Verificar si excedería las 24 horas
-        const totalActual = totalHoras.value;
-        if (totalActual >= 24) {
-            mostrarMensaje('⏰ Ya has asignado el máximo de 24 horas permitidas', 'warning', 3000);
-            return;
-        }
-        
-        hora.horas = Math.floor((hora.horas || 0)) + 1;
-        await guardarCambiosHoras();
-    }
-};
-
-// Decrementar horas de la mano de obra actual
-const decrementarHora = async () => {
-    // Encontrar el registro de la mano de obra actual
-    const manoDeObraId = formData.value.mano_de_obra?.id;
-    const hora = horasManoDeObra.value.find(h => h.mano_de_obra_id === manoDeObraId);
-    
-    if (hora) {
-        const nuevasHoras = Math.max(0, (hora.horas || 0) - 1);
-        hora.horas = nuevasHoras;
-        await guardarCambiosHoras();
     }
 };
 
@@ -1486,6 +820,11 @@ const abrirSelectorEstructuras = async () => {
     estructurasDisponibles.value = storeEstructuras.estructuras || [];
     mostrarSelectorEstructuras.value = true;
 };
+const abrirSelectorCubreCantos = async () => {
+    await storeAcabadoCubreCantos.fetchAcabadoCubreCantos();
+    cubreCantosDisponibles.value = storeAcabadoCubreCantos.acabadoCubreCantos || [];
+    mostrarSelectorCubreCantos.value = true;
+};
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
@@ -1519,6 +858,11 @@ const tablerosFiltrados = computed(() => {
 const estructurasFiltradas = computed(() => {
     const estructurasAgregadas = estructurasDelComponente.value.map(e => obtenerIdEstructuraRelacion(e));
     return filtrarCatalogo(estructurasDisponibles.value, busquedaEstructuraDebounced.value, estructurasAgregadas);
+});
+
+const cubreCantosFiltrados = computed(() => {
+    const cubreCantosAgregados = acabadoCubreCantosDelComponente.value.map(c => obtenerIdCubreCantoRelacion(c));
+    return filtrarCatalogo(cubreCantosDisponibles.value, busquedaCubreCantoDebounced.value, cubreCantosAgregados);
 });
 
 // Métodos simplificados
@@ -1557,189 +901,6 @@ const agregarMaterial = async (material) => {
     }
 };
 
-const crearPayloadTablero = (tableroId, cantidad = 1) => ({
-    componente_id: componenteId.value,
-    [campoIdTableroRelacion.value]: tableroId,
-    cantidad,
-});
-
-const agregarTablero = async (tablero) => {
-    try {
-        if (!tablero || !tablero.id) return;
-
-        const yaExiste = tablerosDelComponente.value.some(t => t.tablero_id === tablero.id);
-        if (yaExiste) {
-            mostrarMensaje('⚠️ Este tablero ya está agregado', 'warning', 2000);
-            return;
-        }
-
-        let resultado;
-        try {
-            resultado = await storeTablerosPorComponente.crearTableroPorComponente(crearPayloadTablero(tablero.id, 1));
-        } catch (err) {
-            if (campoIdTableroRelacion.value === 'tablero_id') {
-                campoIdTableroRelacion.value = 'acabado_tablero_id';
-                resultado = await storeTablerosPorComponente.crearTableroPorComponente(crearPayloadTablero(tablero.id, 1));
-            } else {
-                throw err;
-            }
-        }
-
-        const datosResultado = normalizarTableroRelacion(resultado?.data || resultado || {});
-        tablerosDelComponente.value.push({
-            ...datosResultado,
-            tablero_id: tablero.id,
-            cantidad: Number(datosResultado.cantidad || 1),
-            tablero: { ...tablero },
-        });
-
-        mostrarMensaje('✅ Tablero agregado', 'success', 2000);
-        mostrarSelectorTableros.value = false;
-        busquedaTablero.value = '';
-    } catch (err) {
-        console.error('Error agregando tablero:', err);
-        mostrarMensaje('❌ Error al agregar tablero', 'error', 3000);
-    }
-};
-
-const guardarCantidadTablero = async (item) => {
-    if (!item || !item.id) return;
-
-    const cantidadFinal = Math.round(item.cantidad || 1);
-    if (cantidadFinal < 1) {
-        item.cantidad = 1;
-        return;
-    }
-
-    item.cantidad = cantidadFinal;
-
-    try {
-        await storeTablerosPorComponente.actualizarTableroPorComponente(item.id, { cantidad: cantidadFinal });
-    } catch (err) {
-        console.error('Error guardando cantidad de tablero:', err);
-        mostrarMensaje('❌ Error al actualizar cantidad de tablero', 'error', 3000);
-    }
-};
-
-const incrementarCantidadTablero = (item) => {
-    if (!item) return;
-    item.cantidad = Math.floor(item.cantidad || 1) + 1;
-    guardarCantidadTablero(item);
-};
-
-const decrementarCantidadTablero = (item) => {
-    if (!item || !item.cantidad || item.cantidad <= 1) return;
-    item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
-    guardarCantidadTablero(item);
-};
-
-const removerTablero = async (tableroRelacionId) => {
-    try {
-        const tableroRel = tablerosDelComponente.value.find(t => t.id === tableroRelacionId);
-        if (!tableroRel?.id) return;
-
-        await storeTablerosPorComponente.eliminarTableroPorComponente(tableroRel.id);
-        tablerosDelComponente.value = tablerosDelComponente.value.filter(t => t.id !== tableroRel.id);
-        mostrarMensaje('✅ Tablero eliminado', 'success', 2000);
-    } catch (err) {
-        console.error('Error eliminando tablero:', err);
-        mostrarMensaje('❌ Error al eliminar tablero', 'error', 3000);
-    }
-};
-
-// ========== Estructuras CRUD ==========
-const agregarEstructura = async (estructura) => {
-    try {
-        if (!estructura || !estructura.id) return;
-
-        const yaExiste = estructurasDelComponente.value.some(e => obtenerIdEstructuraRelacion(e) === estructura.id);
-        if (yaExiste) {
-            mostrarMensaje('⚠️ Esta estructura ya está agregada', 'warning', 2000);
-            return;
-        }
-
-        const payload = {
-            componente_id: componenteId.value,
-            [campoIdEstructuraRelacion.value]: estructura.id,
-            cantidad: 1,
-        };
-
-        let resultado;
-        try {
-            resultado = await storeEstructurasPorComponente.crearEstructuraPorComponente(payload);
-        } catch (err) {
-            // Intentar con campo alternativo si falla
-            if (campoIdEstructuraRelacion.value === 'estructura_id') {
-                campoIdEstructuraRelacion.value = 'acabado_estructura_id';
-                payload.acabado_estructura_id = estructura.id;
-                delete payload.estructura_id;
-                resultado = await storeEstructurasPorComponente.crearEstructuraPorComponente(payload);
-            } else {
-                throw err;
-            }
-        }
-
-        const datosResultado = normalizarEstructuraRelacion(resultado?.data || resultado || {});
-        estructurasDelComponente.value.push({
-            ...datosResultado,
-            estructura_id: estructura.id,
-            cantidad: Number(datosResultado.cantidad || 1),
-            estructura: { ...estructura },
-        });
-
-        mostrarMensaje('✅ Estructura agregada', 'success', 2000);
-        mostrarSelectorEstructuras.value = false;
-        busquedaEstructura.value = '';
-    } catch (err) {
-        console.error('Error agregando estructura:', err);
-        mostrarMensaje('❌ Error al agregar estructura', 'error', 3000);
-    }
-};
-
-const guardarCantidadEstructura = async (item) => {
-    if (!item || !item.id) return;
-
-    const cantidadFinal = Math.round(item.cantidad || 1);
-    if (cantidadFinal < 1) {
-        item.cantidad = 1;
-        return;
-    }
-    item.cantidad = cantidadFinal;
-
-    try {
-        await storeEstructurasPorComponente.actualizarEstructuraPorComponente(item.id, { cantidad: cantidadFinal });
-    } catch (err) {
-        console.error('Error guardando cantidad de estructura:', err);
-        mostrarMensaje('❌ Error al actualizar cantidad de estructura', 'error', 3000);
-    }
-};
-
-const incrementarCantidadEstructura = (item) => {
-    if (!item) return;
-    item.cantidad = Math.floor(item.cantidad || 1) + 1;
-    guardarCantidadEstructura(item);
-};
-
-const decrementarCantidadEstructura = (item) => {
-    if (!item || !item.cantidad || item.cantidad <= 1) return;
-    item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
-    guardarCantidadEstructura(item);
-};
-
-const removerEstructura = async (estructuraRelacionId) => {
-    try {
-        const estructuraRel = estructurasDelComponente.value.find(e => e.id === estructuraRelacionId);
-        if (!estructuraRel?.id) return;
-
-        await storeEstructurasPorComponente.eliminarEstructuraPorComponente(estructuraRel.id);
-        estructurasDelComponente.value = estructurasDelComponente.value.filter(e => e.id !== estructuraRel.id);
-        mostrarMensaje('✅ Estructura eliminada', 'success', 2000);
-    } catch (err) {
-        console.error('Error eliminando estructura:', err);
-        mostrarMensaje('❌ Error al eliminar estructura', 'error', 3000);
-    }
-};
-
 // Cargar acabados disponibles
 const cargarAcabados = async () => {
     try {
@@ -1751,86 +912,6 @@ const cargarAcabados = async () => {
         acabadosDisponibles.value = [];
     }
 };
-
-// Cargar mano de obra disponible
-const cargarManoDeObraDisponible = async () => {
-    try {
-        const response = await api.get('/mano-de-obras');
-        const data = response.data.data || response.data || [];
-        manoDeObraDisponible.value = Array.isArray(data) ? data : [];
-    } catch (err) {
-        console.error('Error al cargar mano de obra:', err);
-        manoDeObraDisponible.value = [];
-    }
-};
-
-// Abrir selector de mano de obra
-const abrirSelectorManoDeObra = async () => {
-    await cargarManoDeObraDisponible();
-    mostrarSelectorManoDeObra.value = true;
-};
-
-// Agregar mano de obra seleccionada
-// Limpiar horas de la mano de obra anterior antes de cambiar
-const limpiarHorasManoDeObraAnterior = () => {
-    // Solo limpiar el array local, sin intentar guardar en la API
-    // (El backend no acepta horas = 0)
-    horasManoDeObra.value = [];
-};
-
-const agregarManoDeObra = async (manoDeObra) => {
-    if (!manoDeObra) return;
-    
-    try {
-        // Preparar datos para enviar al servidor
-        const datos = {
-            nombre: formData.value.nombre.trim(),
-            codigo: formData.value.codigo.trim(),
-            descripcion: formData.value.descripcion.trim(),
-            costo_unitario: parseFloat(formData.value.costo_unitario),
-            mano_de_obra_id: manoDeObra.id,
-        };
-        
-        // Agregar acabado_id si existe
-        if (formData.value.acabado && formData.value.acabado.id) {
-            datos.acabado_id = formData.value.acabado.id;
-        }
-
-        await api.put(`/componentes/${componenteId.value || route.params.id}`, datos);
-        
-        // Limpiar horas de la mano de obra anterior
-        if (formData.value.mano_de_obra && formData.value.mano_de_obra.id !== manoDeObra.id) {
-            limpiarHorasManoDeObraAnterior();
-        }
-        
-        // Actualizar mano de obra en el estado local
-        formData.value.mano_de_obra = {
-            ...manoDeObra
-        };
-        await cargarHorasManoDeObra();
-
-        // Cerrar modal y limpiar búsqueda
-        mostrarSelectorManoDeObra.value = false;
-        busquedaManoDeObra.value = '';
-    } catch (err) {
-        console.error('❌ Error al guardar cambio de mano de obra:', err);
-        console.error('   Status:', err.response?.status);
-        console.error('   Data:', err.response?.data);
-        error.value = 'Error al cambiar la mano de obra: ' + (err.response?.data?.message || err.message);
-    }
-};
-
-// Filtrar mano de obra disponible
-const manoDeObraFiltrada = computed(() => {
-    if (busquedaManoDeObraDebounced.value.trim()) {
-        const busqueda = busquedaManoDeObraDebounced.value.toLowerCase();
-        return manoDeObraDisponible.value.filter(m => 
-            m.nombre.toLowerCase().includes(busqueda) ||
-            (m.codigo && m.codigo.toLowerCase().includes(busqueda))
-        );
-    }
-    return manoDeObraDisponible.value;
-});
 
 // Abrir selector de acabados
 const abrirSelectorAcabados = async () => {
@@ -1892,11 +973,6 @@ const guardarComponente = async () => {
             costo_unitario: parseFloat(formData.value.costo_unitario),
         };
         
-        // Agregar mano_de_obra_id si existe
-        if (formData.value.mano_de_obra && formData.value.mano_de_obra.id) {
-            datos.mano_de_obra_id = formData.value.mano_de_obra.id;
-        }
-        
         // Agregar acabado_id si existe
         if (formData.value.acabado && formData.value.acabado.id) {
             datos.acabado_id = formData.value.acabado.id;
@@ -1916,7 +992,6 @@ const guardarComponente = async () => {
 // Cargar datos al montar
 onMounted(async () => {
     await cargarComponente();
-    await cargarHorasManoDeObra();
 });
 </script>
 
@@ -3355,7 +2430,7 @@ onMounted(async () => {
     font-size: 16px;
 }
 
-/* Estilos para edición de mano de obra */
+/* Estilos adicionales */
 .edit-form {
     display: flex;
     flex-direction: column;

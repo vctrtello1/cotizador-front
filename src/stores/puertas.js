@@ -6,7 +6,7 @@ import {
   crearPuerta as crearPuertaApi,
   actualizarPuerta as actualizarPuertaApi,
   eliminarPuerta as eliminarPuertaApi
-} from "../http/puertas.js";
+} from "../http/puertas-api.js";
 
 export const usePuertasStore = defineStore("puertas", () => {
   const puertas = ref([]);

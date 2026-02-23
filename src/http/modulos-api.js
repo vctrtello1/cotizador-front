@@ -49,8 +49,3 @@ export const fetchAcabados = async () => {
   const response = await api.get("/acabados");
   return response.data;
 };
-
-export const fetchManosDeObra = async () => {
-  const response = await api.get("/mano-de-obras");
-  return response.data;
-};
