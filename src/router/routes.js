@@ -54,21 +54,6 @@ export const routes = [
         component: () => import("@/pages/componentes/EditarComponentePage.vue"),
     },
     {
-        path: "/materiales",
-        name: "Materiales",
-        component: () => import("@/pages/materiales/MaterialesPage.vue"),
-    },
-    {
-        path: "/nuevo-material",
-        name: "NuevoMaterial",
-        component: () => import("@/pages/materiales/NuevoMaterial.vue"),
-    },
-    {
-        path: "/editar-material/:id",
-        name: "EditarMaterial",
-        component: () => import("@/pages/materiales/EditarMaterial.vue"),
-    },
-    {
         path: "/estructuras",
         name: "Estructuras",
         component: () => import("@/pages/estructuras/EstructurasPage.vue"),

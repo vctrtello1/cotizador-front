@@ -1,10 +1,19 @@
 <template>
     <div class="editar-componente-container">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <router-link to="/componentes" class="breadcrumb-link">Componentes</router-link>
+            <span class="breadcrumb-sep">/</span>
+            <span class="breadcrumb-current">{{ formData.nombre || 'Editar' }}</span>
+        </nav>
+
         <!-- Header -->
         <div class="page-header">
             <div class="header-left">
-                <button class="btn-back" @click="$router.push('/componentes')">
-                    <span class="back-arrow">←</span> Volver
+                <button class="btn-back" @click="$router.push('/componentes')" title="Volver a componentes">
+                    <span class="back-arrow">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                    </span>
                 </button>
                 <div class="header-text">
                     <h1 class="page-title">Editar Componente</h1>
@@ -13,7 +22,9 @@
             </div>
             <div class="header-right">
                 <span class="badge badge-code">{{ formData.codigo || '---' }}</span>
-                <span v-if="guardando" class="badge badge-saving">⏳ Guardando...</span>
+                <span v-if="guardando" class="badge badge-saving">
+                    <span class="saving-dot"></span> Guardando...
+                </span>
                 <span v-else class="badge badge-status">✓ Listo</span>
             </div>
         </div>
@@ -39,8 +50,11 @@
 
         <!-- Loading -->
         <div v-if="cargando" class="loading-state">
-            <div class="spinner"></div>
-            <p>Cargando componente...</p>
+            <div class="loading-card">
+                <div class="spinner"></div>
+                <p class="loading-text">Cargando componente...</p>
+                <p class="loading-subtext">Obteniendo datos del servidor</p>
+            </div>
         </div>
 
         <!-- Formulario -->
@@ -48,41 +62,41 @@
             <!-- Resumen superior -->
             <div class="stats-bar">
                 <div class="stat-card">
-                    <div class="stat-icon">🪵</div>
-                    <div class="stat-content">
-                        <span class="stat-label">Tableros</span>
-                        <strong class="stat-value">{{ tablerosDelComponente.length }} <small>tipos</small> · {{ totalCantidadTableros }} <small>u</small></strong>
-                    </div>
-                </div>
-                <div class="stat-card">
                     <div class="stat-icon">🏗️</div>
                     <div class="stat-content">
                         <span class="stat-label">Estructuras</span>
-                        <strong class="stat-value">{{ estructurasDelComponente.length }} <small>tipos</small> · {{ totalCantidadEstructuras }} <small>u</small></strong>
+                        <strong class="stat-value">{{ estructurasDelComponente.length }} <small>tipos</small></strong>
+                        <span class="stat-detail">{{ totalCantidadEstructuras }} unidades</span>
                     </div>
+                    <span class="stat-amount">${{ formatCurrency(totalCostoEstructuras) }}</span>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">🎨</div>
                     <div class="stat-content">
                         <span class="stat-label">Cubre Cantos</span>
-                        <strong class="stat-value">{{ acabadoCubreCantosDelComponente.length }} <small>tipos</small> · {{ totalCantidadCubreCantos }} <small>u</small></strong>
+                        <strong class="stat-value">{{ acabadoCubreCantosDelComponente.length }} <small>tipos</small></strong>
+                        <span class="stat-detail">{{ totalCantidadCubreCantos }} unidades</span>
                     </div>
+                    <span class="stat-amount">${{ formatCurrency(totalCostoCubreCantos) }}</span>
                 </div>
                 <div class="stat-card stat-card--highlight">
-                    <div class="stat-icon">💰</div>
+                    <div class="stat-icon stat-icon--total">💰</div>
                     <div class="stat-content">
                         <span class="stat-label">Costo total</span>
-                        <strong class="stat-value">${{ formatCurrency(totalCostoTableros + totalCostoEstructuras + totalCostoCubreCantos) }}</strong>
+                        <strong class="stat-value stat-value--total">${{ formatCurrency(totalCostoEstructuras + totalCostoCubreCantos) }}</strong>
                     </div>
                 </div>
             </div>
 
             <!-- Datos Generales -->
             <div class="info-card">
-                <h2 class="section-title">📌 Datos Generales</h2>
+                <h2 class="section-title">
+                    <span class="section-icon">📌</span>
+                    Datos Generales
+                </h2>
                 <div class="info-grid">
                     <div class="form-group">
-                        <label for="nombre" class="form-label">Nombre *</label>
+                        <label for="nombre" class="form-label">Nombre <span class="required">*</span></label>
                         <input
                             v-model="formData.nombre"
                             type="text"
@@ -105,6 +119,23 @@
                         />
                     </div>
 
+                    <div class="form-group">
+                        <label for="costo_unitario" class="form-label">Costo Unitario <span class="required">*</span></label>
+                        <div class="input-with-prefix">
+                            <span class="input-prefix">$</span>
+                            <input
+                                v-model="formData.costo_unitario"
+                                type="number"
+                                id="costo_unitario"
+                                class="form-input form-input--prefixed"
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
+                        <span v-if="errors.costo_unitario" class="error-text">{{ errors.costo_unitario }}</span>
+                    </div>
+
                     <div class="form-group full-width">
                         <label for="descripcion" class="form-label">Descripción</label>
                         <textarea
@@ -118,79 +149,17 @@
                 </div>
             </div>
 
-            <!-- Tableros Asociados -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">🪵 Tableros Asociados</h2>
-                    <button type="button" class="btn-action-header" @click="abrirSelectorTableros">
-                        + Gestionar
-                    </button>
-                </div>
-
-                <div v-if="tablerosDelComponente.length > 0">
-                    <div class="tableros-metrics">
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ tablerosDelComponente.length }}</span>
-                            <span class="metric-label">Tipos</span>
-                        </div>
-                        <div class="metric-pill">
-                            <span class="metric-number">{{ totalCantidadTableros }}</span>
-                            <span class="metric-label">Unidades</span>
-                        </div>
-                        <div class="metric-pill metric-pill--accent">
-                            <span class="metric-number">${{ formatCurrency(totalCostoTableros) }}</span>
-                            <span class="metric-label">Costo total</span>
-                        </div>
-                    </div>
-
-                    <div
-                        v-for="item in tablerosOrdenadosParaVista"
-                        :key="`tablero-inline-${item.id}`"
-                        class="tablero-card"
-                    >
-                        <div class="tablero-card-left">
-                            <div class="tablero-avatar">🪵</div>
-                            <div class="tablero-info">
-                                <div class="tablero-name">{{ obtenerNombreTablero(item) }}</div>
-                                <div class="tablero-code">{{ obtenerCodigoTablero(item) }}</div>
-                            </div>
-                        </div>
-                        <div class="tablero-card-center">
-                            <div class="tablero-pricing">
-                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioTablero(item)) }} <small>c/u</small></span>
-                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalTablero(item)) }}</span>
-                            </div>
-                        </div>
-                        <div class="tablero-card-right">
-                            <div class="quantity-controls-compact">
-                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadTablero(item)" title="Disminuir">−</button>
-                                <input
-                                    v-model.number="item.cantidad"
-                                    type="number" min="1" step="1" placeholder="1"
-                                    @blur="guardarCantidadTablero(item)"
-                                    @keyup.enter="guardarCantidadTablero(item)"
-                                    class="qty-input"
-                                />
-                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadTablero(item)" title="Aumentar">+</button>
-                            </div>
-                            <button type="button" class="btn-delete-sm" @click="removerTablero(item)" title="Eliminar">🗑</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-icon">🪵</div>
-                    <p>No hay tableros asignados</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorTableros">+ Agregar Tablero</button>
-                </div>
-            </div>
-
             <!-- Estructuras Asociadas -->
             <div class="info-card">
                 <div class="section-header">
-                    <h2 class="section-title">🏗️ Estructuras Asociadas</h2>
+                    <h2 class="section-title">
+                        <span class="section-icon">🏗️</span>
+                        Estructuras Asociadas
+                        <span v-if="estructurasDelComponente.length" class="section-count">{{ estructurasDelComponente.length }}</span>
+                    </h2>
                     <button type="button" class="btn-action-header" @click="abrirSelectorEstructuras">
-                        + Gestionar
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Agregar
                     </button>
                 </div>
 
@@ -210,54 +179,70 @@
                         </div>
                     </div>
 
-                    <div
-                        v-for="item in estructurasOrdenadasParaVista"
-                        :key="`estructura-inline-${item.id}`"
-                        class="tablero-card"
-                    >
-                        <div class="tablero-card-left">
-                            <div class="tablero-avatar">🏗️</div>
-                            <div class="tablero-info">
-                                <div class="tablero-name">{{ obtenerNombreEstructura(item) }}</div>
-                                <div class="tablero-code">{{ obtenerCodigoEstructura(item) }}</div>
+                    <TransitionGroup name="entity-list" tag="div" class="entity-list">
+                        <div
+                            v-for="item in estructurasOrdenadasParaVista"
+                            :key="`estructura-inline-${item.id}`"
+                            class="entity-row"
+                        >
+                            <div class="entity-row-left">
+                                <div class="entity-avatar">🏗️</div>
+                                <div class="entity-info">
+                                    <div class="entity-name">{{ obtenerNombreEstructura(item) }}</div>
+                                    <div class="entity-code">{{ obtenerCodigoEstructura(item) }}</div>
+                                </div>
+                            </div>
+                            <div class="entity-row-center">
+                                <div class="entity-pricing">
+                                    <span class="entity-unit-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(item)) }} <small>c/u</small></span>
+                                    <span class="entity-subtotal">${{ formatCurrency(obtenerSubtotalEstructura(item)) }}</span>
+                                </div>
+                            </div>
+                            <div class="entity-row-right">
+                                <div class="quantity-controls-compact">
+                                    <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadEstructura(item)" title="Disminuir">−</button>
+                                    <input
+                                        v-model.number="item.cantidad"
+                                        type="number" min="1" step="1" placeholder="1"
+                                        @blur="guardarCantidadEstructura(item)"
+                                        @keyup.enter="guardarCantidadEstructura(item)"
+                                        class="qty-input"
+                                    />
+                                    <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadEstructura(item)" title="Aumentar">+</button>
+                                </div>
+                                <button type="button" class="btn-delete-sm" @click="removerEstructura(item)" title="Eliminar">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                </button>
                             </div>
                         </div>
-                        <div class="tablero-card-center">
-                            <div class="tablero-pricing">
-                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(item)) }} <small>c/u</small></span>
-                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalEstructura(item)) }}</span>
-                            </div>
-                        </div>
-                        <div class="tablero-card-right">
-                            <div class="quantity-controls-compact">
-                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadEstructura(item)" title="Disminuir">−</button>
-                                <input
-                                    v-model.number="item.cantidad"
-                                    type="number" min="1" step="1" placeholder="1"
-                                    @blur="guardarCantidadEstructura(item)"
-                                    @keyup.enter="guardarCantidadEstructura(item)"
-                                    class="qty-input"
-                                />
-                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadEstructura(item)" title="Aumentar">+</button>
-                            </div>
-                            <button type="button" class="btn-delete-sm" @click="removerEstructura(item)" title="Eliminar">🗑</button>
-                        </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <div v-else class="empty-state-inline">
-                    <div class="empty-icon">🏗️</div>
-                    <p>No hay estructuras asignadas</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorEstructuras">+ Agregar Estructura</button>
+                    <div class="empty-illustration">
+                        <span class="empty-icon">🏗️</span>
+                        <div class="empty-rings"></div>
+                    </div>
+                    <p class="empty-title">Sin estructuras asignadas</p>
+                    <p class="empty-desc">Asocia estructuras metálicas o de soporte al componente</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorEstructuras">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Agregar Estructura
+                    </button>
                 </div>
             </div>
 
             <!-- Acabado Cubre Cantos Asociados -->
             <div class="info-card">
                 <div class="section-header">
-                    <h2 class="section-title">🎨 Cubre Cantos Asociados</h2>
+                    <h2 class="section-title">
+                        <span class="section-icon">🎨</span>
+                        Cubre Cantos Asociados
+                        <span v-if="acabadoCubreCantosDelComponente.length" class="section-count">{{ acabadoCubreCantosDelComponente.length }}</span>
+                    </h2>
                     <button type="button" class="btn-action-header" @click="abrirSelectorCubreCantos">
-                        + Gestionar
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Agregar
                     </button>
                 </div>
 
@@ -277,74 +262,76 @@
                         </div>
                     </div>
 
-                    <div
-                        v-for="item in cubreCantosOrdenadosParaVista"
-                        :key="`cc-inline-${item.id}`"
-                        class="tablero-card"
-                    >
-                        <div class="tablero-card-left">
-                            <div class="tablero-avatar">🎨</div>
-                            <div class="tablero-info">
-                                <div class="tablero-name">{{ obtenerNombreCubreCanto(item) }}</div>
-                                <div class="tablero-code">{{ obtenerCodigoCubreCanto(item) }}</div>
+                    <TransitionGroup name="entity-list" tag="div" class="entity-list">
+                        <div
+                            v-for="item in cubreCantosOrdenadosParaVista"
+                            :key="`cc-inline-${item.id}`"
+                            class="entity-row"
+                        >
+                            <div class="entity-row-left">
+                                <div class="entity-avatar">🎨</div>
+                                <div class="entity-info">
+                                    <div class="entity-name">{{ obtenerNombreCubreCanto(item) }}</div>
+                                    <div class="entity-code">{{ obtenerCodigoCubreCanto(item) }}</div>
+                                </div>
+                            </div>
+                            <div class="entity-row-center">
+                                <div class="entity-pricing">
+                                    <span class="entity-unit-price">${{ formatCurrency(obtenerCostoUnitarioCubreCanto(item)) }} <small>c/u</small></span>
+                                    <span class="entity-subtotal">${{ formatCurrency(obtenerSubtotalCubreCanto(item)) }}</span>
+                                </div>
+                            </div>
+                            <div class="entity-row-right">
+                                <div class="quantity-controls-compact">
+                                    <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadCubreCanto(item)" title="Disminuir">−</button>
+                                    <input
+                                        v-model.number="item.cantidad"
+                                        type="number" min="1" step="1" placeholder="1"
+                                        @blur="guardarCantidadCubreCanto(item)"
+                                        @keyup.enter="guardarCantidadCubreCanto(item)"
+                                        class="qty-input"
+                                    />
+                                    <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadCubreCanto(item)" title="Aumentar">+</button>
+                                </div>
+                                <button type="button" class="btn-delete-sm" @click="removerCubreCanto(item)" title="Eliminar">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                </button>
                             </div>
                         </div>
-                        <div class="tablero-card-center">
-                            <div class="tablero-pricing">
-                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioCubreCanto(item)) }} <small>c/u</small></span>
-                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalCubreCanto(item)) }}</span>
-                            </div>
-                        </div>
-                        <div class="tablero-card-right">
-                            <div class="quantity-controls-compact">
-                                <button type="button" class="btn-qty btn-qty--minus" @click="decrementarCantidadCubreCanto(item)" title="Disminuir">−</button>
-                                <input
-                                    v-model.number="item.cantidad"
-                                    type="number" min="1" step="1" placeholder="1"
-                                    @blur="guardarCantidadCubreCanto(item)"
-                                    @keyup.enter="guardarCantidadCubreCanto(item)"
-                                    class="qty-input"
-                                />
-                                <button type="button" class="btn-qty btn-qty--plus" @click="incrementarCantidadCubreCanto(item)" title="Aumentar">+</button>
-                            </div>
-                            <button type="button" class="btn-delete-sm" @click="removerCubreCanto(item)" title="Eliminar">🗑</button>
-                        </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <div v-else class="empty-state-inline">
-                    <div class="empty-icon">🎨</div>
-                    <p>No hay cubre cantos asignados</p>
-                    <button type="button" class="btn-empty-action" @click="abrirSelectorCubreCantos">+ Agregar Cubre Canto</button>
+                    <div class="empty-illustration">
+                        <span class="empty-icon">🎨</span>
+                        <div class="empty-rings"></div>
+                    </div>
+                    <p class="empty-title">Sin cubre cantos asignados</p>
+                    <p class="empty-desc">Agrega acabados de cubre cantos para los bordes del componente</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorCubreCantos">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Agregar Cubre Canto
+                    </button>
                 </div>
             </div>
 
             <!-- Acciones -->
             <div class="form-actions form-actions--sticky">
                 <button type="button" class="btn-secondary" @click="$router.back()">
-                    ← Cancelar
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Cancelar
                 </button>
                 <button type="submit" class="btn-primary" :disabled="guardando">
-                    <span v-if="guardando">⏳ Guardando...</span>
-                    <span v-else>💾 Guardar Cambios</span>
+                    <span v-if="guardando" class="btn-loading">
+                        <span class="spinner-sm"></span> Guardando...
+                    </span>
+                    <span v-else>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Guardar Cambios
+                    </span>
                 </button>
             </div>
         </form>
-
-        <!-- Selector de Tableros -->
-        <EntitySelectorModal
-            :visible="mostrarSelectorTableros"
-            icon="🪵"
-            titulo="Seleccionar Tableros"
-            label-singular="Tablero"
-            :busqueda="busquedaTablero"
-            :items-filtrados="tablerosFiltrados"
-            :format-currency="formatCurrency"
-            :obtener-precio="(item) => item.costo_unitario || item.costo || 0"
-            @close="mostrarSelectorTableros = false"
-            @seleccionar="agregarTablero"
-            @update:busqueda="busquedaTablero = $event"
-        />
 
         <!-- Selector de Estructuras -->
         <EntitySelectorModal
@@ -383,8 +370,6 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
-
-import { useTablerosPorComponenteStore } from '@/stores/tableros-por-componente';
 import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-componente';
 import { useEstructuraStore } from '@/stores/estructura';
 import { useAcabadoCubreCantosPorComponenteStore } from '@/stores/acabado-cubre-cantos-por-componente';
@@ -395,8 +380,6 @@ import EntitySelectorModal from '@/components/EntitySelectorModal.vue';
 const router = useRouter();
 const route = useRoute();
 const componenteId = computed(() => Number.parseInt(route.params.id, 10) || 0);
-
-const storeTablerosPorComponente = useTablerosPorComponenteStore();
 const storeEstructurasPorComponente = useEstructurasPorComponenteStore();
 const storeEstructuras = useEstructuraStore();
 const storeAcabadoCubreCantosPorComponente = useAcabadoCubreCantosPorComponenteStore();
@@ -448,49 +431,12 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
 
 
 // ===== Catálogos disponibles para entidades =====
-const tablerosDisponibles = ref([]);
 const estructurasDisponibles = ref([]);
 const cubreCantosDisponibles = ref([]);
-const tablerosDisponiblesMap = computed(() => new Map((tablerosDisponibles.value || []).map(t => [t.id, t])));
 const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles.value || []).map(e => [e.id, e])));
 const cubreCantosDisponiblesMap = computed(() => new Map((cubreCantosDisponibles.value || []).map(c => [c.id, c])));
 
 // ===== Composables de entidades por componente =====
-const {
-    items: tablerosDelComponente,
-    mostrarSelector: mostrarSelectorTableros,
-    busqueda: busquedaTablero,
-    obtenerId: obtenerIdTableroRelacion,
-    obtenerNombre: obtenerNombreTablero,
-    obtenerCodigo: obtenerCodigoTablero,
-    obtenerCostoUnitario: obtenerCostoUnitarioTablero,
-    obtenerSubtotal: obtenerSubtotalTablero,
-    itemsOrdenados: tablerosOrdenadosParaVista,
-    totalCantidad: totalCantidadTableros,
-    totalCosto: totalCostoTableros,
-    cargar: cargarTablerosPorComponente,
-    agregar: agregarTablero,
-    guardarCantidad: guardarCantidadTablero,
-    incrementarCantidad: incrementarCantidadTablero,
-    decrementarCantidad: decrementarCantidadTablero,
-    remover: removerTablero,
-} = useEntidadPorComponente({
-    label: 'Tablero',
-    primaryIdField: 'tablero_id',
-    alternateIdField: 'acabado_tablero_id',
-    nestedKeys: ['tablero', 'acabado_tablero'],
-    idAccessors: ['tablero_id', 'acabado_tablero_id', 'tablero.id', 'acabado_tablero.id', 'tableroId'],
-    costFields: ['costo_unitario', 'costo'],
-    disponiblesMap: tablerosDisponiblesMap,
-    store: storeTablerosPorComponente,
-    storeCrear: 'crearTableroPorComponente',
-    storeActualizar: 'actualizarTableroPorComponente',
-    storeEliminar: 'eliminarTableroPorComponente',
-    storeFetch: 'fetchTablerosPorComponente',
-    componenteId,
-    mostrarMensaje,
-});
-
 const {
     items: estructurasDelComponente,
     mostrarSelector: mostrarSelectorEstructuras,
@@ -561,7 +507,6 @@ const {
     mostrarMensaje,
 });
 
-const busquedaTableroDebounced = createDebouncedRef(busquedaTablero);
 const busquedaEstructuraDebounced = createDebouncedRef(busquedaEstructura);
 const busquedaCubreCantoDebounced = createDebouncedRef(busquedaCubreCanto);
 
@@ -581,11 +526,6 @@ const cargarComponente = async () => {
         
         // Cargar catálogos relacionados en paralelo
         await Promise.all([
-            cargarTablerosPorComponente(async () => {
-                if (!tablerosDisponibles.value.length) {
-                    await cargarCatalogo('/acabado-tableros', tablerosDisponibles);
-                }
-            }),
             cargarEstructurasPorComponente(async () => {
                 if (!estructurasDisponibles.value.length) {
                     await storeEstructuras.fetchEstructuras();
@@ -613,25 +553,6 @@ const formatCurrency = (value) => {
     return parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-// Cargar catálogos de forma genérica
-const cargarCatalogo = async (endpoint, targetRef) => {
-    try {
-        const response = await api.get(endpoint);
-        const data = response.data.data || response.data || [];
-        targetRef.value = Array.isArray(data) ? data : [];
-    } catch (err) {
-        console.error(`Error cargando ${endpoint}:`, err);
-        targetRef.value = [];
-    }
-};
-
-// Abrir selectores genérico
-const abrirSelector = async (endpoint, catalogRef, showRef) => {
-    await cargarCatalogo(endpoint, catalogRef);
-    showRef.value = true;
-};
-
-const abrirSelectorTableros = () => abrirSelector('/acabado-tableros', tablerosDisponibles, mostrarSelectorTableros);
 const abrirSelectorEstructuras = async () => {
     await storeEstructuras.fetchEstructuras();
     estructurasDisponibles.value = storeEstructuras.estructuras || [];
@@ -662,11 +583,6 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
 };
 
 // Computed properties para filtros
-const tablerosFiltrados = computed(() => {
-    const tablerosAgregados = tablerosDelComponente.value.map(t => t.tablero_id);
-    return filtrarCatalogo(tablerosDisponibles.value, busquedaTableroDebounced.value, tablerosAgregados);
-});
-
 const estructurasFiltradas = computed(() => {
     const estructurasAgregadas = estructurasDelComponente.value.map(e => obtenerIdEstructuraRelacion(e));
     return filtrarCatalogo(estructurasDisponibles.value, busquedaEstructuraDebounced.value, estructurasAgregadas);
@@ -726,12 +642,53 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ========== Page Entrance ========== */
+@keyframes pageEntrance {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* ========== Container ========== */
 .editar-componente-container {
-    max-width: 900px;
+    max-width: 920px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 24px 20px 40px;
     min-height: 100vh;
+    animation: pageEntrance 0.4s ease-out;
+}
+
+/* ========== Breadcrumb ========== */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.breadcrumb-link {
+    color: #8b7355;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb-link:hover {
+    color: #d4a574;
+}
+
+.breadcrumb-sep {
+    color: #ccc;
+    user-select: none;
+}
+
+.breadcrumb-current {
+    color: #5a4037;
+    font-weight: 600;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ========== Header ========== */
@@ -739,12 +696,12 @@ onMounted(async () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 32px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f7f6 100%);
-    padding: 24px 28px;
-    border-radius: 12px;
+    margin-bottom: 28px;
+    background: white;
+    padding: 20px 24px;
+    border-radius: 14px;
     border: 1px solid #e8e3dd;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 4px rgba(90, 64, 55, 0.06), 0 4px 16px rgba(90, 64, 55, 0.03);
     gap: 16px;
     flex-wrap: wrap;
 }
@@ -752,53 +709,59 @@ onMounted(async () => {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 .btn-back {
-    padding: 8px 16px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    background: #f5f1ed;
+    color: #8b7355;
+    border: 1px solid #e8e3dd;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.3s;
+    transition: all 0.25s;
     display: flex;
     align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
 }
 
 .btn-back:hover {
-    background: linear-gradient(135deg, #c89564 0%, #b88454 100%);
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border-color: transparent;
     transform: translateX(-2px);
     box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 .back-arrow {
-    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .header-text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
 }
 
 .page-title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
     color: #2c2c2c;
     margin: 0;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
 }
 
 .header-subtitle {
-    font-size: 14px;
-    color: #888;
+    font-size: 13px;
+    color: #999;
     margin: 0;
     font-weight: 500;
 }
@@ -811,21 +774,31 @@ onMounted(async () => {
 }
 
 .badge-saving {
-    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
-    color: #856404;
-    border: 1px solid #ffc107;
-    animation: pulse-badge 1.5s ease-in-out infinite;
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.saving-dot {
+    width: 8px;
+    height: 8px;
+    background: #f59e0b;
+    border-radius: 50%;
+    animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
 }
 
 .badge-status {
-    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-    color: #155724;
-    border: 1px solid #28a745;
-}
-
-@keyframes pulse-badge {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
 }
 
 .badge {
@@ -1000,90 +973,135 @@ onMounted(async () => {
 
 /* ========== Loading ========== */
 .loading-state {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 80px 24px;
+}
+
+.loading-card {
+    text-align: center;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    padding: 48px 40px;
+    box-shadow: 0 2px 12px rgba(90, 64, 55, 0.06);
     border: 1px solid #ede7e0;
+    max-width: 320px;
+    width: 100%;
 }
 
 .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid #ede7e0;
+    border: 3px solid #f0ebe5;
     border-top-color: #d4a574;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
-    margin: 0 auto 16px;
+    margin: 0 auto 18px;
 }
 
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 
-.loading-state p {
+.loading-text {
     font-size: 15px;
+    margin: 0 0 4px;
+    color: #5a4037;
+    font-weight: 600;
+}
+
+.loading-subtext {
+    font-size: 13px;
     margin: 0;
-    color: #8b7355;
-    font-weight: 500;
+    color: #a89480;
 }
 
 /* ========== Stats Bar ========== */
 .stats-bar {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 12px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .stat-card {
     background: white;
     border: 1px solid #e8e3dd;
     border-radius: 12px;
-    padding: 16px;
+    padding: 16px 18px;
     display: flex;
     align-items: center;
     gap: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s;
+    box-shadow: 0 1px 3px rgba(90, 64, 55, 0.04);
+    transition: all 0.25s ease;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #d4a574, #c89564);
+    opacity: 0;
+    transition: opacity 0.25s;
 }
 
 .stat-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(90, 64, 55, 0.08);
+    transform: translateY(-2px);
+}
+
+.stat-card:hover::after {
+    opacity: 1;
 }
 
 .stat-card--highlight {
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-color: #d4a574;
+    background: linear-gradient(135deg, #fffbf5 0%, #fff8ee 100%);
+    border-color: #e8d5c0;
+}
+
+.stat-card--highlight::after {
+    opacity: 1;
+    height: 3px;
+    background: linear-gradient(90deg, #d4a574, #e8b888);
 }
 
 .stat-icon {
-    font-size: 24px;
-    width: 44px;
-    height: 44px;
+    font-size: 22px;
+    width: 42px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
+    background: #f7f3ef;
     border-radius: 10px;
     flex-shrink: 0;
+}
+
+.stat-icon--total {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
 }
 
 .stat-content {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
     min-width: 0;
+    flex: 1;
 }
 
 .stat-label {
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     font-weight: 700;
-    color: #8b7355;
+    color: #a89480;
 }
 
 .stat-value {
@@ -1095,29 +1113,81 @@ onMounted(async () => {
     text-overflow: ellipsis;
 }
 
+.stat-value--total {
+    font-size: 17px;
+    color: #2e7d32;
+}
+
 .stat-value small {
     font-size: 11px;
     font-weight: 600;
-    color: #8b7355;
+    color: #a89480;
+}
+
+.stat-detail {
+    font-size: 11px;
+    color: #a89480;
+    font-weight: 500;
+}
+
+.stat-amount {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2e7d32;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* ========== Info Card ========== */
 .info-card {
     background: white;
-    border-radius: 12px;
-    padding: 28px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(90, 64, 55, 0.05);
     border: 1px solid #ede7e0;
+    transition: box-shadow 0.25s ease;
+}
+
+.info-card:hover {
+    box-shadow: 0 2px 12px rgba(90, 64, 55, 0.08);
 }
 
 .section-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: #5a4037;
     margin: 0 0 20px 0;
     padding-bottom: 14px;
     border-bottom: 2px solid #f5f1ed;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 12px;
+    margin-left: 4px;
+}
+
+.required {
+    color: #e53e3e;
+    font-weight: 700;
 }
 
 .section-header {
@@ -1136,7 +1206,7 @@ onMounted(async () => {
 }
 
 .btn-action-header {
-    padding: 8px 18px;
+    padding: 8px 16px;
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
     border: none;
@@ -1144,26 +1214,29 @@ onMounted(async () => {
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.25s;
     box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .btn-action-header:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.35);
+    box-shadow: 0 4px 14px rgba(212, 165, 116, 0.35);
 }
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .form-group.full-width {
@@ -1173,38 +1246,80 @@ onMounted(async () => {
 .form-label {
     font-weight: 600;
     color: #5a4037;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+}
+
+.input-with-prefix {
+    display: flex;
+    align-items: stretch;
+    border-radius: 8px;
+    border: 2px solid #e0d5c7;
+    overflow: hidden;
+    transition: all 0.25s;
+    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+}
+
+.input-with-prefix:hover {
+    border-color: #d4a574;
+}
+
+.input-with-prefix:focus-within {
+    border-color: #c89564;
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.12);
+    background: white;
+}
+
+.input-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: #f5f1ed;
+    color: #8b7355;
+    font-weight: 700;
     font-size: 14px;
-    letter-spacing: 0.3px;
+    border-right: 1px solid #e0d5c7;
+    user-select: none;
+}
+
+.form-input--prefixed {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.form-input--prefixed:focus {
+    box-shadow: none !important;
 }
 
 .form-input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 11px 14px;
     border: 2px solid #e0d5c7;
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
     box-sizing: border-box;
-    transition: all 0.3s;
+    transition: all 0.25s;
     background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
     color: #5a4037;
 }
 
 .form-input::placeholder {
     color: #c4a882;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .form-input:hover {
     border-color: #d4a574;
-    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
 }
 
 .form-input:focus {
     outline: none;
     background: white;
     border-color: #c89564;
-    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.15);
+    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.12);
 }
 
 .textarea-input {
@@ -1214,15 +1329,16 @@ onMounted(async () => {
 
 .error-text {
     display: block;
-    color: #c62828;
-    font-size: 13px;
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 500;
 }
 
-/* ========== Tableros Section ========== */
+/* ========== Entity Sections ========== */
 .tableros-metrics {
     display: flex;
-    gap: 10px;
-    margin-bottom: 18px;
+    gap: 8px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
 }
 
@@ -1230,119 +1346,148 @@ onMounted(async () => {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
-    background: #f5f1ed;
+    padding: 6px 12px;
+    background: #f7f3ef;
     border-radius: 20px;
-    border: 1px solid #e8e3dd;
+    border: 1px solid #ede7e0;
 }
 
 .metric-pill--accent {
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-color: #d4a574;
+    background: #fffbf5;
+    border-color: #e8d5c0;
 }
 
 .metric-number {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #5a4037;
 }
 
 .metric-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: #8b7355;
+    font-size: 10px;
+    font-weight: 700;
+    color: #a89480;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
 }
 
-.tablero-card {
+/* Entity List & Transitions */
+.entity-list {
     display: flex;
-    align-items: center;
-    padding: 14px 16px;
-    background: white;
-    border: 1px solid #e8e3dd;
-    border-radius: 10px;
-    gap: 16px;
-    margin-bottom: 10px;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+}
+
+.entity-list-enter-active {
+    transition: all 0.35s ease;
+}
+.entity-list-leave-active {
     transition: all 0.25s ease;
 }
-
-.tablero-card:hover {
-    border-color: #d4a574;
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.12);
+.entity-list-enter-from {
+    opacity: 0;
+    transform: translateX(-12px);
+}
+.entity-list-leave-to {
+    opacity: 0;
+    transform: translateX(16px);
+}
+.entity-list-move {
+    transition: transform 0.3s ease;
 }
 
-.tablero-card-left {
+/* Entity Row Card */
+.entity-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    padding: 12px 14px;
+    background: #fefefe;
+    border: 1px solid #eee9e3;
+    border-radius: 10px;
+    gap: 14px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.entity-row:hover {
+    border-color: #ddd4c8;
+    background: #fffdf9;
+    box-shadow: 0 2px 8px rgba(90, 64, 55, 0.06);
+}
+
+.entity-row-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     flex: 1;
     min-width: 0;
 }
 
-.tablero-avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
-    border-radius: 10px;
+.entity-avatar {
+    width: 36px;
+    height: 36px;
+    background: #f7f3ef;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px;
     flex-shrink: 0;
-    border: 1px solid #e8e3dd;
 }
 
-.tablero-info {
+.entity-info {
     min-width: 0;
 }
 
-.tablero-name {
-    font-weight: 700;
+.entity-name {
+    font-weight: 600;
     color: #2c2c2c;
-    font-size: 14px;
+    font-size: 13.5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.3;
 }
 
-.tablero-code {
-    font-size: 12px;
-    color: #888;
-    margin-top: 2px;
-}
-
-.tablero-card-center {
-    flex-shrink: 0;
-}
-
-.tablero-pricing {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-}
-
-.tablero-unit-price {
-    font-size: 12px;
-    color: #8b7355;
+.entity-code {
+    font-size: 11px;
+    color: #a89480;
+    margin-top: 1px;
     font-weight: 500;
 }
 
-.tablero-unit-price small {
+.entity-row-center {
+    flex-shrink: 0;
+}
+
+.entity-pricing {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+}
+
+.entity-unit-price {
+    font-size: 11px;
+    color: #a89480;
+    font-weight: 500;
+}
+
+.entity-unit-price small {
     font-size: 10px;
 }
 
-.tablero-subtotal {
-    font-size: 15px;
+.entity-subtotal {
+    font-size: 14px;
     font-weight: 800;
     color: #2e7d32;
 }
 
-.tablero-card-right {
+.entity-row-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
@@ -1350,22 +1495,22 @@ onMounted(async () => {
     display: flex;
     align-items: center;
     gap: 0;
-    border: 2px solid #e8e3dd;
+    border: 1.5px solid #e8e3dd;
     border-radius: 8px;
     overflow: hidden;
-    background: #f9f7f4;
+    background: #faf8f6;
 }
 
 .btn-qty {
-    width: 32px;
-    height: 34px;
+    width: 30px;
+    height: 32px;
     border: none;
     background: transparent;
     color: #5a4037;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1373,27 +1518,31 @@ onMounted(async () => {
 }
 
 .btn-qty:hover {
-    background: #e8e3dd;
+    background: #eee9e3;
+}
+
+.btn-qty:active {
+    transform: scale(0.92);
 }
 
 .btn-qty--minus:hover {
-    background: #ffebee;
-    color: #c62828;
+    background: #fef2f2;
+    color: #dc2626;
 }
 
 .btn-qty--plus:hover {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #f0fdf4;
+    color: #16a34a;
 }
 
 .qty-input {
-    width: 48px;
-    height: 34px;
+    width: 42px;
+    height: 32px;
     border: none;
     border-left: 1px solid #e8e3dd;
     border-right: 1px solid #e8e3dd;
     text-align: center;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: #5a4037;
     background: white;
@@ -1413,13 +1562,12 @@ onMounted(async () => {
 }
 
 .btn-delete-sm {
-    width: 34px;
-    height: 34px;
-    background: #fff5f5;
-    border: 1px solid #fed7d7;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 8px;
-    color: #c53030;
-    font-size: 14px;
+    color: #bbb;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -1429,52 +1577,94 @@ onMounted(async () => {
 }
 
 .btn-delete-sm:hover {
-    background: #fed7d7;
-    border-color: #fc8181;
-    transform: scale(1.08);
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.btn-delete-sm:active {
+    transform: scale(0.9);
 }
 
 /* ========== Empty State ========== */
 .empty-state-inline {
     text-align: center;
-    padding: 40px 20px;
-    color: #888;
+    padding: 36px 20px;
 }
 
-.empty-state-inline .empty-icon {
-    font-size: 40px;
+.empty-illustration {
+    position: relative;
+    display: inline-block;
     margin-bottom: 12px;
 }
 
-.empty-state-inline p {
-    margin: 0 0 16px;
-    font-size: 15px;
-    color: #888;
-    font-weight: 500;
+.empty-illustration .empty-icon {
+    font-size: 36px;
+    position: relative;
+    z-index: 1;
+}
+
+.empty-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px dashed #e8e3dd;
+    animation: ring-rotate 12s linear infinite;
+}
+
+@keyframes ring-rotate {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.empty-title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: #5a4037;
+    font-weight: 600;
+}
+
+.empty-desc {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: #a89480;
+    font-weight: 400;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
 }
 
 .btn-empty-action {
-    padding: 10px 24px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
+    padding: 10px 22px;
+    background: white;
+    color: #8b7355;
+    border: 1.5px dashed #d4a574;
     border-radius: 8px;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.25);
+    transition: all 0.25s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .btn-empty-action:hover {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border-color: transparent;
     transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(212, 165, 116, 0.35);
+    box-shadow: 0 4px 14px rgba(212, 165, 116, 0.3);
 }
 
 /* ========== Form Actions ========== */
 .form-actions {
     display: flex;
-    gap: 14px;
+    gap: 12px;
     justify-content: flex-end;
     padding-top: 8px;
 }
@@ -1482,204 +1672,74 @@ onMounted(async () => {
 .form-actions--sticky {
     position: sticky;
     bottom: 0;
-    background: linear-gradient(to top, #ffffff 60%, rgba(255,255,255,0.95) 80%, rgba(255,255,255,0) 100%);
-    padding: 20px 0 8px;
+    background: linear-gradient(to top, #ffffff 50%, rgba(255,255,255,0.97) 75%, rgba(255,255,255,0) 100%);
+    padding: 24px 0 12px;
     z-index: 10;
     margin-top: 8px;
 }
 
-/* ========== Section Header ========== */
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.section-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #5a4037;
-    margin: 0;
-    display: flex;
+.btn-loading {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
 }
 
-.btn-action-header {
-    padding: 7px 16px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 700;
-    transition: all 0.3s;
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
-}
-
-.btn-action-header:hover {
-    background: linear-gradient(135deg, #c89564 0%, #b88454 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
+.spinner-sm {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
 }
 
 .btn-primary,
 .btn-secondary {
-    padding: 14px 28px;
+    padding: 12px 24px;
     border: none;
     border-radius: 10px;
-    font-size: 15px;
+    font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.25s;
     font-weight: 700;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #4CAF50 0%, #43a047 100%);
     color: white;
-    box-shadow: 0 3px 10px rgba(76, 175, 80, 0.25);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
 }
 
 .btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(76, 175, 80, 0.35);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .btn-primary:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
     transform: none;
 }
 
 .btn-secondary {
     background: white;
-    color: #666;
-    border: 2px solid #e0d5c7;
+    color: #777;
+    border: 1.5px solid #e0d5c7;
     box-shadow: none;
 }
 
 .btn-secondary:hover {
-    background: #f5f1ed;
+    background: #f9f6f2;
     border-color: #d4a574;
     color: #5a4037;
-}
-
-/* Modal Styles */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fadeIn {
-    from {
-        background: rgba(0, 0, 0, 0);
-    }
-    to {
-        background: rgba(0, 0, 0, 0.6);
-    }
-}
-
-.modal-content {
-    background: white;
-    border-radius: 14px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    max-height: 80vh;
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.modal-content-large {
-    max-width: 650px;
-}
-
-.modal-header {
-    padding: 22px 24px;
-    border-bottom: 2px solid #f0ebe5;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-radius: 14px 14px 0 0;
-}
-
-.modal-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #5a4037;
-    margin: 0;
-    letter-spacing: 0.3px;
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #999;
-    cursor: pointer;
-    padding: 0;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 6px;
-}
-
-.modal-close:hover {
-    background: #f5f1ed;
-    color: #5a4037;
-    transform: rotate(90deg);
-}
-
-.modal-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px 24px;
-}
-
-.selected-items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.items-subtitle {
-    font-size: 14px;
-    font-weight: 700;
-    color: #5a4037;
-    margin: 0 0 12px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 /* Transitions */
@@ -1692,914 +1752,81 @@ onMounted(async () => {
     opacity: 0;
 }
 
-.list-enter-active {
+.slide-down-enter-active,
+.slide-down-leave-active {
     transition: all 0.3s ease;
 }
-.list-leave-active {
-    transition: all 0.25s ease;
-}
-.list-enter-from {
+.slide-down-enter-from,
+.slide-down-leave-to {
     opacity: 0;
-    transform: translateY(-8px);
-}
-.list-leave-to {
-    opacity: 0;
-    transform: translateX(20px);
-}
-
-.items-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-}
-
-.selected-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-left: 4px solid #d4a574;
-    border-radius: 6px;
-    gap: 12px;
-}
-
-.selected-item-edit {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 18px;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-left: 4px solid #d4a574;
-    border-radius: 8px;
-    gap: 16px;
-    flex-wrap: wrap;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
-}
-
-.selected-item-edit:hover {
-    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.15);
-    transform: translateY(-2px);
-    border-left-color: #c89564;
-}
-
-.quantity-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: center;
-    position: relative;
-}
-
-.quantity-input-group label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #8b7355;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.quantity-input {
-    width: 70px;
-    padding: 10px 12px;
-    border: 2px solid #d4a574;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 700;
-    color: #5a4037;
-    text-align: center;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.1);
-}
-
-.quantity-input:hover {
-    border-color: #c89564;
-    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
-    box-shadow: 0 4px 8px rgba(212, 165, 116, 0.15);
-    transform: translateY(-1px);
-}
-
-.quantity-input:focus {
-    outline: none;
-    border-color: #c89564;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.3);
-    background: white;
-    transform: translateY(-2px);
-}
-
-.quantity-input::placeholder {
-    color: #d4a574;
-    opacity: 0.5;
-}
-
-/* Controles de cantidad con botones +/- */
-.quantity-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-radius: 8px;
-    padding: 4px;
-    border: 2px solid #e8ddd7;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.quantity-controls:hover {
-    border-color: #d4a574;
-    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
-    box-shadow: 0 4px 8px rgba(212, 165, 116, 0.1);
-}
-
-.btn-qty-control {
-    width: 32px;
-    height: 32px;
-    border: 2px solid #d4a574;
-    border-radius: 6px;
-    background: white;
-    color: #5a4037;
-    font-size: 18px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.08);
-}
-
-.btn-qty-control:hover {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border-color: #c89564;
-    transform: scale(1.08);
-    box-shadow: 0 4px 8px rgba(212, 165, 116, 0.2);
-}
-
-.btn-qty-control:active {
-    transform: scale(0.95);
-    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.1);
-}
-
-.btn-qty-minus:hover {
-    background: linear-gradient(135deg, #ff9999 0%, #ff8888 100%);
-    border-color: #c62828;
-}
-
-.btn-qty-plus:hover {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    border-color: #2e7d32;
-}
-
-.item-info {
-    flex: 1;
-}
-
-.item-name {
-    font-weight: 700;
-    color: #5a4037;
-    font-size: 14px;
-    margin-bottom: 4px;
-}
-
-.item-code {
-    font-size: 12px;
-    color: #8b7355;
-    margin-bottom: 4px;
-}
-
-.item-price {
-    font-size: 13px;
-    color: #d4a574;
-    font-weight: 600;
-}
-
-.item-subtotal {
-    margin-top: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #2e7d32;
-}
-
-.btn-remove {
-    background: #fff5f5;
-    color: #c53030;
-    border: 1px solid #fed7d7;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: none;
-}
-
-.btn-remove:hover {
-    background: #fed7d7;
-    color: #c53030;
-    border-color: #fc8181;
-    transform: scale(1.08);
-    box-shadow: none;
-}
-
-.btn-remove:active {
-    transform: scale(0.95);
-}
-
-.horas-summary {
-    margin-top: 16px;
-    padding: 14px 16px;
-    background: linear-gradient(135deg, #f0f4f8 0%, #f8fafc 100%);
-    border-left: 4px solid #059669;
-    border-radius: 6px;
-}
-
-.horas-counter {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 18px;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-left: 4px solid #d4a574;
-    border-radius: 8px;
-    gap: 16px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
-}
-
-.horas-counter:hover {
-    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.15);
-    transform: translateY(-2px);
-    border-left-color: #c89564;
-}
-
-.counter-info {
-    flex: 1;
-}
-
-.counter-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #8b7355;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-}
-
-.counter-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #5a4037;
-}
-
-.horas-total {
-    font-size: 13px;
-    font-weight: 600;
-    color: #5a4037;
-    margin: 0 0 8px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.horas-cost {
-    font-size: 13px;
-    font-weight: 600;
-    color: #5a4037;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.add-section {
-    margin-bottom: 28px;
-    padding: 18px 0;
-    border-bottom: 2px solid #e8ddd7;
-}
-
-.btn-add-material {
-    width: 100%;
-    padding: 14px 24px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    letter-spacing: 0.3px;
-}
-
-.btn-add-material:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4);
-}
-
-.btn-add-material:active {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(212, 165, 116, 0.3);
-}
-
-.select-bar {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.material-select {
-    flex: 1;
-    padding: 12px;
-    border: 2px solid #e0d5c7;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-    color: #5a4037;
-    background: white;
-    cursor: pointer;
-    transition: all 0.3s;
-    appearance: none;
-    padding-right: 32px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23d4a574' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 32px;
-}
-
-.material-select:focus {
-    outline: none;
-    border-color: #d4a574;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
-    background-color: #fff9f0;
-}
-
-.material-select:disabled {
-    background-color: #f0f0f0;
-    color: #8b7355;
-    cursor: not-allowed;
-}
-
-.btn-add {
-    background: #d4a574;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.btn-add:hover:not(:disabled) {
-    background: #c89564;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.3);
-}
-
-.btn-add:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.btn-add:disabled {
-    background: #c0a589;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.search-bar {
-    margin-bottom: 16px;
-}
-
-.search-input {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #e0d5c7;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-    transition: all 0.3s;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: #d4a574;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
-    background: #fff9f0;
-}
-
-.available-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 8px;
-    background: #f5f1ed;
-    border-radius: 6px;
-}
-
-.available-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    background: white;
-    border: 1px solid #e0d5c7;
-    border-radius: 4px;
-    transition: all 0.3s;
-    gap: 12px;
-}
-
-.available-item:hover {
-    background: #fff9f0;
-    border-color: #d4a574;
-    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.2);
-}
-
-.empty-search {
-    padding: 24px;
-    text-align: center;
-    color: #8b7355;
-    font-size: 14px;
-    background: #f5f1ed;
-    border-radius: 6px;
-}
-
-.selected-item-full {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border-left: 4px solid #d4a574;
-    border-radius: 6px;
-    gap: 16px;
-}
-
-.item-info-full {
-    flex: 1;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #e8ddd7;
-}
-
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.info-label {
-    font-weight: 600;
-    color: #8b7355;
-    font-size: 13px;
-}
-
-.info-value {
-    font-weight: 700;
-    color: #d4a574;
-    font-size: 14px;
-}
-
-.btn-remove-large {
-    padding: 8px 12px;
-    background: #ffebee;
-    color: #c62828;
-    border: 1px solid #c62828;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.btn-remove-large:hover {
-    background: #ff9999;
-    color: white;
-}
-
-.btn-change-item {
-    padding: 8px 12px;
-    background: #e3f2fd;
-    color: #1976d2;
-    border: 1px solid #1976d2;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: 600;
-    white-space: nowrap;
-    width: 100%;
-}
-
-.btn-change-item:hover {
-    background: #90caf9;
-    color: white;
-}
-
-.empty-list {
-    text-align: center;
-    padding: 32px 24px;
-    color: #999;
-}
-
-.empty-list p {
-    margin: 0;
-    font-size: 16px;
-}
-
-/* Estilos adicionales */
-.edit-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.form-group-small {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.form-group-small label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #5a4037;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.form-input-small {
-    padding: 10px 12px;
-    border: 2px solid #d4a574;
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: inherit;
-    color: #5a4037;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-sizing: border-box;
-}
-
-.form-input-small:hover {
-    border-color: #c89564;
-    background: linear-gradient(135deg, #fff5ea 0%, #fffbf5 100%);
-}
-
-.form-input-small:focus {
-    outline: none;
-    border-color: #c89564;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2);
-    background: white;
-}
-
-.form-input-small::placeholder {
-    color: #d4a574;
-    opacity: 0.5;
-}
-
-.button-group-vertical {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.button-group-horizontal {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.btn-edit-item {
-    padding: 10px 16px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.15);
-}
-
-.btn-edit-item:hover {
-    background: linear-gradient(135deg, #c89564 0%, #b88454 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.25);
-}
-
-.btn-save {
-    flex: 1;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.15);
-}
-
-.btn-save:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
-}
-
-.btn-cancel {
-    flex: 1;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(158, 158, 158, 0.15);
-}
-
-.btn-cancel:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(158, 158, 158, 0.25);
-}
-
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #e8ddd7;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: #faf7f2;
-}
-
-/* Estilos para el modal de selección de materiales */
-.modal-content-large {
-    max-width: 700px;
-    max-height: 85vh;
-}
-
-.search-section {
-    margin-bottom: 24px;
-}
-
-.search-input {
-    width: 100%;
-    padding: 14px 16px;
-    border: 2px solid #e0d5c7;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    transition: all 0.3s;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-}
-
-.search-input::placeholder {
-    color: #d4a574;
-    opacity: 0.6;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: #d4a574;
-    box-shadow: 0 0 0 4px rgba(212, 165, 116, 0.2);
-    background: white;
-}
-
-.materiales-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 16px;
-}
-
-.material-card {
-    background: white;
-    border: 2px solid #e8ddd7;
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.08);
-}
-
-.material-card.selected {
-    border: 3px solid #4CAF50;
-    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2), 0 12px 30px rgba(76, 175, 80, 0.35);
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.08) 0%, rgba(76, 175, 80, 0.04) 100%);
-    transform: scale(1.02);
-    position: relative;
-}
-
-.material-card.selected::before {
-    content: '✓';
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 18px;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-    z-index: 10;
-}
-
-.material-card:hover {
-    border-color: #d4a574;
-    box-shadow: 0 8px 20px rgba(212, 165, 116, 0.25);
-    transform: translateY(-4px);
-}
-
-.material-card.selected:hover {
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15), 0 8px 20px rgba(76, 175, 80, 0.3);
-}
-
-.card-header {
-    padding: 18px;
-    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
-    border-bottom: 2px solid #e8ddd7;
-}
-
-.card-name {
-    font-weight: 700;
-    color: #5a4037;
-    font-size: 15px;
-    margin-bottom: 8px;
-    line-height: 1.4;
-}
-
-.card-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    padding: 5px 12px;
-    border-radius: 14px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 4px rgba(212, 165, 116, 0.2);
-}
-
-.card-body {
-    padding: 18px;
-    flex: 1;
-}
-
-.card-label {
-    font-size: 12px;
-    color: #8b7355;
-    margin: 0 0 6px 0;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.card-price {
-    font-size: 24px;
-    font-weight: 700;
-    color: #d4a574;
-    margin: 0;
-}
-
-.card-footer {
-    padding: 14px 18px;
-    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
-    border-top: 2px solid #e8ddd7;
-}
-
-.btn-select {
-    width: 100%;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.15);
-    letter-spacing: 0.3px;
-}
-
-.btn-select:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
-}
-
-.btn-select:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.15);
-}
-
-.btn-select-active {
-    background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
-    cursor: default;
-}
-
-.btn-select-active:disabled {
-    opacity: 1;
-}
-
-.btn-add-material {
-    width: 100%;
-    padding: 14px 24px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-bottom: 0;
-}
-
-.btn-add-material:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
-}
-
-.btn-add-material:active {
-    transform: translateY(0);
+    transform: translateY(-12px);
 }
 
 /* ========== Responsive ========== */
 @media (max-width: 768px) {
     .editar-componente-container {
-        padding: 16px 12px;
+        padding: 16px 12px 32px;
+    }
+
+    .breadcrumb {
+        font-size: 12px;
+        margin-bottom: 12px;
     }
 
     .page-header {
         flex-direction: column;
         align-items: flex-start;
-        padding: 18px 16px;
+        padding: 16px;
     }
 
     .header-left {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        gap: 10px;
     }
 
     .header-right {
-        margin-top: 10px;
+        margin-top: 8px;
+    }
+
+    .page-title {
+        font-size: 19px;
     }
 
     .stats-bar {
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .stat-card {
+        padding: 12px;
+    }
+
+    .stat-amount {
+        display: none;
     }
 
     .info-card {
-        padding: 18px 14px;
+        padding: 16px 14px;
     }
 
     .info-grid {
         grid-template-columns: 1fr;
     }
 
-    .tablero-card {
+    .entity-row {
         flex-wrap: wrap;
         gap: 10px;
+        padding: 12px;
     }
 
-    .tablero-card-left {
+    .entity-row-left {
         flex: 1 1 100%;
     }
 
-    .tablero-card-center {
+    .entity-row-center {
         flex: 1;
     }
 
-    .tablero-card-right {
+    .entity-row-right {
         flex: 0 0 auto;
     }
 
@@ -2617,7 +1844,7 @@ onMounted(async () => {
     }
 
     .form-actions--sticky {
-        padding: 16px 0 4px;
+        padding: 16px 0 8px;
     }
 
     .btn-primary,
@@ -2628,16 +1855,16 @@ onMounted(async () => {
 }
 
 @media (max-width: 480px) {
-    .page-title {
-        font-size: 20px;
-    }
-
     .stats-bar {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
     }
 
-    .tablero-pricing {
+    .entity-pricing {
         align-items: flex-start;
+    }
+
+    .quantity-controls-compact {
+        order: 1;
     }
 }
 </style>

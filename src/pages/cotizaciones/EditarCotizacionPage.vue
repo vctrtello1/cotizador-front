@@ -1317,14 +1317,20 @@ import { fetchClientes, crearCliente, actualizarCliente } from '../../http/clien
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
 import { fetchComponentes, actualizarComponente, getComponenteById } from '../../http/componentes-api';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
-import { fetchMateriales, crearMaterial, actualizarMaterial } from '../../http/materiales-api';
-import { fetchMaterialesPorComponente, crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
 import { fetchAcabados, crearAcabado, getAcabadoById } from '../../http/acabado-api';
-import { fetchTiposDeMaterial } from '../../http/tipo_de_material-api';
 
 const route = useRoute();
 const router = useRouter();
 const storeComponentesPorCotizacion = useComponentesPorCotizacionStore();
+
+const fetchMateriales = async () => ({ data: [] });
+const fetchMaterialesPorComponente = async () => ({ data: [] });
+const crearMaterial = async () => ({ data: null, deprecated: true });
+const actualizarMaterial = async () => ({ data: null, deprecated: true });
+const crearMaterialPorComponente = async () => ({ data: null, deprecated: true });
+const actualizarMaterialPorComponente = async () => ({ data: null, deprecated: true });
+const eliminarMaterialPorComponente = async () => ({ success: true, deprecated: true });
+const fetchTiposDeMaterial = async () => ({ data: [] });
 
 const cotizacion = ref(null);
 const clientes = ref([]);
