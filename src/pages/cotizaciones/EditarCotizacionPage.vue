@@ -665,13 +665,6 @@
                                     </button>
                                     <button 
                                         type="button"
-                                        :class="['tab-btn', { active: tabActiva === 'herrajes' }]"
-                                        @click="tabActiva = 'herrajes'"
-                                    >
-                                        🔩 Herrajes
-                                    </button>
-                                    <button 
-                                        type="button"
                                         :class="['tab-btn', { active: tabActiva === 'mano-obra' }]"
                                         @click="tabActiva = 'mano-obra'"
                                     >
@@ -755,57 +748,6 @@
                                         <div v-else class="empty-tab-state">
                                             <div class="empty-icon">📦</div>
                                             <p>Este componente no tiene materiales asignados</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Tab Herrajes -->
-                                    <div v-if="tabActiva === 'herrajes'" class="tab-panel">
-                                        <div class="tab-panel-header">
-                                            <h5>Herrajes del Componente</h5>
-                                            <p class="tab-description">Visualiza los herrajes asociados a este componente</p>
-                                            <div class="tab-header-actions">
-                                                <button class="btn-add-item btn-secondary" @click="abrirModalCrearHerraje">
-                                                    <span class="btn-icon">✨</span>
-                                                    Crear Nuevo Herraje
-                                                </button>
-                                                <button class="btn-add-item" @click="agregarHerraje">
-                                                    <span class="btn-icon">➕</span>
-                                                    Agregar Herraje
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div v-if="componenteEditando.herrajes && componenteEditando.herrajes.length > 0" class="items-list">
-                                            <div v-for="her in componenteEditando.herrajes" :key="her.id" class="item-card">
-                                                <div class="item-header">
-                                                    <span class="item-icon">🔩</span>
-                                                    <span class="item-name">{{ her.herraje?.nombre || 'Sin nombre' }}</span>
-                                                    <button class="btn-delete-item" @click="eliminarHerraje(her)" title="Eliminar herraje">
-                                                        🗑️
-                                                    </button>
-                                                </div>
-                                                <div class="item-details">
-                                                    <div class="item-detail-row">
-                                                        <span class="detail-label">Cantidad:</span>
-                                                        <div class="cantidad-controls">
-                                                            <button class="btn-cantidad" @click="disminuirCantidadHerraje(her)">−</button>
-                                                            <span class="detail-value">{{ her.cantidad }}</span>
-                                                            <button class="btn-cantidad" @click="aumentarCantidadHerraje(her)">+</button>
-                                                        </div>
-                                                    </div>
-                                                    <div class="item-detail-row">
-                                                        <span class="detail-label">Costo unitario:</span>
-                                                        <span class="detail-value">${{ formatCurrency(her.herraje?.costo_unitario || 0) }}</span>
-                                                    </div>
-                                                    <div class="item-detail-row subtotal">
-                                                        <span class="detail-label">Subtotal:</span>
-                                                        <span class="detail-value">${{ formatCurrency((her.herraje?.costo_unitario || 0) * (her.cantidad || 0)) }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div v-else class="empty-tab-state">
-                                            <div class="empty-icon">🔩</div>
-                                            <p>Este componente no tiene herrajes asignados</p>
                                         </div>
                                     </div>
 
@@ -1077,38 +1019,6 @@
                     </div>
                 </Transition>
 
-                <!-- Modal para agregar herraje -->
-                <Transition name="modal">
-                    <div v-if="mostrarModalAgregarHerraje" class="modal-overlay" @click="cerrarModalAgregarHerraje">
-                        <div class="modal-content modal-selector" @click.stop>
-                            <div class="modal-header">
-                                <h3>🔩 Seleccionar Herraje</h3>
-                                <button class="btn-close" @click="cerrarModalAgregarHerraje">✕</button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="search-box">
-                                    <input v-model="busquedaHerraje" type="text" placeholder="🔍 Buscar herraje..." class="search-input" />
-                                </div>
-                                <div class="selector-list">
-                                    <div v-for="herraje in herrajesFiltrados" :key="herraje.id" class="selector-item" @click="seleccionarYAgregarHerraje(herraje)">
-                                        <div class="selector-item-content">
-                                            <span class="selector-icon">🔩</span>
-                                            <div class="selector-info">
-                                                <span class="selector-name">{{ herraje.nombre }}</span>
-                                                <span class="selector-description">{{ herraje.descripcion || 'Sin descripción' }}</span>
-                                                <span class="selector-price">${{ formatCurrency(herraje.costo_unitario || 0) }} / unidad</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div v-if="herrajesFiltrados.length === 0" class="empty-selector">
-                                        <p>No se encontraron herrajes</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </Transition>
-
                 <!-- Modal para agregar mano de obra -->
                 <Transition name="modal">
                     <div v-if="mostrarModalAgregarManoObra" class="modal-overlay" @click="cerrarModalAgregarManoObra">
@@ -1222,36 +1132,6 @@
                             <div class="modal-footer">
                                 <button class="btn-cancel" @click="cerrarModalCrearMaterial">Cancelar</button>
                                 <button class="btn-primary" @click="guardarNuevoMaterial">Crear Material</button>
-                            </div>
-                        </div>
-                    </div>
-                </Transition>
-
-                <!-- Modal para crear nuevo herraje -->
-                <Transition name="modal">
-                    <div v-if="mostrarModalCrearHerraje" class="modal-overlay" @click="cerrarModalCrearHerraje">
-                        <div class="modal-content modal-form" @click.stop>
-                            <div class="modal-header">
-                                <h3>✨ Crear Nuevo Herraje</h3>
-                                <button class="btn-close" @click="cerrarModalCrearHerraje">✕</button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="form-group">
-                                    <label>Nombre*</label>
-                                    <input v-model="nuevoHerraje.nombre" type="text" class="input-text" placeholder="Nombre del herraje" />
-                                </div>
-                                <div class="form-group">
-                                    <label>Descripción</label>
-                                    <textarea v-model="nuevoHerraje.descripcion" class="input-textarea" rows="3" placeholder="Descripción del herraje"></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label>Precio Unitario</label>
-                                    <input v-model="nuevoHerraje.precio_unitario" type="number" step="0.01" class="input-text" placeholder="0.00" />
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button class="btn-cancel" @click="cerrarModalCrearHerraje">Cancelar</button>
-                                <button class="btn-primary" @click="guardarNuevoHerraje">Crear Herraje</button>
                             </div>
                         </div>
                     </div>
@@ -1567,8 +1447,6 @@ import { fetchComponentes, actualizarComponente, getComponenteById } from '../..
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
 import { fetchMateriales, crearMaterial, actualizarMaterial } from '../../http/materiales-api';
 import { fetchMaterialesPorComponente, crearMaterialPorComponente, actualizarMaterialPorComponente, eliminarMaterialPorComponente } from '../../http/materiales_por_componente-api';
-import { fetchHerrajes, crearHerraje } from '../../http/herrajes-api';
-import { fetchCantidadPorHerraje, crearCantidadPorHerraje, actualizarCantidadPorHerraje, eliminarCantidadPorHerraje } from '../../http/cantidad_por_herraje-api';
 import { fetchClientes as fetchManoDeObra, crearCliente as crearManoDeObra } from '../../http/mano_de_obra-api ';
 import { fetchAcabados, crearAcabado, getAcabadoById } from '../../http/acabado-api ';
 import { fetchTiposDeMaterial } from '../../http/tipo_de_material-api';
@@ -1613,9 +1491,6 @@ const mostrarModalEditarMaterial = ref(false);
 const materialEditando = ref(null);
 const cantidadEdicionMaterial = ref(1);
 
-const mostrarModalAgregarHerraje = ref(false);
-const busquedaHerraje = ref('');
-const herrajesDisponibles = ref([]);
 const mostrarModalAgregarManoObra = ref(false);
 const busquedaManoObra = ref('');
 const manoDeObraDisponible = ref([]);
@@ -1657,13 +1532,6 @@ const tipoMaterialSeleccionado = ref(null);
 const mostrarModalSeleccionarTipoMaterialEdicion = ref(false);
 const busquedaTipoMaterialEdicion = ref('');
 const tipoMaterialSeleccionadoEdicion = ref(null);
-
-const mostrarModalCrearHerraje = ref(false);
-const nuevoHerraje = ref({
-    nombre: '',
-    descripcion: '',
-    precio_unitario: ''
-});
 
 const mostrarModalCrearManoDeObra = ref(false);
 const nuevaManoDeObra = ref({
@@ -2379,15 +2247,13 @@ const abrirModalEditarComponente = async (componente) => {
         console.log('✅ Componente completo cargado:', componenteCompleto);
         
         // Cargar catálogos completos para hacer el join
-        const [todosMaterialesResponse, todosHerrajesResponse, todaManoObraResponse] = await Promise.all([
+        const [todosMaterialesResponse, todaManoObraResponse] = await Promise.all([
             fetchMateriales().catch(() => []),
-            fetchHerrajes().catch(() => []),
             fetchManoDeObra().catch(() => [])
         ]);
         
         // Normalizar respuestas de catálogos
         const todosMaterialesData = Array.isArray(todosMaterialesResponse) ? todosMaterialesResponse : (todosMaterialesResponse.data || []);
-        const todosHerrajesData = Array.isArray(todosHerrajesResponse) ? todosHerrajesResponse : (todosHerrajesResponse.data || []);
         const todaManoObraData = Array.isArray(todaManoObraResponse) ? todaManoObraResponse : (todaManoObraResponse.data || []);
         
         // Cargar materiales relacionados - usar fetch all y filtrar
@@ -2405,23 +2271,6 @@ const abrirModalEditarComponente = async (componente) => {
             console.log('✅ Materiales encontrados:', materiales.length);
         } catch (err) {
             console.warn('⚠️ Error al cargar materiales:', err);
-        }
-        
-        // Cargar herrajes relacionados
-        let herrajes = [];
-        try {
-            const todasCantidadesResponse = await fetchCantidadPorHerraje();
-            const todasCantidades = Array.isArray(todasCantidadesResponse) ? todasCantidadesResponse : (todasCantidadesResponse.data || []);
-            const herrajesFiltrados = todasCantidades.filter(h => h.componente_id === componente.componente_id);
-            
-            // Hacer join con los herrajes completos
-            herrajes = herrajesFiltrados.map(her => ({
-                ...her,
-                herraje: todosHerrajesData.find(h => h.id === her.herraje_id)
-            }));
-            console.log('✅ Herrajes encontrados:', herrajes.length);
-        } catch (err) {
-            console.warn('⚠️ Error al cargar herrajes:', err);
         }
         
         const horasManoObra = [];
@@ -2466,7 +2315,6 @@ const abrirModalEditarComponente = async (componente) => {
             ...componenteCompleto,
             // Agregar las relaciones cargadas
             materiales: materiales || [],
-            herrajes: herrajes || [],
             mano_de_obra: manoDeObraConsolidada,
             horas_mano_obra: horasManoObraTotal,
             horas_mano_obra_id: horasManoObraId,
@@ -2986,13 +2834,10 @@ const recalcularCostoComponente = async () => {
         const costoMateriales = (componenteEditando.value.materiales || []).reduce((sum, mat) => 
             sum + ((mat.material?.precio_unitario || 0) * (mat.cantidad || 0)), 0);
         
-        const costoHerrajes = (componenteEditando.value.herrajes || []).reduce((sum, her) => 
-            sum + ((her.herraje?.costo_unitario || 0) * (her.cantidad || 0)), 0);
-        
         const costoManoObra = (componenteEditando.value.mano_de_obra?.costo_hora || 0) * (componenteEditando.value.horas_mano_obra || 0);
         
         const costoAcabado = parseFloat(componenteEditando.value.acabado?.costo || 0);
-        const costoTotal = costoMateriales + costoHerrajes + costoManoObra + costoAcabado;
+        const costoTotal = costoMateriales + costoManoObra + costoAcabado;
         
         componenteEditando.value = { ...componenteEditando.value, precio_unitario: costoTotal };
         
@@ -3001,128 +2846,10 @@ const recalcularCostoComponente = async () => {
             if (componente) componente.precio_unitario = costoTotal;
         });
         
-        console.log('💰 Costo recalculado:', { materiales: costoMateriales, herrajes: costoHerrajes, manoObra: costoManoObra, acabado: costoAcabado, total: costoTotal });
+        console.log('💰 Costo recalculado:', { materiales: costoMateriales, manoObra: costoManoObra, acabado: costoAcabado, total: costoTotal });
     } catch (err) {
         console.error('❌ Error al recalcular costo:', err);
     }
-};
-
-// ===== HERRAJES =====
-const agregarHerraje = () => abrirModalSeleccion(
-    fetchHerrajes,
-    herrajesDisponibles,
-    busquedaHerraje,
-    mostrarModalAgregarHerraje,
-    'herrajes'
-);
-
-const cerrarModalAgregarHerraje = () => cerrarModal(mostrarModalAgregarHerraje, busquedaHerraje);
-
-// Funciones para crear nuevo herraje
-const abrirModalCrearHerraje = () => {
-    nuevoHerraje.value = resetFormularioHerraje();
-    mostrarModalCrearHerraje.value = true;
-};
-
-const resetFormularioHerraje = () => ({
-    nombre: '',
-    descripcion: '',
-    precio_unitario: ''
-});
-
-const cerrarModalCrearHerraje = () => {
-    mostrarModalCrearHerraje.value = false;
-    nuevoHerraje.value = resetFormularioHerraje();
-};
-
-const guardarNuevoHerraje = async () => {
-    try {
-        if (!nuevoHerraje.value.nombre) {
-            alert('Por favor ingresa el nombre del herraje');
-            return;
-        }
-
-        const datos = {
-            nombre: nuevoHerraje.value.nombre,
-            descripcion: nuevoHerraje.value.descripcion || '',
-            precio_unitario: parseFloat(nuevoHerraje.value.precio_unitario) || 0
-        };
-
-        const response = await crearHerraje(datos);
-        const herrajeCreado = response.data || response;
-
-        // Agregar automáticamente el herraje creado al componente
-        const datosRelacion = {
-            herraje_id: herrajeCreado.id,
-            componente_id: componenteEditando.value.componente_id,
-            cantidad: 1
-        };
-
-        const responseRelacion = await crearCantidadPorHerraje(datosRelacion);
-        const relacionCreada = responseRelacion.data || responseRelacion;
-
-        // Agregar el herraje a la lista local
-        componenteEditando.value.herrajes.push({
-            id: relacionCreada.id,
-            herraje_id: herrajeCreado.id,
-            componente_id: componenteEditando.value.componente_id,
-            cantidad: 1,
-            herraje: herrajeCreado
-        });
-
-        // Recalcular el costo del componente
-        await recalcularCostoComponente();
-
-        cerrarModalCrearHerraje();
-        alert('Herraje creado y agregado exitosamente');
-    } catch (err) {
-        console.error('❌ Error al crear herraje:', err);
-        alert('Error al crear el herraje');
-    }
-};
-
-const seleccionarYAgregarHerraje = async (herraje) => {
-    // Verificar si el herraje ya está agregado (sin mostrar mensaje)
-    if (componenteEditando.value.herrajes.find(h => h.herraje_id === herraje.id)) {
-        cerrarModalAgregarHerraje();
-        return;
-    }
-    
-    try {
-        const response = await crearCantidadPorHerraje({
-            herraje_id: herraje.id,
-            componente_id: componenteEditando.value.componente_id,
-            cantidad: 1
-        });
-        
-        componenteEditando.value.herrajes.push({
-            id: (response.data || response).id,
-            herraje_id: herraje.id,
-            componente_id: componenteEditando.value.componente_id,
-            cantidad: 1,
-            herraje: herraje
-        });
-        
-        await recalcularCostoComponente();
-        cerrarModalAgregarHerraje();
-    } catch (err) {
-        console.error('❌ Error al agregar herraje:', err);
-        alert('Error al agregar el herraje');
-    }
-};
-
-const herrajesFiltrados = computed(() => filtrarItems(herrajesDisponibles.value, busquedaHerraje.value));
-
-const eliminarHerraje = async (herraje) => {
-    await eliminarItem(herraje, componenteEditando.value.herrajes, eliminarCantidadPorHerraje, 'herraje');
-};
-
-const aumentarCantidadHerraje = async (herraje) => {
-    await actualizarCantidadOHoras(herraje, 1, actualizarCantidadPorHerraje);
-};
-
-const disminuirCantidadHerraje = async (herraje) => {
-    await actualizarCantidadOHoras(herraje, -1, actualizarCantidadPorHerraje);
 };
 
 // ===== MANO DE OBRA =====

@@ -73,48 +73,6 @@
                     <span v-else>✓ Guardar Cambios</span>
                 </button>
             </div>
-
-
-            <!-- Sección de Herrajes -->
-            <div class="section-info">
-                <div class="section-header">
-                    <div class="header-with-count">
-                        <h3 class="section-title">🔩 Herrajes</h3>
-                        <span v-if="herrajesDelComponente.length > 0" class="materials-badge">
-                            
-                        </span>
-                    </div>
-                    <button type="button" class="btn-edit-small" @click="mostrarModalHerrajes = true">✏️ Editar</button>
-                </div>
-                
-                <!-- Herrajes por Componente desde API -->
-                <div v-if="cargandoHerrajes" class="loading-info">
-                    <p>Cargando relación de herrajes...</p>
-                </div>
-                <div v-else-if="herrajesDelComponente && herrajesDelComponente.length > 0" class="info-list">
-                    <div v-for="herComp in herrajesDelComponente" :key="herComp.id" class="info-item-card">
-                        <div class="info-label">
-                            {{ herComp.herraje?.nombre || 'Herraje sin datos' }}
-                            <span v-if="herComp.cantidad" class="quantity-badge">{{ herComp.cantidad }} unidades</span>
-                        </div>
-                        <div v-if="herComp.herraje?.codigo" class="info-detail">
-                            Código: {{ herComp.herraje.codigo }}
-                        </div>
-                        <div v-if="herComp.herraje?.costo_unitario" class="info-detail">
-                            Precio unitario: ${{ formatCurrency(herComp.herraje.costo_unitario) }}
-                        </div>
-                        <div v-if="herComp.herraje?.costo_unitario && herComp.cantidad" class="info-detail">
-                            Subtotal: ${{ formatCurrency((herComp.herraje.costo_unitario * herComp.cantidad)) }}
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="empty-info">Sin herrajes</div>
-            </div>
-
-
-            
-
-
         </form>
 
         <!-- Modal Materiales -->
@@ -181,74 +139,6 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn-secondary" @click="mostrarModalMateriales = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Herrajes -->
-        <div v-if="mostrarModalHerrajes" class="modal-overlay" @click.self="mostrarModalHerrajes = false">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">🔩 Editar Herrajes</h3>
-                </div>
-                <div class="modal-body">
-                    <!-- Sección para agregar nuevo herraje -->
-                    <div class="add-section">
-                        <button 
-                            type="button" 
-                            class="btn-add-material"
-                            @click="abrirSelectorHerrajes()"
-                        >+ Agregar Herraje</button>
-                    </div>
-
-                    <!-- Sección de herrajes seleccionados -->
-                    <div v-if="herrajesDelComponente && herrajesDelComponente.length > 0" class="selected-items">
-                        <h4 class="items-subtitle">Herrajes Seleccionados</h4>
-                        <div class="items-grid">
-                            <div v-for="herraje in herrajesDelComponente" :key="herraje.id" class="selected-item-edit">
-                                <div class="item-info">
-                                    <div class="item-name">{{ herraje.herraje?.nombre }}</div>
-                                    <div class="item-code">{{ herraje.herraje?.codigo }}</div>
-                                    <div class="item-price">${{ formatCurrency(herraje.herraje?.costo_unitario) }}</div>
-                                </div>
-                                <div class="quantity-input-group">
-                                    <label :for="`qty-herraje-${herraje.id}`">Cantidad (unidades)</label>
-                                    <div class="quantity-controls">
-                                        <button 
-                                            type="button"
-                                            class="btn-qty-control btn-qty-minus"
-                                            @click="decrementarCantidad(herraje)"
-                                            title="Disminuir"
-                                        >−</button>
-                                        <input 
-                                            :id="`qty-herraje-${herraje.id}`"
-                                            v-model.number="herraje.cantidad"
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            placeholder="1"
-                                            @blur="guardarCantidadHerraje(herraje)"
-                                            @keyup.enter="guardarCantidadHerraje(herraje)"
-                                            class="quantity-input"
-                                        />
-                                        <button 
-                                            type="button"
-                                            class="btn-qty-control btn-qty-plus"
-                                            @click="incrementarCantidad(herraje)"
-                                            title="Aumentar"
-                                        >+</button>
-                                    </div>
-                                </div>
-                                <button class="btn-remove" @click="removerHerraje(herraje.id)" title="Remover">×</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="empty-list">
-                        <p>📭 No hay herrajes seleccionados</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarModalHerrajes = false">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -417,51 +307,6 @@
             </div>
         </div>
 
-        <!-- Modal Selector de Herrajes -->
-        <div v-if="mostrarSelectorHerrajes" class="modal-overlay" @click.self="mostrarSelectorHerrajes = false">
-            <div class="modal-content modal-content-large">
-                <div class="modal-header">
-                    <h3 class="modal-title">🔩 Seleccionar Herrajes</h3>
-                </div>
-                <div class="modal-body">
-                    <div class="search-section">
-                        <input 
-                            v-model="busquedaHerraje"
-                            type="text"
-                            class="search-input"
-                            placeholder="🔍 Buscar herraje..."
-                        />
-                    </div>
-                    <div class="materiales-grid">
-                        <div 
-                            v-for="herraje in herrajesFiltrados"
-                            :key="herraje.id"
-                            class="material-card"
-                            @click="agregarHerraje(herraje)"
-                        >
-                            <div class="card-header">
-                                <div class="card-name">{{ herraje.nombre }}</div>
-                                <div class="card-badge">{{ herraje.codigo }}</div>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-label">Precio Unitario</p>
-                                <p class="card-price">${{ formatCurrency(herraje.costo_unitario) }}</p>
-                            </div>
-                            <div class="card-footer">
-                                <button class="btn-select">+ Seleccionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-if="herrajesFiltrados.length === 0" class="empty-list">
-                        <p>📭 No hay herrajes disponibles</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" @click="mostrarSelectorHerrajes = false">Cerrar</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Modal Selector de Mano de Obra -->
         <div v-if="mostrarSelectorManoDeObra" class="modal-overlay" @click.self="mostrarSelectorManoDeObra = false">
             <div class="modal-content modal-content-large">
@@ -564,17 +409,13 @@ import { useRouter, useRoute } from 'vue-router';
 import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
-import { useCantidadPorHerraje } from '@/stores/cantidad-por-herraje';
 import { useMateriales } from '@/stores/materiales';
-import { useHerrajes } from '@/stores/herrajes';
 import { useManosDeObraStore } from '@/stores/mano-de-obra';
 
 const router = useRouter();
 const route = useRoute();
 const storeMaterialesPorComponente = useMaterialesPorComponente();
-const storeCantidadPorHerraje = useCantidadPorHerraje();
 const storeMateriales = useMateriales();
-const storeHerrajes = useHerrajes();
 const storeManosDeObra = useManosDeObraStore();
 
 // Estado
@@ -584,7 +425,6 @@ const formData = ref({
     descripcion: '',
     costo_unitario: '',
     materiales: [],
-    herrajes: [],
     mano_de_obra: null,
     acabado: null,
 });
@@ -613,32 +453,22 @@ const cerrarMensaje = () => {
     mensaje.value = null;
     tipoMensaje.value = null;
 };
-const cargandoMateriales = ref(false);
-const cargandoHerrajes = ref(false);
 const materialesDelComponente = ref([]);
-const herrajesDelComponente = ref([]);
 
 // Modales
 const mostrarModalMateriales = ref(false);
-const mostrarModalHerrajes = ref(false);
 const mostrarModalManoDeObra = ref(false);
 const mostrarModalAcabado = ref(false);
 const mostrarSelectorMateriales = ref(false);
 
 // Datos para seleccionar materiales
 const materialesDisponibles = ref([]);
-const materialSeleccionadoId = ref(null);
 const busquedaMaterial = ref('');
 
 // Total de horas calculado dinámicamente
 const totalHoras = computed(() => {
     return horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
 });
-
-// Datos para seleccionar herrajes
-const herrajesDisponibles = ref([]);
-const busquedaHerraje = ref('');
-const mostrarSelectorHerrajes = ref(false);
 
 // Datos para seleccionar mano de obra
 const manoDeObraDisponible = ref([]);
@@ -665,7 +495,6 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
 };
 
 const busquedaMaterialDebounced = createDebouncedRef(busquedaMaterial);
-const busquedaHerrajeDebounced = createDebouncedRef(busquedaHerraje);
 const busquedaManoDeObraDebounced = createDebouncedRef(busquedaManoDeObra);
 const busquedaAcabadoDebounced = createDebouncedRef(busquedaAcabado);
 
@@ -696,16 +525,12 @@ const cargarComponente = async () => {
             descripcion: data.descripcion || '',
             costo_unitario: data.costo_unitario || data.costo_total || '',
             materiales: data.materiales || [],
-            herrajes: data.herrajes || [],
             mano_de_obra: manoDeObraData || null,
             acabado: data.acabado_id || null,
         };
         
         // Cargar catálogos relacionados en paralelo
-        await Promise.all([
-            cargarMaterialesPorComponente(),
-            cargarHerrajesPorComponente()
-        ]);
+        await cargarMaterialesPorComponente();
     } catch (err) {
         error.value = 'Error al cargar el componente';
         console.error(err);
@@ -717,8 +542,6 @@ const cargarComponente = async () => {
 // Cargar materiales por componente
 const cargarMaterialesPorComponente = async () => {
     try {
-        cargandoMateriales.value = true;
-        
         // Cargar todos los materiales y sus relaciones con el componente
         await storeMateriales.fetchMaterialesAction();
         await storeMaterialesPorComponente.fetchMaterialesPorComponenteAction();
@@ -733,32 +556,6 @@ const cargarMaterialesPorComponente = async () => {
         }));
     } catch (err) {
         console.error('Error cargando materiales por componente:', err);
-    } finally {
-        cargandoMateriales.value = false;
-    }
-};
-
-// Cargar herrajes por componente
-const cargarHerrajesPorComponente = async () => {
-    try {
-        cargandoHerrajes.value = true;
-        
-        // Cargar el catálogo completo de herrajes y sus relaciones
-        await storeHerrajes.fetchHerralesAction();
-        await storeCantidadPorHerraje.fetchCantidadPorHerrajeAction();
-        
-        // Filtrar y enriquecer con datos del herraje
-        const componenteId = parseInt(route.params.id);
-        const herrajesRelacion = storeCantidadPorHerraje.getCantidadPorComponente(componenteId);
-        
-        herrajesDelComponente.value = herrajesRelacion.map(rel => ({
-            ...rel,
-            herraje: storeHerrajes.herrajes.find(h => h.id === rel.herraje_id) || {}
-        }));
-    } catch (err) {
-        console.error('Error cargando herrajes por componente:', err);
-    } finally {
-        cargandoHerrajes.value = false;
     }
 };
 
@@ -798,18 +595,6 @@ const formatCurrency = (value) => {
     return parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-// Métodos genéricos para remover elementos
-const removerDelFormulario = (tipo, id) => {
-    switch(tipo) {
-        case 'material':
-            formData.value.materiales = formData.value.materiales.filter(m => m.id !== id);
-            break;
-        case 'herraje':
-            removerHerraje(id);
-            break;
-    }
-};
-
 const removerMaterial = async (materialId) => {
     try {
         // Encontrar el registro de material-por-componente para este material
@@ -828,26 +613,6 @@ const removerMaterial = async (materialId) => {
         mostrarMensaje('❌ Error al eliminar material', 'error', 3000);
     }
 };
-const removerHerraje = async (herrajeId) => {
-    try {
-        // Encontrar el registro de cantidad-por-herraje para este herraje
-        const herrajeComp = herrajesDelComponente.value.find(h => h.id === herrajeId);
-        
-        if (herrajeComp && herrajeComp.id) {
-            // Eliminar del backend
-            await storeCantidadPorHerraje.eliminarCantidadPorHerrajeAction(herrajeComp.id);
-            
-            // Actualizar lista local
-            herrajesDelComponente.value = herrajesDelComponente.value.filter(h => h.id !== herrajeComp.id);
-            mostrarMensaje('✅ Herraje eliminado', 'success', 2000);
-        }
-    } catch (err) {
-        console.error('Error eliminando herraje:', err);
-        mostrarMensaje('❌ Error al eliminar herraje', 'error', 3000);
-    }
-};
-
-
 // Computed para obtener el registro de horas de la mano de obra actual
 const horaActual = computed(() => {
     const manoDeObraId = formData.value.mano_de_obra?.id;
@@ -942,68 +707,36 @@ const decrementarHora = async (index) => {
     }
 };
 
-const incrementarHorasTotal = async () => {
-    if (horasManoDeObra.value.length === 0) return;
-    const ultimoBloque = horasManoDeObra.value[horasManoDeObra.value.length - 1];
-    ultimoBloque.horas = Math.floor((ultimoBloque.horas || 0)) + 1;
-    await guardarCambiosHoras();
-};
-
-const decrementarHorasTotal = async () => {
-    if (horasManoDeObra.value.length === 0) return;
-    
-    const totalActual = horasManoDeObra.value.reduce((sum, h) => sum + (h.horas || 0), 0);
-    if (totalActual <= 1) return; // Mínimo 1 hora total
-    
-    // Encontrar y decrementar el primer bloque con horas > 0
-    const bloqueIndex = horasManoDeObra.value.findIndex(h => h.horas > 0);
-    if (bloqueIndex === -1) return;
-    
-    horasManoDeObra.value[bloqueIndex].horas = Math.max(0, horasManoDeObra.value[bloqueIndex].horas - 1);
-    await guardarCambiosHoras();
-    
-    // Limpiar bloques vacíos
-    horasManoDeObra.value = horasManoDeObra.value.filter(hora => (hora.horas || 0) > 0);
-};
-
-// Incrementar cantidad de material/herraje
+// Incrementar cantidad de material
 const incrementarCantidad = (item) => {
     if (item && typeof item.cantidad === 'number') {
         item.cantidad = Math.floor(item.cantidad) + 1;
     } else if (item) {
         item.cantidad = 2;
     }
-    // Detectar si es material (tiene material_id) o herraje (tiene herraje_id)
     if (item && item.material_id) {
         guardarCantidadMaterial(item);
-    } else if (item && item.herraje_id) {
-        guardarCantidadHerraje(item);
     }
 };
 
-// Decrementar cantidad de material/herraje
+// Decrementar cantidad de material
 const decrementarCantidad = (item) => {
     if (item && typeof item.cantidad === 'number' && item.cantidad > 1) {
         item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
     }
-    // Detectar si es material (tiene material_id) o herraje (tiene herraje_id)
     if (item && item.material_id) {
         guardarCantidadMaterial(item);
-    } else if (item && item.herraje_id) {
-        guardarCantidadHerraje(item);
     }
 };
 
-// Guardar cantidad genérica de material/herraje
-const guardarCantidad = async (item, tipo) => {
+const guardarCantidadMaterial = async (item) => {
     if (!item || !item.id) return;
     
     const cantidadFinal = Math.round(item.cantidad || 1);
     const maxCantidad = 50;
     
     if (cantidadFinal > maxCantidad) {
-        const emoji = tipo === 'material' ? '📦' : '🔩';
-        mostrarMensaje(`${emoji} La cantidad máxima permitida es ${maxCantidad} unidades`, 'warning', 3000);
+        mostrarMensaje(`📦 La cantidad máxima permitida es ${maxCantidad} unidades`, 'warning', 3000);
         item.cantidad = maxCantidad;
         return;
     }
@@ -1011,22 +744,15 @@ const guardarCantidad = async (item, tipo) => {
     item.cantidad = cantidadFinal;
     
     try {
-        const itemsList = tipo === 'material' ? materialesDelComponente.value : herrajesDelComponente.value;
-        const itemComp = itemsList.find(i => i.id === item.id);
+        const itemComp = materialesDelComponente.value.find(i => i.id === item.id);
         if (!itemComp?.id) return;
-        
-        const store = tipo === 'material' ? storeMaterialesPorComponente : storeCantidadPorHerraje;
-        const action = tipo === 'material' ? 'actualizarMaterialPorComponenteAction' : 'actualizarCantidadPorHerrajeAction';
-        
-        await store[action](itemComp.id, { cantidad: cantidadFinal });
+
+        await storeMaterialesPorComponente.actualizarMaterialPorComponenteAction(itemComp.id, { cantidad: cantidadFinal });
     } catch (err) {
-        console.error(`Error guardando cantidad de ${tipo}:`, err);
-        mostrarMensaje(`❌ Error al actualizar cantidad de ${tipo}`, 'error', 3000);
+        console.error('Error guardando cantidad de material:', err);
+        mostrarMensaje('❌ Error al actualizar cantidad de material', 'error', 3000);
     }
 };
-
-const guardarCantidadMaterial = (material) => guardarCantidad(material, 'material');
-const guardarCantidadHerraje = (herraje) => guardarCantidad(herraje, 'herraje');
 
 // Cargar catálogos de forma genérica
 const cargarCatalogo = async (endpoint, targetRef) => {
@@ -1047,7 +773,6 @@ const abrirSelector = async (endpoint, catalogRef, showRef) => {
 };
 
 const abrirSelectorMateriales = () => abrirSelector('/materiales', materialesDisponibles, mostrarSelectorMateriales);
-const abrirSelectorHerrajes = () => abrirSelector('/herrajes', herrajesDisponibles, mostrarSelectorHerrajes);
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
@@ -1071,11 +796,6 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
 const materialesFiltrados = computed(() => {
     const materialesAgregados = materialesDelComponente.value.map(m => m.material_id);
     return filtrarCatalogo(materialesDisponibles.value, busquedaMaterialDebounced.value, materialesAgregados);
-});
-
-const herrajesFiltrados = computed(() => {
-    const herrajesAgregados = herrajesDelComponente.value.map(h => h.herraje_id);
-    return filtrarCatalogo(herrajesDisponibles.value, busquedaHerrajeDebounced.value, herrajesAgregados);
 });
 
 // Métodos simplificados
@@ -1111,41 +831,6 @@ const agregarMaterial = async (material) => {
     } catch (err) {
         console.error('Error agregando material:', err);
         mostrarMensaje('❌ Error al agregar material', 'error', 3000);
-    }
-};
-
-const agregarHerraje = async (herraje) => {
-    try {
-        if (!herraje || !herraje.id) return;
-        
-        const yaExiste = herrajesDelComponente.value.some(h => h.herraje_id === herraje.id);
-        if (yaExiste) {
-            mostrarMensaje('⚠️ Este herraje ya está agregado', 'warning', 2000);
-            return;
-        }
-        
-        const resultado = await storeCantidadPorHerraje.crearCantidadPorHerrajeAction({
-            componente_id: parseInt(route.params.id),
-            herraje_id: herraje.id,
-            cantidad: 1
-        });
-        
-        const datosResultado = resultado.data || resultado;
-        herrajesDelComponente.value.push({
-            id: datosResultado.id,
-            componente_id: datosResultado.componente_id,
-            herraje_id: datosResultado.herraje_id,
-            cantidad: datosResultado.cantidad,
-            created_at: datosResultado.created_at,
-            herraje: { ...herraje }
-        });
-        
-        mostrarMensaje('✅ Herraje agregado', 'success', 2000);
-        mostrarSelectorHerrajes.value = false;
-        busquedaHerraje.value = '';
-    } catch (err) {
-        console.error('Error agregando herraje:', err);
-        mostrarMensaje('❌ Error al agregar herraje', 'error', 3000);
     }
 };
 
@@ -1655,109 +1340,6 @@ onMounted(async () => {
 .btn-secondary:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
-}
-
-.section-info {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
-    border: 1px solid #e8ddd7;
-    border-radius: 8px;
-}
-
-.section-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #5a4037;
-    margin: 0 0 1rem 0;
-}
-
-.info-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.info-item-card {
-    padding: 1rem;
-    background: white;
-    border-left: 3px solid #d4a574;
-    border-radius: 4px;
-}
-
-.info-label {
-    font-weight: 700;
-    color: #5a4037;
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.info-detail {
-    font-size: 0.9rem;
-    color: #8b7355;
-    margin: 0.25rem 0;
-}
-
-.empty-info {
-    padding: 1rem;
-    text-align: center;
-    color: #999;
-    font-style: italic;
-    background: white;
-    border-radius: 4px;
-}
-
-.loading-info {
-    padding: 1rem;
-    text-align: center;
-    color: #8b7355;
-    background: white;
-    border-radius: 4px;
-    border-left: 3px solid #d4a574;
-}
-
-.loading-info p {
-    margin: 0;
-}
-
-.quantity-badge {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    margin-left: 0.5rem;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    gap: 1rem;
-}
-
-.section-header .section-title {
-    margin: 0;
-}
-
-.btn-edit-small {
-    padding: 6px 12px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    white-space: nowrap;
-}
-
-.btn-edit-small:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.3);
 }
 
 /* Modal Styles */
