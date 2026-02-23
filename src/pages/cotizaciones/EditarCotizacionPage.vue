@@ -1558,7 +1558,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes, crearCliente, actualizarCliente } from '../../http/clientes-api';
@@ -1679,6 +1679,23 @@ const nuevoAcabado = ref({
     costo: ''
 });
 
+const createDebouncedRef = (sourceRef, delay = 180) => {
+    const debounced = ref(sourceRef.value);
+    let timeoutId;
+
+    watch(sourceRef, (value) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            debounced.value = value;
+        }, delay);
+    });
+
+    return debounced;
+};
+
+const busquedaComponenteDebounced = createDebouncedRef(busquedaComponente);
+const busquedaClienteDebounced = createDebouncedRef(busquedaCliente);
+
 const modulosAsignados = computed(() => {
     // Los módulos están en cotizacion.modulos
     return cotizacion.value?.modulos || [];
@@ -1693,10 +1710,10 @@ const componentesDisponiblesParaModulo = computed(() => {
     if (!moduloParaAgregarComponente.value) return [];
     
     // Obtener los IDs de componentes ya agregados a este módulo
-    const idsYaAgregados = (moduloParaAgregarComponente.value.componentes || []).map(c => c.id);
+    const idsYaAgregados = new Set((moduloParaAgregarComponente.value.componentes || []).map(c => c.id));
     
     // Filtrar componentes que no están en este módulo
-    return componentes.value.filter(c => !idsYaAgregados.includes(c.id));
+    return componentes.value.filter(c => !idsYaAgregados.has(c.id));
 });
 
 const todosComponentesDisponibles = computed(() => {
@@ -1707,11 +1724,11 @@ const todosComponentesDisponibles = computed(() => {
 const componentesFiltrados = computed(() => {
     const lista = moduloParaAgregarComponente.value ? componentesDisponiblesParaModulo.value : todosComponentesDisponibles.value;
     
-    if (!busquedaComponente.value) {
+    if (!busquedaComponenteDebounced.value) {
         return lista;
     }
     
-    const termino = busquedaComponente.value.toLowerCase();
+    const termino = busquedaComponenteDebounced.value.toLowerCase();
     return lista.filter(c => 
         c.nombre.toLowerCase().includes(termino) ||
         c.codigo?.toLowerCase().includes(termino) ||
@@ -1720,11 +1737,11 @@ const componentesFiltrados = computed(() => {
 });
 
 const clientesFiltrados = computed(() => {
-    if (!busquedaCliente.value) {
+    if (!busquedaClienteDebounced.value) {
         return clientes.value;
     }
     
-    const termino = busquedaCliente.value.toLowerCase();
+    const termino = busquedaClienteDebounced.value.toLowerCase();
     return clientes.value.filter(c => 
         c.nombre.toLowerCase().includes(termino) ||
         c.empresa?.toLowerCase().includes(termino) ||
@@ -1735,13 +1752,9 @@ const clientesFiltrados = computed(() => {
 
 const todosLosComponentes = computed(() => {
     const componentes = [];
-    
-    console.log('🔄 Recalculando todosLosComponentes...');
-    console.log('📊 Módulos en cotización:', cotizacion.value?.modulos?.length || 0);
-    
+
     if (cotizacion.value?.modulos && Array.isArray(cotizacion.value.modulos)) {
         cotizacion.value.modulos.forEach((modulo, moduloIndex) => {
-            console.log(`📦 Módulo ${modulo.nombre}: ${modulo.componentes?.length || 0} componentes`);
             if (modulo.componentes && Array.isArray(modulo.componentes)) {
                 for (const comp of modulo.componentes) {
                     componentes.push({
@@ -1756,8 +1769,7 @@ const todosLosComponentes = computed(() => {
             }
         });
     }
-    
-    console.log('✅ Total componentes en lista plana:', componentes.length);
+
     return componentes;
 });
 

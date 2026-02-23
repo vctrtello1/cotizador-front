@@ -479,7 +479,7 @@
                     </div>
                     <div class="materiales-grid">
                         <div 
-                            v-for="manoDeObra in manoDeObraFiltrada()"
+                            v-for="manoDeObra in manoDeObraFiltrada"
                             :key="manoDeObra.id"
                             class="material-card"
                             :class="{ 'selected': formData.mano_de_obra?.id === manoDeObra.id }"
@@ -499,7 +499,7 @@
                             </div>
                         </div>
                     </div>
-                    <div v-if="manoDeObraFiltrada().length === 0" class="empty-list">
+                    <div v-if="manoDeObraFiltrada.length === 0" class="empty-list">
                         <p>📭 No hay mano de obra disponible</p>
                     </div>
                 </div>
@@ -559,7 +559,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
@@ -650,6 +650,25 @@ const acabadosDisponibles = ref([]);
 const busquedaAcabado = ref('');
 const mostrarSelectorAcabados = ref(false);
 
+const createDebouncedRef = (sourceRef, delay = 180) => {
+    const debounced = ref(sourceRef.value);
+    let timeoutId;
+
+    watch(sourceRef, (value) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            debounced.value = value;
+        }, delay);
+    });
+
+    return debounced;
+};
+
+const busquedaMaterialDebounced = createDebouncedRef(busquedaMaterial);
+const busquedaHerrajeDebounced = createDebouncedRef(busquedaHerraje);
+const busquedaManoDeObraDebounced = createDebouncedRef(busquedaManoDeObra);
+const busquedaAcabadoDebounced = createDebouncedRef(busquedaAcabado);
+
 // Horas de mano de obra por componente
 const horasManoDeObra = ref([]);
 
@@ -659,21 +678,15 @@ const cargarComponente = async () => {
         cargando.value = true;
         const response = await getComponenteById(route.params.id);
         const data = response.data || response;
-        console.log('Componente cargado:', data);
-        console.log('costo_unitario:', data.costo_unitario);
-        console.log('costo_total:', data.costo_total);
         
         // Mano de obra: puede venir como objeto completo o como ID
         let manoDeObraData = null;
         if (data.mano_de_obra_id) {
             // Si es un objeto, usarlo directamente; si es ID, cargar desde API
             if (typeof data.mano_de_obra_id === 'object' && data.mano_de_obra_id.id) {
-                console.log('📦 Mano de obra viene como objeto:', data.mano_de_obra_id.nombre);
                 manoDeObraData = data.mano_de_obra_id;
             } else if (typeof data.mano_de_obra_id === 'number' || typeof data.mano_de_obra_id === 'string') {
-                console.log('📚 Cargando mano de obra ID:', data.mano_de_obra_id);
                 manoDeObraData = await storeManosDeObra.getManosDeObraByIdStore(data.mano_de_obra_id);
-                console.log('✅ Mano de obra cargada:', manoDeObraData);
             }
         }
         
@@ -688,11 +701,11 @@ const cargarComponente = async () => {
             acabado: data.acabado_id || null,
         };
         
-        // Cargar materiales por componente desde el API
-        await cargarMaterialesPorComponente();
-        
-        // Cargar herrajes por componente desde el API
-        await cargarHerrajesPorComponente();
+        // Cargar catálogos relacionados en paralelo
+        await Promise.all([
+            cargarMaterialesPorComponente(),
+            cargarHerrajesPorComponente()
+        ]);
     } catch (err) {
         error.value = 'Error al cargar el componente';
         console.error(err);
@@ -1039,11 +1052,11 @@ const abrirSelectorHerrajes = () => abrirSelector('/herrajes', herrajesDisponibl
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
     // itemsExistentes puede ser un array de objetos o un array de IDs
-    const existentesIds = Array.isArray(itemsExistentes) 
+    const existentesIds = new Set(Array.isArray(itemsExistentes) 
         ? itemsExistentes.map(item => typeof item === 'object' ? item.id : item)
-        : [];
+        : []);
     
-    const filtrados = catalog.filter(item => !existentesIds.includes(item.id));
+    const filtrados = catalog.filter(item => !existentesIds.has(item.id));
     
     if (!busqueda.trim()) return filtrados;
     
@@ -1057,12 +1070,12 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
 // Computed properties para filtros
 const materialesFiltrados = computed(() => {
     const materialesAgregados = materialesDelComponente.value.map(m => m.material_id);
-    return filtrarCatalogo(materialesDisponibles.value, busquedaMaterial.value, materialesAgregados);
+    return filtrarCatalogo(materialesDisponibles.value, busquedaMaterialDebounced.value, materialesAgregados);
 });
 
 const herrajesFiltrados = computed(() => {
     const herrajesAgregados = herrajesDelComponente.value.map(h => h.herraje_id);
-    return filtrarCatalogo(herrajesDisponibles.value, busquedaHerraje.value, herrajesAgregados);
+    return filtrarCatalogo(herrajesDisponibles.value, busquedaHerrajeDebounced.value, herrajesAgregados);
 });
 
 // Métodos simplificados
@@ -1238,16 +1251,16 @@ const agregarManoDeObra = async (manoDeObra) => {
 };
 
 // Filtrar mano de obra disponible
-const manoDeObraFiltrada = () => {
-    if (busquedaManoDeObra.value.trim()) {
-        const busqueda = busquedaManoDeObra.value.toLowerCase();
+const manoDeObraFiltrada = computed(() => {
+    if (busquedaManoDeObraDebounced.value.trim()) {
+        const busqueda = busquedaManoDeObraDebounced.value.toLowerCase();
         return manoDeObraDisponible.value.filter(m => 
             m.nombre.toLowerCase().includes(busqueda) ||
             (m.codigo && m.codigo.toLowerCase().includes(busqueda))
         );
     }
     return manoDeObraDisponible.value;
-};
+});
 
 // Abrir selector de acabados
 const abrirSelectorAcabados = async () => {
@@ -1268,8 +1281,8 @@ const agregarAcabado = (acabado) => {
 
 // Filtrar acabados disponibles
 const acabadosFiltrados = computed(() => {
-    if (busquedaAcabado.value.trim()) {
-        const busqueda = busquedaAcabado.value.toLowerCase();
+    if (busquedaAcabadoDebounced.value.trim()) {
+        const busqueda = busquedaAcabadoDebounced.value.toLowerCase();
         return acabadosDisponibles.value.filter(a => 
             a.nombre.toLowerCase().includes(busqueda) ||
             a.codigo.toLowerCase().includes(busqueda)

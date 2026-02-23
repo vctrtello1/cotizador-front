@@ -1,42 +1,3 @@
-import CotizacionesPage from "@/pages/cotizaciones/CotizacionesPage.vue";
-import CotizacionDetalladaPage from "@/pages/cotizaciones/CotizacionDetalladaPage.vue";
-import NuevaCotizacionPage from "@/pages/cotizaciones/NuevaCotizacionPage.vue";
-import EditarCotizacionPage from "@/pages/cotizaciones/EditarCotizacionPage.vue";
-import NuevoModuloPage from "@/pages/modulos/NuevoModuloPage.vue";
-import EditarModuloPage from "@/pages/modulos/EditarModuloPage.vue";
-import ModulosPage from "@/pages/modulos/ModulosPage.vue";
-import ComponentesPage from "@/pages/componentes/ComponentesPage.vue";
-import NuevoComponentePage from "@/pages/componentes/NuevoComponentePage.vue";
-import EditarComponentePage from "@/pages/componentes/EditarComponentePage.vue";
-import MaterialesPage from "@/pages/materiales/MaterialesPage.vue";
-import NuevoMaterial from "@/pages/materiales/NuevoMaterial.vue";
-import EditarMaterial from "@/pages/materiales/EditarMaterial.vue";
-import AcabadosPage from "@/pages/acabados/AcabadosPage.vue";
-import NuevoAcabadoPage from "@/pages/acabados/NuevoAcabadoPage.vue";
-import EditarAcabadoPage from "@/pages/acabados/EditarAcabadoPage.vue";
-import TiposDeMateriales from "@/pages/tiipoDeMaterial/TiposDeMateriales.vue";
-import NuevoTipoMaterialPage from "@/pages/tiipoDeMaterial/NuevoTipoMaterialPage.vue";
-import EditarTipoMaterialPage from "@/pages/tiipoDeMaterial/EditarTipoMaterialPage.vue";
-import ManoDeObraPage from "@/pages/mano-de-obra/ManoDeObraPage.vue";
-import NuevoManoDeObraPage from "@/pages/mano-de-obra/NuevoManoDeObraPage.vue";
-import EditarManoDeObraPage from "@/pages/mano-de-obra/EditarManoDeObraPage.vue";
-import EstructurasPage from "@/pages/estructuras/EstructurasPage.vue";
-import NuevaEstructuraPage from "@/pages/estructuras/NuevaEstructuraPage.vue";
-import EditarEstructuraPage from "@/pages/estructuras/EditarEstructuraPage.vue";
-import AcabadoTableroPage from "@/pages/acabadoTabllero/AcabadoTableroPage.vue";
-import NuevoAcabadoTableroPage from "@/pages/acabadoTabllero/NuevoAcabadoTableroPage.vue";
-import EditarAcabadoTableroPage from "@/pages/acabadoTabllero/EditarAcabadoTableroPage.vue";
-import AcabadoCubreCantoPage from "@/pages/acabadoCubreCanto/AcabadoCubreCantoPage.vue";
-import CorrederasPage from "@/pages/correderas/CorrederasPage.vue";
-import NuevaCorrederaPage from "@/pages/correderas/NuevaCorrederaPage.vue";
-import EditarCorrederaPage from "@/pages/correderas/EditarCorrederaPage.vue";
-import CompasesAbatiblesPage from "@/pages/compases-abatibles/CompasesAbatiblesPage.vue";
-import NuevoCompasAbatiblePage from "@/pages/compases-abatibles/NuevoCompasAbatiblePage.vue";
-import EditarCompasAbatiblePage from "@/pages/compases-abatibles/EditarCompasAbatiblePage.vue";
-import PuertasPage from "@/pages/puertas/PuertasPage.vue";
-import NuevaPuertaPage from "@/pages/puertas/NuevaPuertaPage.vue";
-import EditarPuertaPage from "@/pages/puertas/EditarPuertaPage.vue";
-
 export const routes = [
     {
         path: "/",
@@ -45,192 +6,192 @@ export const routes = [
     {
         path: "/cotizaciones",
         name: "Cotizaciones",
-        component: CotizacionesPage,
+        component: () => import("@/pages/cotizaciones/CotizacionesPage.vue"),
     },
     {
         path: "/nueva-cotizacion",
         name: "NuevaCotizacion",
-        component: NuevaCotizacionPage,
+        component: () => import("@/pages/cotizaciones/NuevaCotizacionPage.vue"),
     },
     {
         path: "/cotizacion-detallada/:id",
         name: "CotizacionDetallada",
-        component: CotizacionDetalladaPage,
+        component: () => import("@/pages/cotizaciones/CotizacionDetalladaPage.vue"),
     },
     {
         path: "/editar-cotizacion/:id",
         name: "EditarCotizacion",
-        component: EditarCotizacionPage,
+        component: () => import("@/pages/cotizaciones/EditarCotizacionPage.vue"),
     },
     {
         path: "/modulos",
         name: "Modulos",
-        component: ModulosPage,
+        component: () => import("@/pages/modulos/ModulosPage.vue"),
     },
     {
         path: "/nuevo-modulo",
         name: "NuevoModulo",
-        component: NuevoModuloPage,
+        component: () => import("@/pages/modulos/NuevoModuloPage.vue"),
     },
     {
         path: "/editar-modulo/:id",
         name: "EditarModulo",
-        component: EditarModuloPage,
+        component: () => import("@/pages/modulos/EditarModuloPage.vue"),
     },
     {
         path: "/componentes",
         name: "Componentes",
-        component: ComponentesPage,
+        component: () => import("@/pages/componentes/ComponentesPage.vue"),
     },
     {
         path: "/nuevo-componente",
         name: "NuevoComponente",
-        component: NuevoComponentePage,
+        component: () => import("@/pages/componentes/NuevoComponentePage.vue"),
     },
     {
         path: "/editar-componente/:id",
         name: "EditarComponente",
-        component: EditarComponentePage,
+        component: () => import("@/pages/componentes/EditarComponentePage.vue"),
     },
     {
         path: "/materiales",
         name: "Materiales",
-        component: MaterialesPage,
+        component: () => import("@/pages/materiales/MaterialesPage.vue"),
     },
     {
         path: "/nuevo-material",
         name: "NuevoMaterial",
-        component: NuevoMaterial,
+        component: () => import("@/pages/materiales/NuevoMaterial.vue"),
     },
     {
         path: "/editar-material/:id",
         name: "EditarMaterial",
-        component: EditarMaterial,
+        component: () => import("@/pages/materiales/EditarMaterial.vue"),
     },
     {
         path: "/acabados",
         name: "Acabados",
-        component: AcabadosPage,
+        component: () => import("@/pages/acabados/AcabadosPage.vue"),
     },
     {
         path: "/nuevo-acabado",
         name: "NuevoAcabado",
-        component: NuevoAcabadoPage,
+        component: () => import("@/pages/acabados/NuevoAcabadoPage.vue"),
     },
     {
         path: "/editar-acabado/:id",
         name: "EditarAcabado",
-        component: EditarAcabadoPage,
+        component: () => import("@/pages/acabados/EditarAcabadoPage.vue"),
     },
     {
         path: "/tipo-de-material",
         name: "TiposDeMateriales",
-        component: TiposDeMateriales,
+        component: () => import("@/pages/tiipoDeMaterial/TiposDeMateriales.vue"),
     },
     {
         path: "/nuevo-tipo-material",
         name: "NuevoTipoMaterial",
-        component: NuevoTipoMaterialPage,
+        component: () => import("@/pages/tiipoDeMaterial/NuevoTipoMaterialPage.vue"),
     },
     {
         path: "/editar-tipo-material/:id",
         name: "EditarTipoMaterial",
-        component: EditarTipoMaterialPage,
+        component: () => import("@/pages/tiipoDeMaterial/EditarTipoMaterialPage.vue"),
     },
     {
         path: "/mano-de-obra",
         name: "ManoDeObra",
-        component: ManoDeObraPage,
+        component: () => import("@/pages/mano-de-obra/ManoDeObraPage.vue"),
     },
     {
         path: "/nuevo-mano-de-obra",
         name: "NuevoManoDeObra",
-        component: NuevoManoDeObraPage,
+        component: () => import("@/pages/mano-de-obra/NuevoManoDeObraPage.vue"),
     },
     {
         path: "/editar-mano-de-obra/:id",
         name: "EditarManoDeObra",
-        component: EditarManoDeObraPage,
+        component: () => import("@/pages/mano-de-obra/EditarManoDeObraPage.vue"),
     },
     {
         path: "/estructuras",
         name: "Estructuras",
-        component: EstructurasPage,
+        component: () => import("@/pages/estructuras/EstructurasPage.vue"),
     },
     {
         path: "/nueva-estructura",
         name: "NuevaEstructura",
-        component: NuevaEstructuraPage,
+        component: () => import("@/pages/estructuras/NuevaEstructuraPage.vue"),
     },
     {
         path: "/editar-estructura/:id",
         name: "EditarEstructura",
-        component: EditarEstructuraPage,
+        component: () => import("@/pages/estructuras/EditarEstructuraPage.vue"),
     },
     {
         path: "/acabado-tablero",
         name: "AcabadoTablero",
-        component: AcabadoTableroPage,
+        component: () => import("@/pages/acabadoTabllero/AcabadoTableroPage.vue"),
     },
     {
         path: "/nuevo-acabado-tablero",
         name: "NuevoAcabadoTablero",
-        component: NuevoAcabadoTableroPage,
+        component: () => import("@/pages/acabadoTabllero/NuevoAcabadoTableroPage.vue"),
     },
     {
         path: "/editar-acabado-tablero/:id",
         name: "EditarAcabadoTablero",
-        component: EditarAcabadoTableroPage,
+        component: () => import("@/pages/acabadoTabllero/EditarAcabadoTableroPage.vue"),
     },
     {
         path: "/acabado-cubre-canto",
         name: "AcabadoCubreCanto",
-        component: AcabadoCubreCantoPage,
+        component: () => import("@/pages/acabadoCubreCanto/AcabadoCubreCantoPage.vue"),
     },
     {
         path: "/correderas",
         name: "Correderas",
-        component: CorrederasPage,
+        component: () => import("@/pages/correderas/CorrederasPage.vue"),
     },
     {
         path: "/nueva-corredera",
         name: "NuevaCorredera",
-        component: NuevaCorrederaPage,
+        component: () => import("@/pages/correderas/NuevaCorrederaPage.vue"),
     },
     {
         path: "/editar-corredera/:id",
         name: "EditarCorredera",
-        component: EditarCorrederaPage,
+        component: () => import("@/pages/correderas/EditarCorrederaPage.vue"),
     },
     {
         path: "/compases-abatibles",
         name: "CompasesAbatibles",
-        component: CompasesAbatiblesPage,
+        component: () => import("@/pages/compases-abatibles/CompasesAbatiblesPage.vue"),
     },
     {
         path: "/nuevo-compas-abatible",
         name: "NuevoCompasAbatible",
-        component: NuevoCompasAbatiblePage,
+        component: () => import("@/pages/compases-abatibles/NuevoCompasAbatiblePage.vue"),
     },
     {
         path: "/editar-compas-abatible/:id",
         name: "EditarCompasAbatible",
-        component: EditarCompasAbatiblePage,
+        component: () => import("@/pages/compases-abatibles/EditarCompasAbatiblePage.vue"),
     },
     {
         path: "/puertas",
         name: "Puertas",
-        component: PuertasPage,
+        component: () => import("@/pages/puertas/PuertasPage.vue"),
     },
     {
         path: "/nueva-puerta",
         name: "NuevaPuerta",
-        component: NuevaPuertaPage,
+        component: () => import("@/pages/puertas/NuevaPuertaPage.vue"),
     },
     {
         path: "/editar-puerta/:id",
         name: "EditarPuerta",
-        component: EditarPuertaPage,
+        component: () => import("@/pages/puertas/EditarPuertaPage.vue"),
     }
 
 ];
