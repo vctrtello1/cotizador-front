@@ -59,11 +59,18 @@
                         <strong class="stat-value">{{ tablerosDelComponente.length }} <small>tipos</small> · {{ totalCantidadTableros }} <small>u</small></strong>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏗️</div>
+                    <div class="stat-content">
+                        <span class="stat-label">Estructuras</span>
+                        <strong class="stat-value">{{ estructurasDelComponente.length }} <small>tipos</small> · {{ totalCantidadEstructuras }} <small>u</small></strong>
+                    </div>
+                </div>
                 <div class="stat-card stat-card--highlight">
                     <div class="stat-icon">💰</div>
                     <div class="stat-content">
-                        <span class="stat-label">Costo tableros</span>
-                        <strong class="stat-value">${{ formatCurrency(totalCostoTableros) }}</strong>
+                        <span class="stat-label">Costo total</span>
+                        <strong class="stat-value">${{ formatCurrency(totalCostoTableros + totalCostoEstructuras) }}</strong>
                     </div>
                 </div>
             </div>
@@ -195,6 +202,94 @@
                     <div class="empty-icon">📭</div>
                     <p>No hay tableros asignados</p>
                     <button type="button" class="btn-empty-action" @click="mostrarModalTableros = true">+ Agregar tablero</button>
+                </div>
+            </div>
+
+            <!-- Estructuras Asociadas -->
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">🏗️ Estructuras Asociadas</h2>
+                    <button
+                        type="button"
+                        class="btn-action-header"
+                        @click="abrirSelectorEstructuras"
+                    >
+                        + Gestionar
+                    </button>
+                </div>
+
+                <transition-group name="list" tag="div" v-if="estructurasDelComponente.length">
+                    <!-- Resumen métricas -->
+                    <div key="resumen-est" class="tableros-metrics">
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ estructurasDelComponente.length }}</span>
+                            <span class="metric-label">Tipos</span>
+                        </div>
+                        <div class="metric-pill">
+                            <span class="metric-number">{{ totalCantidadEstructuras }}</span>
+                            <span class="metric-label">Unidades</span>
+                        </div>
+                        <div class="metric-pill metric-pill--accent">
+                            <span class="metric-number">${{ formatCurrency(totalCostoEstructuras) }}</span>
+                            <span class="metric-label">Costo total</span>
+                        </div>
+                    </div>
+
+                    <!-- Lista de estructuras -->
+                    <div v-for="estructura in estructurasOrdenadasParaVista" :key="`vista-estructura-${estructura.id}`" class="tablero-card">
+                        <div class="tablero-card-left">
+                            <div class="tablero-avatar">🏗️</div>
+                            <div class="tablero-info">
+                                <div class="tablero-name">{{ obtenerNombreEstructura(estructura) }}</div>
+                                <div class="tablero-code">{{ obtenerCodigoEstructura(estructura) }}</div>
+                            </div>
+                        </div>
+                        <div class="tablero-card-center">
+                            <div class="tablero-pricing">
+                                <span class="tablero-unit-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(estructura)) }} <small>c/u</small></span>
+                                <span class="tablero-subtotal">${{ formatCurrency(obtenerSubtotalEstructura(estructura)) }}</span>
+                            </div>
+                        </div>
+                        <div class="tablero-card-right">
+                            <div class="quantity-controls-compact">
+                                <button
+                                    type="button"
+                                    class="btn-qty btn-qty--minus"
+                                    @click="decrementarCantidadEstructura(estructura)"
+                                    title="Disminuir"
+                                >−</button>
+                                <input
+                                    :id="`qty-estructura-vista-${estructura.id}`"
+                                    v-model.number="estructura.cantidad"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    placeholder="1"
+                                    @blur="guardarCantidadEstructura(estructura)"
+                                    @keyup.enter="guardarCantidadEstructura(estructura)"
+                                    class="qty-input"
+                                />
+                                <button
+                                    type="button"
+                                    class="btn-qty btn-qty--plus"
+                                    @click="incrementarCantidadEstructura(estructura)"
+                                    title="Aumentar"
+                                >+</button>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn-delete-sm"
+                                @click="removerEstructura(estructura.id)"
+                                title="Eliminar estructura"
+                            >🗑</button>
+                        </div>
+                    </div>
+                </transition-group>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-icon">📭</div>
+                    <p>No hay estructuras asignadas</p>
+                    <button type="button" class="btn-empty-action" @click="abrirSelectorEstructuras">+ Agregar estructura</button>
                 </div>
             </div>
 
@@ -661,6 +756,118 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Estructuras -->
+        <div v-if="mostrarModalEstructuras" class="modal-overlay" @click.self="mostrarModalEstructuras = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">🏗️ Editar Estructuras</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="add-section">
+                        <button
+                            type="button"
+                            class="btn-add-material"
+                            @click="abrirSelectorEstructuras"
+                        >+ Agregar Estructura</button>
+                    </div>
+
+                    <div v-if="estructurasDelComponente && estructurasDelComponente.length > 0" class="selected-items">
+                        <h4 class="items-subtitle">Estructuras Seleccionadas</h4>
+                        <div class="items-grid">
+                            <div v-for="estructura in estructurasDelComponente" :key="estructura.id" class="selected-item-edit">
+                                <div class="item-info">
+                                    <div class="item-name">{{ obtenerNombreEstructura(estructura) }}</div>
+                                    <div class="item-code">{{ obtenerCodigoEstructura(estructura) }}</div>
+                                    <div class="item-price">${{ formatCurrency(obtenerCostoUnitarioEstructura(estructura)) }} c/u</div>
+                                    <div class="item-subtotal">Subtotal: ${{ formatCurrency(obtenerSubtotalEstructura(estructura)) }}</div>
+                                </div>
+                                <div class="quantity-input-group">
+                                    <label :for="`qty-estructura-${estructura.id}`">Cantidad (unidades)</label>
+                                    <div class="quantity-controls">
+                                        <button
+                                            type="button"
+                                            class="btn-qty-control btn-qty-minus"
+                                            @click="decrementarCantidadEstructura(estructura)"
+                                            title="Disminuir"
+                                        >−</button>
+                                        <input
+                                            :id="`qty-estructura-${estructura.id}`"
+                                            v-model.number="estructura.cantidad"
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            placeholder="1"
+                                            @blur="guardarCantidadEstructura(estructura)"
+                                            @keyup.enter="guardarCantidadEstructura(estructura)"
+                                            class="quantity-input"
+                                        />
+                                        <button
+                                            type="button"
+                                            class="btn-qty-control btn-qty-plus"
+                                            @click="incrementarCantidadEstructura(estructura)"
+                                            title="Aumentar"
+                                        >+</button>
+                                    </div>
+                                </div>
+                                <button class="btn-remove" @click="removerEstructura(estructura.id)" title="Remover">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="empty-list">
+                        <p>📭 No hay estructuras seleccionadas</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarModalEstructuras = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Selector de Estructuras -->
+        <div v-if="mostrarSelectorEstructuras" class="modal-overlay" @click.self="mostrarSelectorEstructuras = false">
+            <div class="modal-content modal-content-large">
+                <div class="modal-header">
+                    <h3 class="modal-title">🏗️ Seleccionar Estructuras</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="search-section">
+                        <input
+                            v-model="busquedaEstructura"
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar estructura..."
+                        />
+                    </div>
+                    <div class="materiales-grid">
+                        <div
+                            v-for="estructura in estructurasFiltradas"
+                            :key="estructura.id"
+                            class="material-card"
+                            @click="agregarEstructura(estructura)"
+                        >
+                            <div class="card-header">
+                                <div class="card-name">{{ estructura.nombre }}</div>
+                                <div class="card-badge">{{ estructura.codigo }}</div>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-label">Costo Unitario</p>
+                                <p class="card-price">${{ formatCurrency(estructura.costo_unitario || estructura.costo || estructura.precio || 0) }}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-select">+ Seleccionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="estructurasFiltradas.length === 0" class="empty-list">
+                        <p>📭 No hay estructuras disponibles</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="mostrarSelectorEstructuras = false">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -672,6 +879,8 @@ import { getComponenteById } from '@/http/componentes-api';
 import { useMaterialesPorComponente } from '@/stores/materiales-por-componente';
 import { useMateriales } from '@/stores/materiales';
 import { useTablerosPorComponenteStore } from '@/stores/tableros-por-componente';
+import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-componente';
+import { useEstructuraStore } from '@/stores/estructura';
 
 const router = useRouter();
 const route = useRoute();
@@ -679,6 +888,8 @@ const componenteId = computed(() => Number.parseInt(route.params.id, 10) || 0);
 const storeMaterialesPorComponente = useMaterialesPorComponente();
 const storeMateriales = useMateriales();
 const storeTablerosPorComponente = useTablerosPorComponenteStore();
+const storeEstructurasPorComponente = useEstructurasPorComponenteStore();
+const storeEstructuras = useEstructuraStore();
 
 // Estado
 const formData = ref({
@@ -717,14 +928,17 @@ const cerrarMensaje = () => {
 };
 const materialesDelComponente = ref([]);
 const tablerosDelComponente = ref([]);
+const estructurasDelComponente = ref([]);
 
 // Modales
 const mostrarModalMateriales = ref(false);
 const mostrarModalManoDeObra = ref(false);
 const mostrarModalAcabado = ref(false);
 const mostrarModalTableros = ref(false);
+const mostrarModalEstructuras = ref(false);
 const mostrarSelectorMateriales = ref(false);
 const mostrarSelectorTableros = ref(false);
+const mostrarSelectorEstructuras = ref(false);
 
 // Datos para seleccionar materiales
 const materialesDisponibles = ref([]);
@@ -732,6 +946,9 @@ const busquedaMaterial = ref('');
 const tablerosDisponibles = ref([]);
 const busquedaTablero = ref('');
 const campoIdTableroRelacion = ref('tablero_id');
+const estructurasDisponibles = ref([]);
+const busquedaEstructura = ref('');
+const campoIdEstructuraRelacion = ref('estructura_id');
 
 // Total de horas calculado dinámicamente
 const totalHoras = computed(() => {
@@ -769,9 +986,11 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
 
 const busquedaMaterialDebounced = createDebouncedRef(busquedaMaterial);
 const busquedaTableroDebounced = createDebouncedRef(busquedaTablero);
+const busquedaEstructuraDebounced = createDebouncedRef(busquedaEstructura);
 const busquedaManoDeObraDebounced = createDebouncedRef(busquedaManoDeObra);
 const busquedaAcabadoDebounced = createDebouncedRef(busquedaAcabado);
 const tablerosDisponiblesMap = computed(() => new Map((tablerosDisponibles.value || []).map(tablero => [tablero.id, tablero])));
+const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles.value || []).map(e => [e.id, e])));
 
 // Horas de mano de obra por componente
 const horasManoDeObra = ref([]);
@@ -809,6 +1028,7 @@ const cargarComponente = async () => {
         await Promise.all([
             cargarMaterialesPorComponente(),
             cargarTablerosPorComponente(),
+            cargarEstructurasPorComponente(),
         ]);
     } catch (err) {
         error.value = 'Error al cargar el componente';
@@ -946,6 +1166,71 @@ const detalleTablerosCompleto = computed(() => {
         .join(' · ');
 });
 
+// ========== Estructuras helpers ==========
+const obtenerIdEstructuraRelacion = (registro) => {
+    return registro?.estructura_id
+        ?? registro?.estructura?.id
+        ?? registro?.estructuraId
+        ?? null;
+};
+
+const normalizarEstructuraRelacion = (registro) => {
+    const estructuraId = obtenerIdEstructuraRelacion(registro);
+    const estructura = registro?.estructura
+        || estructurasDisponiblesMap.value.get(estructuraId)
+        || {};
+
+    return {
+        ...registro,
+        estructura_id: estructuraId,
+        cantidad: Number(registro?.cantidad || 1),
+        estructura,
+    };
+};
+
+const obtenerNombreEstructura = (registro) => {
+    const estructuraId = obtenerIdEstructuraRelacion(registro);
+    const estructura = registro?.estructura
+        || estructurasDisponiblesMap.value.get(estructuraId)
+        || null;
+    return estructura?.nombre || `Estructura #${estructuraId || 'N/A'}`;
+};
+
+const obtenerCodigoEstructura = (registro) => {
+    const estructuraId = obtenerIdEstructuraRelacion(registro);
+    const estructura = registro?.estructura
+        || estructurasDisponiblesMap.value.get(estructuraId)
+        || null;
+    return estructura?.codigo || '—';
+};
+
+const obtenerCostoUnitarioEstructura = (registro) => {
+    const estructuraId = obtenerIdEstructuraRelacion(registro);
+    const estructura = registro?.estructura
+        || estructurasDisponiblesMap.value.get(estructuraId)
+        || null;
+    return Number(estructura?.costo_unitario ?? estructura?.costo ?? estructura?.precio ?? 0) || 0;
+};
+
+const obtenerSubtotalEstructura = (registro) => {
+    const cantidad = Number(registro?.cantidad || 0) || 0;
+    return obtenerCostoUnitarioEstructura(registro) * cantidad;
+};
+
+const estructurasOrdenadasParaVista = computed(() => {
+    return [...estructurasDelComponente.value].sort((a, b) => {
+        return obtenerNombreEstructura(a).localeCompare(obtenerNombreEstructura(b), 'es', { sensitivity: 'base' });
+    });
+});
+
+const totalCantidadEstructuras = computed(() => {
+    return estructurasDelComponente.value.reduce((sum, e) => sum + (Number(e?.cantidad || 0) || 0), 0);
+});
+
+const totalCostoEstructuras = computed(() => {
+    return estructurasDelComponente.value.reduce((sum, e) => sum + obtenerSubtotalEstructura(e), 0);
+});
+
 const cargarTablerosPorComponente = async () => {
     try {
         if (!tablerosDisponibles.value.length) {
@@ -968,6 +1253,27 @@ const cargarTablerosPorComponente = async () => {
     } catch (err) {
         console.error('Error cargando tableros por componente:', err);
         tablerosDelComponente.value = [];
+    }
+};
+
+// Cargar estructuras por componente
+const cargarEstructurasPorComponente = async () => {
+    try {
+        // Precargar catálogo de estructuras
+        if (!estructurasDisponibles.value.length) {
+            await storeEstructuras.fetchEstructuras();
+            estructurasDisponibles.value = storeEstructuras.estructuras || [];
+        }
+
+        const response = await storeEstructurasPorComponente.fetchEstructurasPorComponente();
+        const data = Array.isArray(response) ? response : [];
+
+        estructurasDelComponente.value = data
+            .filter(item => Number(item?.componente_id) === componenteId.value)
+            .map(normalizarEstructuraRelacion);
+    } catch (err) {
+        console.error('Error cargando estructuras por componente:', err);
+        estructurasDelComponente.value = [];
     }
 };
 
@@ -1175,6 +1481,11 @@ const abrirSelector = async (endpoint, catalogRef, showRef) => {
 
 const abrirSelectorMateriales = () => abrirSelector('/materiales', materialesDisponibles, mostrarSelectorMateriales);
 const abrirSelectorTableros = () => abrirSelector('/acabado-tableros', tablerosDisponibles, mostrarSelectorTableros);
+const abrirSelectorEstructuras = async () => {
+    await storeEstructuras.fetchEstructuras();
+    estructurasDisponibles.value = storeEstructuras.estructuras || [];
+    mostrarSelectorEstructuras.value = true;
+};
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
@@ -1203,6 +1514,11 @@ const materialesFiltrados = computed(() => {
 const tablerosFiltrados = computed(() => {
     const tablerosAgregados = tablerosDelComponente.value.map(t => t.tablero_id);
     return filtrarCatalogo(tablerosDisponibles.value, busquedaTableroDebounced.value, tablerosAgregados);
+});
+
+const estructurasFiltradas = computed(() => {
+    const estructurasAgregadas = estructurasDelComponente.value.map(e => obtenerIdEstructuraRelacion(e));
+    return filtrarCatalogo(estructurasDisponibles.value, busquedaEstructuraDebounced.value, estructurasAgregadas);
 });
 
 // Métodos simplificados
@@ -1328,6 +1644,99 @@ const removerTablero = async (tableroRelacionId) => {
     } catch (err) {
         console.error('Error eliminando tablero:', err);
         mostrarMensaje('❌ Error al eliminar tablero', 'error', 3000);
+    }
+};
+
+// ========== Estructuras CRUD ==========
+const agregarEstructura = async (estructura) => {
+    try {
+        if (!estructura || !estructura.id) return;
+
+        const yaExiste = estructurasDelComponente.value.some(e => obtenerIdEstructuraRelacion(e) === estructura.id);
+        if (yaExiste) {
+            mostrarMensaje('⚠️ Esta estructura ya está agregada', 'warning', 2000);
+            return;
+        }
+
+        const payload = {
+            componente_id: componenteId.value,
+            [campoIdEstructuraRelacion.value]: estructura.id,
+            cantidad: 1,
+        };
+
+        let resultado;
+        try {
+            resultado = await storeEstructurasPorComponente.crearEstructuraPorComponente(payload);
+        } catch (err) {
+            // Intentar con campo alternativo si falla
+            if (campoIdEstructuraRelacion.value === 'estructura_id') {
+                campoIdEstructuraRelacion.value = 'acabado_estructura_id';
+                payload.acabado_estructura_id = estructura.id;
+                delete payload.estructura_id;
+                resultado = await storeEstructurasPorComponente.crearEstructuraPorComponente(payload);
+            } else {
+                throw err;
+            }
+        }
+
+        const datosResultado = normalizarEstructuraRelacion(resultado?.data || resultado || {});
+        estructurasDelComponente.value.push({
+            ...datosResultado,
+            estructura_id: estructura.id,
+            cantidad: Number(datosResultado.cantidad || 1),
+            estructura: { ...estructura },
+        });
+
+        mostrarMensaje('✅ Estructura agregada', 'success', 2000);
+        mostrarSelectorEstructuras.value = false;
+        busquedaEstructura.value = '';
+    } catch (err) {
+        console.error('Error agregando estructura:', err);
+        mostrarMensaje('❌ Error al agregar estructura', 'error', 3000);
+    }
+};
+
+const guardarCantidadEstructura = async (item) => {
+    if (!item || !item.id) return;
+
+    const cantidadFinal = Math.round(item.cantidad || 1);
+    if (cantidadFinal < 1) {
+        item.cantidad = 1;
+        return;
+    }
+    item.cantidad = cantidadFinal;
+
+    try {
+        await storeEstructurasPorComponente.actualizarEstructuraPorComponente(item.id, { cantidad: cantidadFinal });
+    } catch (err) {
+        console.error('Error guardando cantidad de estructura:', err);
+        mostrarMensaje('❌ Error al actualizar cantidad de estructura', 'error', 3000);
+    }
+};
+
+const incrementarCantidadEstructura = (item) => {
+    if (!item) return;
+    item.cantidad = Math.floor(item.cantidad || 1) + 1;
+    guardarCantidadEstructura(item);
+};
+
+const decrementarCantidadEstructura = (item) => {
+    if (!item || !item.cantidad || item.cantidad <= 1) return;
+    item.cantidad = Math.max(1, Math.floor(item.cantidad) - 1);
+    guardarCantidadEstructura(item);
+};
+
+const removerEstructura = async (estructuraRelacionId) => {
+    try {
+        const estructuraRel = estructurasDelComponente.value.find(e => e.id === estructuraRelacionId);
+        if (!estructuraRel?.id) return;
+
+        await storeEstructurasPorComponente.eliminarEstructuraPorComponente(estructuraRel.id);
+        estructurasDelComponente.value = estructurasDelComponente.value.filter(e => e.id !== estructuraRel.id);
+        mostrarMensaje('✅ Estructura eliminada', 'success', 2000);
+    } catch (err) {
+        console.error('Error eliminando estructura:', err);
+        mostrarMensaje('❌ Error al eliminar estructura', 'error', 3000);
     }
 };
 
@@ -2165,6 +2574,7 @@ onMounted(async () => {
     color: #5a4037;
     background: white;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 .qty-input::-webkit-outer-spin-button,
