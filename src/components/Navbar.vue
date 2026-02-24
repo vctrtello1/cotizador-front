@@ -1,7 +1,15 @@
 <script setup>
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+
+const cerrarSesion = async () => {
+  await authStore.logout();
+  router.push('/login');
+};
 
 const navItems = [
   { path: '/cotizaciones', icon: '📋', label: 'Cotizaciones', excludeNew: true },
@@ -44,6 +52,14 @@ const isActive = (path, excludeNew) => {
           {{ item.label }}
         </router-link>
       </nav>
+      <button class="btn-logout" @click="cerrarSesion" title="Cerrar sesión">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span class="logout-text">Salir</span>
+      </button>
     </div>
   </header>
 </template>
@@ -344,5 +360,53 @@ const isActive = (path, excludeNew) => {
   .nav-link.active {
     background: rgba(212, 165, 116, 0.25);
   }
+
+  .btn-logout {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .logout-text {
+    display: none;
+  }
+}
+
+/* ========== Logout button ========== */
+.btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #c0bbb4;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.btn-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.btn-logout:active {
+  transform: scale(0.96);
+}
+
+.logout-text {
+  pointer-events: none;
 }
 </style>
