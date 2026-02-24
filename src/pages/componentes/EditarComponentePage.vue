@@ -111,20 +111,20 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="costo_unitario" class="form-label">Costo Unitario <span class="required">*</span></label>
+                        <label for="precio_unitario" class="form-label">Precio Unitario <span class="required">*</span></label>
                         <div class="input-with-prefix">
                             <span class="input-prefix">$</span>
                             <input
-                                v-model="formData.costo_unitario"
+                                v-model="formData.precio_unitario"
                                 type="number"
-                                id="costo_unitario"
+                                id="precio_unitario"
                                 class="form-input form-input--prefixed"
                                 placeholder="0.00"
                                 min="0"
                                 step="0.01"
                             />
                         </div>
-                        <span v-if="errors.costo_unitario" class="error-text">{{ errors.costo_unitario }}</span>
+                        <span v-if="errors.precio_unitario" class="error-text">{{ errors.precio_unitario }}</span>
                     </div>
 
                     <div class="form-group full-width">
@@ -164,6 +164,65 @@
                     @guardar-cantidad="e.guardarCantidad"
                     @remover="e.remover"
                 />
+            </div>
+
+            <!-- Accesorios -->
+            <div class="info-card">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🧩</span>
+                        Accesorios
+                        <span v-if="accesorios.length" class="section-count">{{ accesorios.length }}</span>
+                    </h2>
+                </div>
+
+                <div class="accesorio-add">
+                    <input
+                        v-model="nuevoAccesorio"
+                        type="text"
+                        class="form-input"
+                        placeholder="Nombre del accesorio..."
+                        @keyup.enter="agregarAccesorio"
+                    />
+                    <button
+                        type="button"
+                        class="btn-action-header"
+                        :disabled="!nuevoAccesorio.trim() || agregandoAccesorio"
+                        @click="agregarAccesorio"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        {{ agregandoAccesorio ? 'Agregando...' : 'Agregar' }}
+                    </button>
+                </div>
+
+                <TransitionGroup v-if="accesorios.length" name="entity-list" tag="div" class="entity-list" style="margin-top: 12px;">
+                    <div
+                        v-for="acc in accesorios"
+                        :key="`acc-${acc.id}`"
+                        class="entity-row"
+                    >
+                        <div class="entity-row-left">
+                            <div class="entity-avatar">🧩</div>
+                            <div class="entity-info">
+                                <div class="entity-name">{{ acc.accesorio }}</div>
+                            </div>
+                        </div>
+                        <div class="entity-row-right">
+                            <button type="button" class="btn-delete-sm" @click="eliminarAccesorio(acc)" title="Eliminar">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </TransitionGroup>
+
+                <div v-else class="empty-state-inline">
+                    <div class="empty-illustration">
+                        <span class="empty-icon">🧩</span>
+                        <div class="empty-rings"></div>
+                    </div>
+                    <p class="empty-title">Sin accesorios</p>
+                    <p class="empty-desc">Agrega accesorios como complementos del componente</p>
+                </div>
             </div>
 
             <!-- Acciones -->
@@ -214,6 +273,9 @@ import { useAcabadoCubreCantosPorComponenteStore } from '@/stores/acabado-cubre-
 import { useAcabadoCubreCantosStore } from '@/stores/acabado-cubre-cantos';
 import { useAcabadoTableroPorComponenteStore } from '@/stores/acabado-tablero-por-componente';
 import { useAcabadoTableroStore } from '@/stores/acabado-tablero';
+import { usePuertasPorComponenteStore } from '@/stores/puertas-por-componente';
+import { usePuertasStore } from '@/stores/puertas';
+import { useAccesoriosPorComponenteStore } from '@/stores/accesorios-por-componente';
 import { useEntidadPorComponente } from '@/composables/useEntidadPorComponente';
 import EntitySelectorModal from '@/components/EntitySelectorModal.vue';
 import EntitySection from '@/components/EntitySection.vue';
@@ -227,13 +289,16 @@ const storeAcabadoCubreCantosPorComponente = useAcabadoCubreCantosPorComponenteS
 const storeAcabadoCubreCantos = useAcabadoCubreCantosStore();
 const storeAcabadoTableroPorComponente = useAcabadoTableroPorComponenteStore();
 const storeAcabadoTableros = useAcabadoTableroStore();
+const storePuertasPorComponente = usePuertasPorComponenteStore();
+const storePuertas = usePuertasStore();
+const storeAccesorios = useAccesoriosPorComponenteStore();
 
 // Estado
 const formData = ref({
     nombre: '',
     codigo: '',
     descripcion: '',
-    costo_unitario: '',
+    precio_unitario: '',
 });
 
 const errors = ref({});
@@ -242,6 +307,11 @@ const mensaje = ref(null);
 const tipoMensaje = ref(null); // 'success', 'error', 'warning'
 const guardando = ref(false);
 const cargando = ref(true);
+
+// ===== Accesorios =====
+const accesorios = ref([]);
+const nuevoAccesorio = ref('');
+const agregandoAccesorio = ref(false);
 
 // Función para mostrar mensajes amigables
 const mostrarMensaje = (texto, tipo = 'info', duracion = 3000) => {
@@ -277,9 +347,11 @@ const createDebouncedRef = (sourceRef, delay = 180) => {
 const estructurasDisponibles = ref([]);
 const cubreCantosDisponibles = ref([]);
 const acabadoTablerosDisponibles = ref([]);
+const puertasDisponibles = ref([]);
 const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles.value || []).map(e => [e.id, e])));
 const cubreCantosDisponiblesMap = computed(() => new Map((cubreCantosDisponibles.value || []).map(c => [c.id, c])));
 const acabadoTablerosDisponiblesMap = computed(() => new Map((acabadoTablerosDisponibles.value || []).map(t => [t.id, t])));
+const puertasDisponiblesMap = computed(() => new Map((puertasDisponibles.value || []).map(p => [p.id, p])));
 
 // ===== Composables de entidades por componente =====
 const {
@@ -387,9 +459,45 @@ const {
     mostrarMensaje,
 });
 
+const {
+    items: puertasDelComponente,
+    mostrarSelector: mostrarSelectorPuertas,
+    busqueda: busquedaPuerta,
+    obtenerId: obtenerIdPuertaRelacion,
+    obtenerNombre: obtenerNombrePuerta,
+    obtenerCodigo: obtenerCodigoPuerta,
+    obtenerCostoUnitario: obtenerCostoUnitarioPuerta,
+    obtenerSubtotal: obtenerSubtotalPuerta,
+    itemsOrdenados: puertasOrdenadasParaVista,
+    totalCantidad: totalCantidadPuertas,
+    totalCosto: totalCostoPuertas,
+    cargar: cargarPuertasPorComponente,
+    agregar: agregarPuerta,
+    guardarCantidad: guardarCantidadPuerta,
+    incrementarCantidad: incrementarCantidadPuerta,
+    decrementarCantidad: decrementarCantidadPuerta,
+    remover: removerPuerta,
+} = useEntidadPorComponente({
+    label: 'Puerta',
+    primaryIdField: 'puerta_id',
+    alternateIdField: null,
+    nestedKeys: ['puerta'],
+    idAccessors: ['puerta_id', 'puerta.id', 'puertaId'],
+    costFields: ['precio_final', 'costo_unitario', 'costo', 'precio'],
+    disponiblesMap: puertasDisponiblesMap,
+    store: storePuertasPorComponente,
+    storeCrear: 'crearPuertaPorComponente',
+    storeActualizar: 'actualizarPuertaPorComponente',
+    storeEliminar: 'eliminarPuertaPorComponente',
+    storeFetch: 'fetchPuertasPorComponente',
+    componenteId,
+    mostrarMensaje,
+});
+
 const busquedaEstructuraDebounced = createDebouncedRef(busquedaEstructura);
 const busquedaCubreCantoDebounced = createDebouncedRef(busquedaCubreCanto);
 const busquedaAcabadoTableroDebounced = createDebouncedRef(busquedaAcabadoTablero);
+const busquedaPuertaDebounced = createDebouncedRef(busquedaPuerta);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -402,7 +510,7 @@ const cargarComponente = async () => {
             nombre: data.nombre || '',
             codigo: data.codigo || '',
             descripcion: data.descripcion || '',
-            costo_unitario: data.costo_unitario || data.costo_total || '',
+            precio_unitario: data.precio_unitario || data.costo_total || '',
         };
         
         // Cargar catálogos relacionados en paralelo
@@ -425,6 +533,18 @@ const cargarComponente = async () => {
                     acabadoTablerosDisponibles.value = storeAcabadoTableros.acabadoTableros || [];
                 }
             }),
+            cargarPuertasPorComponente(async () => {
+                if (!puertasDisponibles.value.length) {
+                    await storePuertas.fetchPuertas();
+                    puertasDisponibles.value = storePuertas.puertas || [];
+                }
+            }),
+            // Cargar accesorios
+            (async () => {
+                await storeAccesorios.fetchAccesoriosPorComponente();
+                const todos = storeAccesorios.accesoriosPorComponente || [];
+                accesorios.value = todos.filter(a => a.componente_id === (componenteId.value || Number(route.params.id)));
+            })(),
         ]);
     } catch (err) {
         error.value = 'Error al cargar el componente';
@@ -455,6 +575,7 @@ const crearFiltro = (itemsRef, obtenerId, disponiblesRef, busquedaRef) => comput
 const abrirSelectorEstructuras = crearAbrirSelector(storeEstructuras, 'fetchEstructuras', 'estructuras', estructurasDisponibles, mostrarSelectorEstructuras);
 const abrirSelectorCubreCantos = crearAbrirSelector(storeAcabadoCubreCantos, 'fetchAcabadoCubreCantos', 'acabadoCubreCantos', cubreCantosDisponibles, mostrarSelectorCubreCantos);
 const abrirSelectorAcabadoTableros = crearAbrirSelector(storeAcabadoTableros, 'fetchAcabadoTableros', 'acabadoTableros', acabadoTablerosDisponibles, mostrarSelectorAcabadoTableros);
+const abrirSelectorPuertas = crearAbrirSelector(storePuertas, 'fetchPuertas', 'puertas', puertasDisponibles, mostrarSelectorPuertas);
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
@@ -478,9 +599,10 @@ const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
 const estructurasFiltradas = crearFiltro(estructurasDelComponente, obtenerIdEstructuraRelacion, estructurasDisponibles, busquedaEstructuraDebounced);
 const cubreCantosFiltrados = crearFiltro(acabadoCubreCantosDelComponente, obtenerIdCubreCantoRelacion, cubreCantosDisponibles, busquedaCubreCantoDebounced);
 const acabadoTablerosFiltrados = crearFiltro(acabadoTablerosDelComponente, obtenerIdAcabadoTableroRelacion, acabadoTablerosDisponibles, busquedaAcabadoTableroDebounced);
+const puertasFiltradas = crearFiltro(puertasDelComponente, obtenerIdPuertaRelacion, puertasDisponibles, busquedaPuertaDebounced);
 
 // === Configuración data-driven de entidades ===
-const obtenerPrecio = (item) => item.costo_unitario || item.costo || item.precio || 0;
+const obtenerPrecio = (item) => item.precio_final || item.costo_unitario || item.costo || item.precio || 0;
 
 const entidades = computed(() => [
     {
@@ -576,11 +698,75 @@ const entidades = computed(() => [
         cerrarSelector: () => { mostrarSelectorAcabadoTableros.value = false; },
         actualizarBusqueda: (val) => { busquedaAcabadoTablero.value = val; },
     },
+    {
+        key: 'puertas',
+        icon: '🚪',
+        titulo: 'Puertas Asociadas',
+        tituloModal: 'Seleccionar Puertas',
+        labelSingular: 'Puerta',
+        labelCorto: 'Puertas',
+        emptyTitle: 'Sin puertas asignadas',
+        emptyDesc: 'Agrega puertas al componente para completar su configuración',
+        addLabel: 'Agregar Puerta',
+        keyPrefix: 'puerta-inline',
+        items: puertasDelComponente.value,
+        itemsOrdenados: puertasOrdenadasParaVista.value,
+        totalCantidad: totalCantidadPuertas.value,
+        totalCosto: totalCostoPuertas.value,
+        obtenerNombre: obtenerNombrePuerta,
+        obtenerCodigo: obtenerCodigoPuerta,
+        obtenerCostoUnitario: obtenerCostoUnitarioPuerta,
+        obtenerSubtotal: obtenerSubtotalPuerta,
+        incrementar: incrementarCantidadPuerta,
+        decrementar: decrementarCantidadPuerta,
+        guardarCantidad: guardarCantidadPuerta,
+        remover: removerPuerta,
+        agregar: agregarPuerta,
+        abrirSelector: abrirSelectorPuertas,
+        selectorVisible: mostrarSelectorPuertas.value,
+        busqueda: busquedaPuerta.value,
+        itemsFiltrados: puertasFiltradas.value,
+        cerrarSelector: () => { mostrarSelectorPuertas.value = false; },
+        actualizarBusqueda: (val) => { busquedaPuerta.value = val; },
+    },
 ]);
 
 const costoTotalGeneral = computed(() =>
     entidades.value.reduce((sum, e) => sum + e.totalCosto, 0)
 );
+
+// ===== Funciones de Accesorios =====
+const agregarAccesorio = async () => {
+    const texto = nuevoAccesorio.value.trim();
+    if (!texto) return;
+    try {
+        agregandoAccesorio.value = true;
+        await storeAccesorios.crearAccesorioPorComponente({
+            componente_id: componenteId.value || Number(route.params.id),
+            accesorio: texto,
+        });
+        const todos = storeAccesorios.accesoriosPorComponente || [];
+        accesorios.value = todos.filter(a => a.componente_id === (componenteId.value || Number(route.params.id)));
+        nuevoAccesorio.value = '';
+        mostrarMensaje('Accesorio agregado', 'success');
+    } catch (err) {
+        mostrarMensaje('Error al agregar accesorio', 'error');
+        console.error(err);
+    } finally {
+        agregandoAccesorio.value = false;
+    }
+};
+
+const eliminarAccesorio = async (acc) => {
+    try {
+        await storeAccesorios.eliminarAccesorioPorComponente(acc.id);
+        accesorios.value = accesorios.value.filter(a => a.id !== acc.id);
+        mostrarMensaje('Accesorio eliminado', 'success');
+    } catch (err) {
+        mostrarMensaje('Error al eliminar accesorio', 'error');
+        console.error(err);
+    }
+};
 
 
 // Validar formulario
@@ -591,8 +777,8 @@ const validar = () => {
         errors.value.nombre = 'El nombre es requerido';
     }
     
-    if (formData.value.costo_unitario === '' || formData.value.costo_unitario <= 0) {
-        errors.value.costo_unitario = 'El costo unitario debe ser mayor a 0';
+    if (formData.value.precio_unitario === '' || formData.value.precio_unitario <= 0) {
+        errors.value.precio_unitario = 'El precio unitario debe ser mayor a 0';
     }
     
     return Object.keys(errors.value).length === 0;
@@ -610,7 +796,7 @@ const guardarComponente = async () => {
             nombre: formData.value.nombre.trim(),
             codigo: formData.value.codigo.trim(),
             descripcion: formData.value.descripcion.trim(),
-            costo_unitario: parseFloat(formData.value.costo_unitario),
+            precio_unitario: parseFloat(formData.value.precio_unitario),
         };
         
         await api.put(`/componentes/${componenteId.value || route.params.id}`, datos);
@@ -1387,6 +1573,220 @@ onMounted(async () => {
     transform: translateY(-12px);
 }
 
+/* ========== Accesorios Section ========== */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #f5f1ed;
+}
+
+.section-header .section-title {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.btn-action-header {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 2px 6px rgba(212, 165, 116, 0.2);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-action-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(212, 165, 116, 0.35);
+}
+
+.btn-action-header:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.accesorio-add {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.accesorio-add .form-input {
+    flex: 1;
+}
+
+.entity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+}
+
+.entity-list-enter-active {
+    transition: all 0.35s ease;
+}
+.entity-list-leave-active {
+    transition: all 0.25s ease;
+}
+.entity-list-enter-from {
+    opacity: 0;
+    transform: translateX(-12px);
+}
+.entity-list-leave-to {
+    opacity: 0;
+    transform: translateX(16px);
+}
+.entity-list-move {
+    transition: transform 0.3s ease;
+}
+
+.entity-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    background: #fefefe;
+    border: 1px solid #eee9e3;
+    border-radius: 10px;
+    gap: 14px;
+    transition: all 0.2s ease;
+}
+
+.entity-row:hover {
+    border-color: #ddd4c8;
+    background: #fffdf9;
+    box-shadow: 0 2px 8px rgba(90, 64, 55, 0.06);
+}
+
+.entity-row-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.entity-avatar {
+    width: 36px;
+    height: 36px;
+    background: #f7f3ef;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.entity-info {
+    min-width: 0;
+}
+
+.entity-name {
+    font-weight: 600;
+    color: #2c2c2c;
+    font-size: 13.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.entity-row-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-delete-sm {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #bbb;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.btn-delete-sm:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.btn-delete-sm:active {
+    transform: scale(0.9);
+}
+
+.empty-state-inline {
+    text-align: center;
+    padding: 36px 20px;
+}
+
+.empty-illustration {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+.empty-illustration .empty-icon {
+    font-size: 36px;
+    position: relative;
+    z-index: 1;
+}
+
+.empty-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px dashed #e8e3dd;
+    animation: ring-rotate 12s linear infinite;
+}
+
+@keyframes ring-rotate {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.empty-title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: #5a4037;
+    font-weight: 600;
+}
+
+.empty-desc {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: #a89480;
+    font-weight: 400;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+}
+
 /* ========== Responsive ========== */
 @media (max-width: 768px) {
     .editar-componente-container {
@@ -1435,6 +1835,21 @@ onMounted(async () => {
 
     .info-grid {
         grid-template-columns: 1fr;
+    }
+
+    .accesorio-add {
+        flex-direction: column;
+    }
+
+    .section-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .entity-row {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
     }
 
     .form-actions {
