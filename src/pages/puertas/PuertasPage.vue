@@ -3,7 +3,7 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">🚪 Puertas</h1>
-            <button class="btn-primary" @click="$router.push('/nueva-puerta')">✨ Nueva Puerta</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nueva-puerta')">✨ Nueva Puerta</button>
         </div>
 
         <div class="search-bar">
@@ -43,7 +43,7 @@
         <!-- Empty State -->
         <div v-else-if="filteredPuertas.length === 0" class="empty-state">
             <p>No hay puertas registradas.</p>
-            <button class="btn-primary" @click="$router.push('/nueva-puerta')">✨ Crear Primera Puerta</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nueva-puerta')">✨ Crear Primera Puerta</button>
         </div>
 
         <!-- Puertas Grid -->
@@ -79,7 +79,7 @@
                     </div>
                 </div>
 
-                <div class="card-actions">
+                <div v-if="canWrite" class="card-actions">
                     <button class="btn-edit" @click="editarPuerta(puerta.id)">Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(puerta.id)">Eliminar</button>
                 </div>
@@ -87,7 +87,7 @@
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
             <div class="modal-content">
                 <h3>Confirmar eliminación</h3>
                 <p>¿Estás seguro de que deseas eliminar esta puerta?</p>
@@ -104,9 +104,11 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePuertasStore } from '@/stores/puertas.js';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const puertasStore = usePuertasStore();
+const authStore = useAuthStore();
 
 // Estado
 const cargando = ref(true);
@@ -115,6 +117,7 @@ const exito = ref(null);
 const modalEliminar = ref(false);
 const puertaAEliminar = ref(null);
 const searchTerm = ref('');
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Cargar puertas
 const cargarPuertas = async () => {

@@ -3,7 +3,7 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">🔀 Compases Abatibles</h1>
-            <button class="btn-primary" @click="$router.push('/nuevo-compas-abatible')">✨ Nuevo Compás Abatible</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-compas-abatible')">✨ Nuevo Compás Abatible</button>
         </div>
 
         <div class="search-bar">
@@ -43,7 +43,7 @@
         <!-- Empty State -->
         <div v-else-if="filteredCompases.length === 0" class="empty-state">
             <p>No hay compases abatibles registrados.</p>
-            <button class="btn-primary" @click="$router.push('/nuevo-compas-abatible')">✨ Crear Primer Compás Abatible</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-compas-abatible')">✨ Crear Primer Compás Abatible</button>
         </div>
 
         <!-- Compases Grid -->
@@ -60,7 +60,7 @@
                     </div>
                 </div>
 
-                <div class="card-actions">
+                <div v-if="canWrite" class="card-actions">
                     <button class="btn-edit" @click="editarCompas(compas.id)">Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(compas.id)">Eliminar</button>
                 </div>
@@ -68,7 +68,7 @@
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
             <div class="modal-content">
                 <h3>Confirmar eliminación</h3>
                 <p>¿Estás seguro de que deseas eliminar este compás abatible?</p>
@@ -85,9 +85,11 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCompasesAbatiblesStore } from '@/stores/compases-abatibles.js';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const compasesStore = useCompasesAbatiblesStore();
+const authStore = useAuthStore();
 
 // Estado
 const cargando = ref(true);
@@ -96,6 +98,7 @@ const exito = ref(null);
 const modalEliminar = ref(false);
 const compasAEliminar = ref(null);
 const searchTerm = ref('');
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Cargar compases
 const cargarCompases = async () => {

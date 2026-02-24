@@ -13,10 +13,13 @@ router.beforeEach(async (to, from, next) => {
 
   const isPublic = to.meta?.public === true;
   const isAuthenticated = authStore.isAuthenticated;
+  const requiredPermission = to.meta?.permission;
 
   if (!isPublic && !isAuthenticated) {
     next({ name: 'Login' });
   } else if (to.name === 'Login' && isAuthenticated) {
+    next('/cotizaciones');
+  } else if (requiredPermission && !authStore.hasPermission(requiredPermission)) {
     next('/cotizaciones');
   } else {
     next();

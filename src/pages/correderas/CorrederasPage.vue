@@ -3,7 +3,7 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">🎚️ Correderas</h1>
-            <button class="btn-primary" @click="$router.push('/nueva-corredera')">✨ Nueva Corredera</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nueva-corredera')">✨ Nueva Corredera</button>
         </div>
 
         <div class="search-bar">
@@ -43,7 +43,7 @@
         <!-- Empty State -->
         <div v-else-if="filteredCorrederas.length === 0" class="empty-state">
             <p>No hay correderas registradas.</p>
-            <button class="btn-primary" @click="$router.push('/nueva-corredera')">✨ Crear Primera Corredera</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nueva-corredera')">✨ Crear Primera Corredera</button>
         </div>
 
         <!-- Correderas Grid -->
@@ -76,7 +76,7 @@
                     </div>
                 </div>
 
-                <div class="card-actions">
+                <div v-if="canWrite" class="card-actions">
                     <button class="btn-edit" @click="editarCorredera(corredera.id)">Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(corredera.id)">Eliminar</button>
                 </div>
@@ -84,7 +84,7 @@
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
             <div class="modal-content">
                 <h3>Confirmar eliminación</h3>
                 <p>¿Estás seguro de que deseas eliminar esta corredera?</p>
@@ -101,9 +101,11 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCorrederasStore } from '@/stores/correderas.js';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const correderasStore = useCorrederasStore();
+const authStore = useAuthStore();
 
 // Estado
 const cargando = ref(true);
@@ -112,6 +114,7 @@ const exito = ref(null);
 const modalEliminar = ref(false);
 const correderaAEliminar = ref(null);
 const searchTerm = ref('');
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Cargar correderas
 const cargarCorrederas = async () => {

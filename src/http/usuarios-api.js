@@ -24,3 +24,20 @@ export const eliminarUsuario = async (id) => {
   const response = await api.delete(`/auth/users/${id}`);
   return response.data;
 };
+
+// ===== Permisos =====
+
+export const fetchPermisos = async () => {
+  const response = await api.get("/auth/permissions");
+  return response.data;
+};
+
+export const fetchPermisosUsuario = async (userId) => {
+  const response = await api.get(`/auth/users/${userId}/permissions`);
+  return response.data;
+};
+
+export const actualizarPermisosUsuario = async (userId, datos) => {
+  const response = await api.put(`/auth/users/${userId}/permissions`, datos);
+  return response.data;
+};

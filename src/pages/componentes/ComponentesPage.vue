@@ -7,7 +7,7 @@
                     <h1 class="page-title">Componentes</h1>
                     <p class="header-subtitle">Gestiona y visualiza todos tus componentes</p>
                 </div>
-                <button class="btn-primary btn-new" @click="$router.push('/nuevo-componente')">
+                <button v-if="canWrite" class="btn-primary btn-new" @click="$router.push('/nuevo-componente')">
                     <span class="btn-icon">+</span>
                     Nuevo Componente
                 </button>
@@ -43,7 +43,7 @@
             <div class="empty-icon">📦</div>
             <h2>No hay componentes</h2>
             <p>Comienza creando tu primer componente</p>
-            <button class="btn-primary" @click="$router.push('/nuevo-componente')">Crear Componente</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-componente')">Crear Componente</button>
         </div>
 
         <!-- Toolbar con búsqueda -->
@@ -83,7 +83,7 @@
                         <th>Código</th>
                         <th>Descripción</th>
                         <th class="text-right">Precio</th>
-                        <th class="text-center">Acciones</th>
+                        <th v-if="canWrite" class="text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,7 +92,7 @@
                         <td class="cell-codigo">{{ componente.codigo }}</td>
                         <td class="cell-descripcion">{{ componente.descripcion || '—' }}</td>
                         <td class="cell-precio">${{ formatCurrency(componente.costo_total) }}</td>
-                        <td class="cell-actions">
+                        <td v-if="canWrite" class="cell-actions">
                             <button 
                                 class="btn-action btn-edit" 
                                 @click="editarComponente(componente.id)"
@@ -130,7 +130,7 @@
                     </div>
                 </div>
 
-                <div class="card-actions">
+                <div v-if="canWrite" class="card-actions">
                     <button class="btn-edit" @click="editarComponente(componente.id)">
                         <span>✏️</span> Editar
                     </button>
@@ -150,7 +150,7 @@
 
         <!-- Modal de confirmación de eliminación -->
         <transition name="modal">
-            <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+            <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
                 <div class="modal-content">
                     <div class="modal-icon">⚠️</div>
                     <h3>Confirmar eliminación</h3>
@@ -169,8 +169,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchComponentes, eliminarComponente } from '@/http/componentes-api';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 // Estado
 const componentes = ref([]);
@@ -181,6 +183,7 @@ const modalEliminar = ref(false);
 const componenteAEliminar = ref(null);
 const searchQuery = ref('');
 const viewMode = ref('grid');
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Componentes filtrados por búsqueda
 const filteredComponentes = computed(() => {

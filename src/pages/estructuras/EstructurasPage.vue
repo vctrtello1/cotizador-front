@@ -3,7 +3,7 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Estructuras</h1>
-            <button class="btn-primary" @click="$router.push('/nueva-estructura')">✨ Nueva Estructura</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nueva-estructura')">✨ Nueva Estructura</button>
         </div>
 
         <!-- Mensaje de error -->
@@ -26,7 +26,7 @@
         <!-- Empty State -->
         <div v-else-if="estructuras.length === 0" class="empty-state">
             <p>No hay estructuras registradas.</p>
-            <button class="btn-primary" @click="$router.push('/nueva-estructura')">✨ Crear Primera Estructura</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nueva-estructura')">✨ Crear Primera Estructura</button>
         </div>
 
         <!-- Estructuras Grid -->
@@ -45,7 +45,7 @@
                     </div>
                 </div>
 
-                <div class="card-actions">
+                <div v-if="canWrite" class="card-actions">
                     <button class="btn-edit" @click="editarEstructura(estructura.id)">Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(estructura.id)">Eliminar</button>
                 </div>
@@ -53,7 +53,7 @@
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
             <div class="modal-content">
                 <h3>Confirmar eliminación</h3>
                 <p>¿Estás seguro de que deseas eliminar esta estructura?</p>
@@ -67,11 +67,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchEstructuras, eliminarEstructura as deleteEstructuraAPI } from '@/http/estructura-api.js';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 // Estado
 const estructuras = ref([]);
@@ -80,6 +82,7 @@ const error = ref(null);
 const exito = ref(null);
 const modalEliminar = ref(false);
 const estructuraAEliminar = ref(null);
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Cargar estructuras
 const cargarEstructuras = async () => {

@@ -38,11 +38,13 @@ export const routes = [
         path: "/nuevo-modulo",
         name: "NuevoModulo",
         component: () => import("@/pages/modulos/NuevoModuloPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-modulo/:id",
         name: "EditarModulo",
         component: () => import("@/pages/modulos/EditarModuloPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/componentes",
@@ -53,11 +55,13 @@ export const routes = [
         path: "/nuevo-componente",
         name: "NuevoComponente",
         component: () => import("@/pages/componentes/NuevoComponentePage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-componente/:id",
         name: "EditarComponente",
         component: () => import("@/pages/componentes/EditarComponentePage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/estructuras",
@@ -68,11 +72,13 @@ export const routes = [
         path: "/nueva-estructura",
         name: "NuevaEstructura",
         component: () => import("@/pages/estructuras/NuevaEstructuraPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-estructura/:id",
         name: "EditarEstructura",
         component: () => import("@/pages/estructuras/EditarEstructuraPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/acabado-tablero",
@@ -83,11 +89,13 @@ export const routes = [
         path: "/nuevo-acabado-tablero",
         name: "NuevoAcabadoTablero",
         component: () => import("@/pages/acabadoTabllero/NuevoAcabadoTableroPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-acabado-tablero/:id",
         name: "EditarAcabadoTablero",
         component: () => import("@/pages/acabadoTabllero/EditarAcabadoTableroPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/acabado-cubre-canto",
@@ -103,11 +111,13 @@ export const routes = [
         path: "/nueva-corredera",
         name: "NuevaCorredera",
         component: () => import("@/pages/correderas/NuevaCorrederaPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-corredera/:id",
         name: "EditarCorredera",
         component: () => import("@/pages/correderas/EditarCorrederaPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/compases-abatibles",
@@ -118,11 +128,13 @@ export const routes = [
         path: "/nuevo-compas-abatible",
         name: "NuevoCompasAbatible",
         component: () => import("@/pages/compases-abatibles/NuevoCompasAbatiblePage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-compas-abatible/:id",
         name: "EditarCompasAbatible",
         component: () => import("@/pages/compases-abatibles/EditarCompasAbatiblePage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/puertas",
@@ -133,11 +145,13 @@ export const routes = [
         path: "/nueva-puerta",
         name: "NuevaPuerta",
         component: () => import("@/pages/puertas/NuevaPuertaPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-puerta/:id",
         name: "EditarPuerta",
         component: () => import("@/pages/puertas/EditarPuertaPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/accesorios",
@@ -148,16 +162,19 @@ export const routes = [
         path: "/nuevo-accesorio",
         name: "NuevoAccesorio",
         component: () => import("@/pages/accesorios/NuevoAccesorioPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/editar-accesorio/:id",
         name: "EditarAccesorio",
         component: () => import("@/pages/accesorios/EditarAccesorioPage.vue"),
+        meta: { permission: "catalogs.write" },
     },
     {
         path: "/admin",
         name: "Admin",
         component: () => import("@/pages/admin/AdminPage.vue"),
+        meta: { permission: "users.read" },
     }
 
 ];

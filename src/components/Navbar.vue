@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
@@ -22,8 +23,12 @@ const navItems = [
   { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true },
   { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true },
   { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true },
-  { path: '/admin', icon: '⚙️', label: 'Admin', excludeNew: false }
+  { path: '/admin', icon: '⚙️', label: 'Admin', excludeNew: false, permission: 'users.read' }
 ];
+
+const visibleNavItems = computed(() =>
+  navItems.filter((item) => !item.permission || authStore.hasPermission(item.permission))
+);
 
 const isActive = (path, excludeNew) => {
   if (!route.path.startsWith(path)) return false;
@@ -43,7 +48,7 @@ const isActive = (path, excludeNew) => {
       </div>
       <nav class="nav-menu">
         <router-link 
-          v-for="item in navItems"
+          v-for="item in visibleNavItems"
           :key="item.path"
           :to="item.path" 
           class="nav-link"

@@ -6,6 +6,9 @@ import {
   crearUsuario as crearApi,
   actualizarUsuario as actualizarApi,
   eliminarUsuario as eliminarApi,
+  fetchPermisos as fetchPermisosApi,
+  fetchPermisosUsuario as fetchPermisosUsuarioApi,
+  actualizarPermisosUsuario as actualizarPermisosApi,
 } from "@/http/usuarios-api";
 
 export const useUsuariosStore = defineStore("usuarios", () => {
@@ -78,6 +81,40 @@ export const useUsuariosStore = defineStore("usuarios", () => {
     }
   };
 
+  const fetchPermisos = async () => {
+    try {
+      const response = await fetchPermisosApi();
+      return Array.isArray(response) ? response : response?.data || [];
+    } catch (err) {
+      console.error("⚠️ Error cargando permisos disponibles:", err);
+      return [];
+    }
+  };
+
+  const fetchPermisosUsuario = async (userId) => {
+    try {
+      const response = await fetchPermisosUsuarioApi(userId);
+      return response?.data || response || { role: 'viewer', permissions: [] };
+    } catch (err) {
+      console.error(`⚠️ Error cargando permisos del usuario ${userId}:`, err);
+      return { role: 'viewer', permissions: [] };
+    }
+  };
+
+  const actualizarPermisosUsuario = async (userId, datos) => {
+    loading.value = true;
+    try {
+      const response = await actualizarPermisosApi(userId, datos);
+      await fetchUsuarios();
+      return response?.data || response;
+    } catch (err) {
+      console.error(`⚠️ Error actualizando permisos del usuario ${userId}:`, err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     usuarios,
     loading,
@@ -86,5 +123,8 @@ export const useUsuariosStore = defineStore("usuarios", () => {
     crearUsuario,
     actualizarUsuario,
     eliminarUsuario,
+    fetchPermisos,
+    fetchPermisosUsuario,
+    actualizarPermisosUsuario,
   };
 });

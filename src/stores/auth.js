@@ -5,11 +5,13 @@ import api, { obtenerTokenCsrf } from "@/http/apl";
 export const useAuthStore = defineStore("auth", () => {
   const user = ref(JSON.parse(localStorage.getItem("auth_user") || "null"));
   const token = ref(localStorage.getItem("auth_token") || null);
+  const permissions = ref(JSON.parse(localStorage.getItem("auth_permissions") || "[]"));
   const loading = ref(false);
   const error = ref(null);
   const initialized = ref(false);
 
   const isAuthenticated = computed(() => !!token.value);
+  const hasPermission = (permission) => permissions.value.includes(permission);
 
   const login = async (credentials) => {
     loading.value = true;
@@ -24,6 +26,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       const authToken = data.token || data.access_token || response.data?.token;
       const authUser = data.user || data.usuario || data;
+      const authPermissions = data.permissions || response.data?.permissions || [];
 
       if (authToken) {
         token.value = authToken;
@@ -35,6 +38,9 @@ export const useAuthStore = defineStore("auth", () => {
         user.value = authUser;
         localStorage.setItem("auth_user", JSON.stringify(authUser));
       }
+
+      permissions.value = Array.isArray(authPermissions) ? authPermissions : [];
+      localStorage.setItem("auth_permissions", JSON.stringify(permissions.value));
 
       return data;
     } catch (err) {
@@ -53,8 +59,10 @@ export const useAuthStore = defineStore("auth", () => {
     } finally {
       token.value = null;
       user.value = null;
+      permissions.value = [];
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
+      localStorage.removeItem("auth_permissions");
       delete api.defaults.headers.common["Authorization"];
     }
   };
@@ -67,6 +75,7 @@ export const useAuthStore = defineStore("auth", () => {
 
     if (!token.value) {
       user.value = null;
+      permissions.value = [];
       return;
     }
 
@@ -75,14 +84,18 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const response = await api.get('/auth/me');
       user.value = response.data?.user || response.data?.data?.user || null;
+      permissions.value = response.data?.permissions || [];
       if (user.value) {
         localStorage.setItem('auth_user', JSON.stringify(user.value));
       }
+      localStorage.setItem('auth_permissions', JSON.stringify(permissions.value));
     } catch {
       token.value = null;
       user.value = null;
+      permissions.value = [];
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+      localStorage.removeItem('auth_permissions');
       delete api.defaults.headers.common['Authorization'];
     }
   };
@@ -99,6 +112,8 @@ export const useAuthStore = defineStore("auth", () => {
     error,
     initialized,
     isAuthenticated,
+    permissions,
+    hasPermission,
     login,
     logout,
     initializeAuth,

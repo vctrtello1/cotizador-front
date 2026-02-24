@@ -6,7 +6,7 @@
                 <h1 class="page-title">📦 Módulos</h1>
                 <p class="header-subtitle">{{ modulos.length }} módulos disponibles</p>
             </div>
-            <button class="btn-primary" @click="crearModuloNuevo">➕ Nuevo Módulo</button>
+            <button v-if="canWrite" class="btn-primary" @click="crearModuloNuevo">➕ Nuevo Módulo</button>
         </div>
 
         <!-- Mensaje de error -->
@@ -29,7 +29,7 @@
         <!-- Empty State -->
         <div v-else-if="modulos.length === 0" class="empty-state">
             <p>No hay módulos registrados.</p>
-            <button class="btn-primary" @click="$router.push('/nuevo-modulo')">Crear Primer Módulo</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-modulo')">Crear Primer Módulo</button>
         </div>
 
         <!-- Módulos Grid -->
@@ -70,7 +70,7 @@
                     </ul>
                 </div>
 
-                <div class="card-actions">
+                <div v-if="canWrite" class="card-actions">
                     <button class="btn-edit" @click="editarModulo(modulo.id)" title="Editar módulo">✏️ Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(modulo.id)" title="Eliminar módulo">🗑️ Eliminar</button>
                 </div>
@@ -78,7 +78,7 @@
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
             <div class="modal-content">
                 <h3>Confirmar eliminación</h3>
                 <p>¿Estás seguro de que deseas eliminar este módulo?</p>
@@ -92,11 +92,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchModulos, eliminarModulo as deleteModuloAPI, crearModulo } from '@/http/modulos-api';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 // Estado
 const modulos = ref([]);
@@ -105,6 +107,7 @@ const error = ref(null);
 const exito = ref(null);
 const modalEliminar = ref(false);
 const moduloAEliminar = ref(null);
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Cargar módulos
 const cargarModulos = async () => {

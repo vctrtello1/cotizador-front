@@ -90,6 +90,7 @@
                         <tr>
                             <th>Usuario</th>
                             <th>Correo</th>
+                            <th>Rol</th>
                             <th>Registro</th>
                             <th class="th-actions">Acciones</th>
                         </tr>
@@ -109,9 +110,17 @@
                                 <span class="user-email">{{ u.email || '—' }}</span>
                             </td>
                             <td>
+                                <span class="role-badge" :class="`role-${u.role || 'viewer'}`">
+                                    {{ rolesMap[u.role] || rolesMap['viewer'] }}
+                                </span>
+                            </td>
+                            <td>
                                 <span class="user-date">{{ formatDate(u.created_at) }}</span>
                             </td>
                             <td class="td-actions">
+                                <button class="btn-icon btn-permisos" @click="abrirModalPermisos(u)" title="Permisos">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                </button>
                                 <button class="btn-icon btn-edit" @click="abrirModalEditar(u)" title="Editar">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 </button>
@@ -171,6 +180,24 @@
                             </div>
 
                             <div class="form-group">
+                                <label class="form-label">Rol <span class="required">*</span></label>
+                                <div class="role-selector">
+                                    <button
+                                        v-for="r in rolesDisponibles"
+                                        :key="r.value"
+                                        type="button"
+                                        class="role-option"
+                                        :class="{ 'role-option--active': formUsuario.role === r.value }"
+                                        @click="formUsuario.role = r.value"
+                                    >
+                                        <span class="role-option-icon">{{ r.icon }}</span>
+                                        <span class="role-option-label">{{ r.label }}</span>
+                                        <span class="role-option-desc">{{ r.desc }}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label class="form-label">
                                     Contraseña
                                     <span v-if="!editando" class="required">*</span>
@@ -222,6 +249,114 @@
             </transition>
         </Teleport>
 
+        <!-- Modal Permisos -->
+        <Teleport to="body">
+            <transition name="modal">
+                <div v-if="mostrarModalPermisos" class="modal-overlay" @click.self="cerrarModalPermisos">
+                    <div class="modal-card modal-card--lg">
+                        <div class="modal-header modal-header--permisos">
+                            <div class="modal-header-info">
+                                <h3 class="modal-title">Permisos de {{ usuarioPermisos?.name || usuarioPermisos?.nombre }}</h3>
+                                <span class="role-badge" :class="`role-${formPermisos.role}`">{{ rolesMap[formPermisos.role] || 'Viewer' }}</span>
+                            </div>
+                            <button class="modal-close" @click="cerrarModalPermisos">×</button>
+                        </div>
+
+                        <div class="modal-body permisos-body">
+                            <!-- Rol -->
+                            <div class="permisos-section">
+                                <h4 class="permisos-section-title">Rol del usuario</h4>
+                                <div class="role-selector role-selector--compact">
+                                    <button
+                                        v-for="r in rolesDisponibles"
+                                        :key="r.value"
+                                        type="button"
+                                        class="role-option"
+                                        :class="{ 'role-option--active': formPermisos.role === r.value }"
+                                        @click="seleccionarRol(r.value)"
+                                    >
+                                        <span class="role-option-icon">{{ r.icon }}</span>
+                                        <span class="role-option-label">{{ r.label }}</span>
+                                    </button>
+                                </div>
+                                <p v-if="formPermisos.role === 'admin'" class="admin-notice">
+                                    🛡️ Los administradores tienen acceso completo a todas las funciones.
+                                </p>
+                            </div>
+
+                            <!-- Permisos granulares -->
+                            <div v-if="formPermisos.role !== 'admin'" class="permisos-section">
+                                <div class="permisos-header-row">
+                                    <h4 class="permisos-section-title">Permisos específicos</h4>
+                                    <div class="permisos-bulk-actions">
+                                        <button type="button" class="btn-link" @click="seleccionarTodos">Seleccionar todos</button>
+                                        <span class="bulk-sep">|</span>
+                                        <button type="button" class="btn-link" @click="deseleccionarTodos">Quitar todos</button>
+                                    </div>
+                                </div>
+
+                                <div class="permisos-grid">
+                                    <div v-for="grupo in permisosAgrupados" :key="grupo.entidad" class="permiso-grupo">
+                                        <div class="permiso-grupo-header">
+                                            <span class="permiso-grupo-icon">{{ grupo.icon }}</span>
+                                            <span class="permiso-grupo-name">{{ grupo.label }}</span>
+                                            <button
+                                                type="button"
+                                                class="btn-toggle-grupo"
+                                                @click="toggleGrupo(grupo.entidad)"
+                                                :title="grupoCompleto(grupo.entidad) ? 'Quitar todos' : 'Seleccionar todos'"
+                                            >
+                                                {{ grupoCompleto(grupo.entidad) ? '✓' : '○' }}
+                                            </button>
+                                        </div>
+                                        <div class="permiso-acciones">
+                                            <label
+                                                v-for="accion in acciones"
+                                                :key="`${grupo.entidad}.${accion.value}`"
+                                                class="permiso-check"
+                                                :class="{ 'permiso-check--active': formPermisos.permissions.includes(`${grupo.entidad}.${accion.value}`) }"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    :value="`${grupo.entidad}.${accion.value}`"
+                                                    v-model="formPermisos.permissions"
+                                                    class="permiso-checkbox"
+                                                />
+                                                <span class="permiso-accion-icon">{{ accion.icon }}</span>
+                                                <span class="permiso-accion-label">{{ accion.label }}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="permisos-summary">
+                                    <span class="permisos-count">
+                                        {{ formPermisos.permissions.length }} de {{ totalPermisos }} permisos seleccionados
+                                    </span>
+                                </div>
+                            </div>
+
+                            <transition name="fade">
+                                <div v-if="errorPermisos" class="modal-error">
+                                    <span>⚠️ {{ errorPermisos }}</span>
+                                </div>
+                            </transition>
+
+                            <div class="modal-actions">
+                                <button type="button" class="btn-secondary" @click="cerrarModalPermisos">Cancelar</button>
+                                <button type="button" class="btn-primary" @click="guardarPermisos" :disabled="guardandoPermisos">
+                                    <span v-if="guardandoPermisos" class="btn-loading-inline">
+                                        <span class="spinner-sm"></span> Guardando...
+                                    </span>
+                                    <span v-else>Guardar Permisos</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </Teleport>
+
         <!-- Modal Confirmar Eliminar -->
         <Teleport to="body">
             <transition name="modal">
@@ -264,6 +399,43 @@ const busqueda = ref('');
 const mensaje = ref(null);
 const tipoMensaje = ref(null);
 
+// Roles
+const rolesMap = {
+    admin: 'Administrador',
+    editor: 'Editor',
+    viewer: 'Visualizador',
+};
+
+const rolesDisponibles = [
+    { value: 'admin', label: 'Admin', icon: '🛡️', desc: 'Acceso total al sistema' },
+    { value: 'editor', label: 'Editor', icon: '✏️', desc: 'Crear y editar registros' },
+    { value: 'viewer', label: 'Viewer', icon: '👁️', desc: 'Solo lectura' },
+];
+
+// Permisos
+const permisosAgrupados = [
+    { entidad: 'cotizaciones', label: 'Cotizaciones', icon: '📋' },
+    { entidad: 'modulos', label: 'Módulos', icon: '🧩' },
+    { entidad: 'componentes', label: 'Componentes', icon: '🔧' },
+    { entidad: 'estructuras', label: 'Estructuras', icon: '🏗️' },
+    { entidad: 'acabado_tablero', label: 'Acabado Tablero', icon: '🎨' },
+    { entidad: 'acabado_cubre_canto', label: 'Acabado Cubre Canto', icon: '🧵' },
+    { entidad: 'correderas', label: 'Correderas', icon: '🎚️' },
+    { entidad: 'compases_abatibles', label: 'Compases Abatibles', icon: '🔀' },
+    { entidad: 'puertas', label: 'Puertas', icon: '🚪' },
+    { entidad: 'accesorios', label: 'Accesorios', icon: '🔩' },
+    { entidad: 'usuarios', label: 'Usuarios', icon: '👥' },
+];
+
+const acciones = [
+    { value: 'ver', label: 'Ver', icon: '👁️' },
+    { value: 'crear', label: 'Crear', icon: '➕' },
+    { value: 'editar', label: 'Editar', icon: '✏️' },
+    { value: 'eliminar', label: 'Eliminar', icon: '🗑️' },
+];
+
+const totalPermisos = computed(() => permisosAgrupados.length * acciones.length);
+
 // Modal crear/editar
 const mostrarModal = ref(false);
 const editando = ref(false);
@@ -273,8 +445,20 @@ const errorModal = ref(null);
 const formUsuario = ref({
     name: '',
     email: '',
+    role: 'viewer',
     password: '',
     password_confirmation: '',
+});
+
+// Modal permisos
+const mostrarModalPermisos = ref(false);
+const usuarioPermisos = ref(null);
+const guardandoPermisos = ref(false);
+const errorPermisos = ref(null);
+const cargandoPermisos = ref(false);
+const formPermisos = ref({
+    role: 'viewer',
+    permissions: [],
 });
 
 // Modal confirmar eliminar
@@ -351,7 +535,7 @@ const abrirModalCrear = () => {
     editando.value = false;
     editandoId.value = null;
     errorModal.value = null;
-    formUsuario.value = { name: '', email: '', password: '', password_confirmation: '' };
+    formUsuario.value = { name: '', email: '', role: 'viewer', password: '', password_confirmation: '' };
     mostrarModal.value = true;
 };
 
@@ -362,10 +546,91 @@ const abrirModalEditar = (u) => {
     formUsuario.value = {
         name: u.name || u.nombre || '',
         email: u.email || '',
+        role: u.role || 'viewer',
         password: '',
         password_confirmation: '',
     };
     mostrarModal.value = true;
+};
+
+// === Permisos ===
+const abrirModalPermisos = async (u) => {
+    usuarioPermisos.value = u;
+    errorPermisos.value = null;
+    cargandoPermisos.value = true;
+
+    // Cargar permisos actuales del usuario
+    const data = await usuariosStore.fetchPermisosUsuario(u.id);
+    formPermisos.value = {
+        role: data.role || u.role || 'viewer',
+        permissions: Array.isArray(data.permissions) ? [...data.permissions] : [],
+    };
+    cargandoPermisos.value = false;
+    mostrarModalPermisos.value = true;
+};
+
+const cerrarModalPermisos = () => {
+    mostrarModalPermisos.value = false;
+    usuarioPermisos.value = null;
+    errorPermisos.value = null;
+};
+
+const seleccionarRol = (role) => {
+    formPermisos.value.role = role;
+    if (role === 'admin') {
+        // Admin tiene todo, limpiamos permisos granulares
+        formPermisos.value.permissions = [];
+    }
+};
+
+const toggleGrupo = (entidad) => {
+    const permsGrupo = acciones.map(a => `${entidad}.${a.value}`);
+    const todosActivos = permsGrupo.every(p => formPermisos.value.permissions.includes(p));
+    if (todosActivos) {
+        formPermisos.value.permissions = formPermisos.value.permissions.filter(p => !permsGrupo.includes(p));
+    } else {
+        const nuevos = permsGrupo.filter(p => !formPermisos.value.permissions.includes(p));
+        formPermisos.value.permissions.push(...nuevos);
+    }
+};
+
+const grupoCompleto = (entidad) => {
+    return acciones.every(a => formPermisos.value.permissions.includes(`${entidad}.${a.value}`));
+};
+
+const seleccionarTodos = () => {
+    const todos = [];
+    permisosAgrupados.forEach(g => {
+        acciones.forEach(a => todos.push(`${g.entidad}.${a.value}`));
+    });
+    formPermisos.value.permissions = todos;
+};
+
+const deseleccionarTodos = () => {
+    formPermisos.value.permissions = [];
+};
+
+const guardarPermisos = async () => {
+    guardandoPermisos.value = true;
+    errorPermisos.value = null;
+    try {
+        await usuariosStore.actualizarPermisosUsuario(usuarioPermisos.value.id, {
+            role: formPermisos.value.role,
+            permissions: formPermisos.value.role === 'admin' ? [] : formPermisos.value.permissions,
+        });
+        // Actualizar rol en la lista local
+        const idx = usuarios.value.findIndex(u => u.id === usuarioPermisos.value.id);
+        if (idx !== -1) {
+            usuarios.value[idx] = { ...usuarios.value[idx], role: formPermisos.value.role, permissions: formPermisos.value.permissions };
+        }
+        cerrarModalPermisos();
+        mostrarMensajeUI('Permisos actualizados correctamente');
+    } catch (err) {
+        const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+        errorPermisos.value = serverMsg || 'Error al guardar los permisos';
+    } finally {
+        guardandoPermisos.value = false;
+    }
 };
 
 const cerrarModal = () => {
@@ -382,6 +647,7 @@ const guardarUsuario = async () => {
         const datos = {
             name: formUsuario.value.name.trim(),
             email: formUsuario.value.email.trim(),
+            role: formUsuario.value.role,
         };
 
         if (formUsuario.value.password) {
@@ -1118,8 +1384,298 @@ onMounted(cargarUsuarios);
     .stats-row { grid-template-columns: 1fr; }
 
     .users-table th:nth-child(3),
-    .users-table td:nth-child(3) {
+    .users-table td:nth-child(3),
+    .users-table th:nth-child(4),
+    .users-table td:nth-child(4) {
         display: none;
     }
+}
+
+/* ========== Role Badges ========== */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-admin {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.role-editor {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    border: 1px solid #60a5fa;
+}
+
+.role-viewer {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #4b5563;
+    border: 1px solid #9ca3af;
+}
+
+/* ========== Role Selector ========== */
+.role-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.role-selector--compact {
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.role-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 10px;
+    border: 2px solid #e8e3dd;
+    border-radius: 12px;
+    background: #faf9f7;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.role-option:hover {
+    border-color: #d4a574;
+    background: #fdf8f3;
+}
+
+.role-option--active {
+    border-color: #d4a574;
+    background: linear-gradient(135deg, #fdf8f3 0%, #faf1e6 100%);
+    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.15);
+}
+
+.role-option-icon { font-size: 22px; }
+
+.role-option-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2c2c2c;
+}
+
+.role-option-desc {
+    font-size: 11px;
+    color: #8b8b8b;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.admin-notice {
+    font-size: 13px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 8px;
+}
+
+/* ========== Permissions Modal ========== */
+.modal-card--lg {
+    max-width: 680px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header--permisos {
+    background: linear-gradient(135deg, #f5f1ed 0%, #ebe5dd 100%);
+}
+
+.modal-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.permisos-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 80px);
+}
+
+.permisos-section {
+    margin-bottom: 24px;
+}
+
+.permisos-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2c2c2c;
+    margin: 0 0 12px;
+}
+
+.permisos-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.permisos-header-row .permisos-section-title {
+    margin: 0;
+}
+
+.permisos-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #d4a574;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: color 0.2s;
+    font-family: inherit;
+}
+
+.btn-link:hover {
+    color: #b8854e;
+    text-decoration: underline;
+}
+
+.bulk-sep { color: #d4d0ca; font-size: 12px; }
+
+.permisos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.permiso-grupo {
+    border: 1px solid #e8e3dd;
+    border-radius: 12px;
+    padding: 14px;
+    background: #faf9f7;
+    transition: border-color 0.2s;
+}
+
+.permiso-grupo:hover {
+    border-color: #d4c8b8;
+}
+
+.permiso-grupo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ede8e1;
+}
+
+.permiso-grupo-icon { font-size: 18px; }
+
+.permiso-grupo-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2c2c2c;
+    flex: 1;
+}
+
+.btn-toggle-grupo {
+    width: 24px;
+    height: 24px;
+    border: 1.5px solid #d4c8b8;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #8b7355;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.btn-toggle-grupo:hover {
+    border-color: #d4a574;
+    background: #fdf8f3;
+}
+
+.permiso-acciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.permiso-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 12px;
+    color: #6b6b6b;
+    background: white;
+    border: 1px solid transparent;
+}
+
+.permiso-check:hover {
+    background: #f0ede8;
+}
+
+.permiso-check--active {
+    background: #fdf8f3;
+    border-color: #d4a574;
+    color: #5a4037;
+}
+
+.permiso-checkbox {
+    display: none;
+}
+
+.permiso-accion-icon {
+    font-size: 13px;
+}
+
+.permiso-accion-label {
+    font-weight: 500;
+}
+
+.permisos-summary {
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #ede8e1;
+}
+
+.permisos-count {
+    font-size: 13px;
+    color: #8b7355;
+    font-weight: 600;
+}
+
+.btn-permisos:hover {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+@media (max-width: 640px) {
+    .role-selector { flex-direction: column; gap: 8px; }
+    .permisos-grid { grid-template-columns: 1fr; }
 }
 </style>

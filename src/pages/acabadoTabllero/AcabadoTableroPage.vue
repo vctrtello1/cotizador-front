@@ -3,7 +3,7 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Acabados de Tablero</h1>
-            <button class="btn-primary" @click="$router.push('/nuevo-acabado-tablero')">✨ Nuevo Acabado de Tablero</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-acabado-tablero')">✨ Nuevo Acabado de Tablero</button>
         </div>
 
         <div class="search-bar">
@@ -43,7 +43,7 @@
         <!-- Empty State -->
         <div v-else-if="filteredAcabadoTableros.length === 0" class="empty-state">
             <p>No hay acabados de tablero registrados.</p>
-            <button class="btn-primary" @click="$router.push('/nuevo-acabado-tablero')">✨ Crear Primer Acabado de Tablero</button>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-acabado-tablero')">✨ Crear Primer Acabado de Tablero</button>
         </div>
 
         <!-- Acabados Tablero Grid -->
@@ -63,7 +63,7 @@
                     </div>
                 </div>
 
-                <div class="card-actions">
+                <div v-if="canWrite" class="card-actions">
                     <button class="btn-edit" @click="editarAcabadoTablero(acabadoTablero.id)">Editar</button>
                     <button class="btn-delete" @click="confirmarEliminar(acabadoTablero.id)">Eliminar</button>
                 </div>
@@ -71,7 +71,7 @@
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
             <div class="modal-content">
                 <h3>Confirmar eliminación</h3>
                 <p>¿Estás seguro de que deseas eliminar este acabado de tablero?</p>
@@ -88,8 +88,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchAcabadoTableros, eliminarAcabadoTablero as deleteAcabadoTableroAPI } from '@/http/acabado_tablero-api.js';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 // Estado
 const acabadoTableros = ref([]);
@@ -99,6 +101,7 @@ const exito = ref(null);
 const modalEliminar = ref(false);
 const acabadoTableroAEliminar = ref(null);
 const searchTerm = ref('');
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Cargar acabados de tablero
 const cargarAcabadoTableros = async () => {

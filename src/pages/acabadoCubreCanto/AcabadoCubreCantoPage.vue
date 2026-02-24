@@ -2,7 +2,7 @@
 	<div class="acabado-cubre-cantos-container">
 		<div class="page-header">
 			<h1 class="page-title">Acabado Cubre Cantos</h1>
-			<button class="btn-primary" @click="$router.push('/nuevo-acabado-cubre-canto')">✨ Nuevo Acabado Cubre Canto</button>
+			<button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-acabado-cubre-canto')">✨ Nuevo Acabado Cubre Canto</button>
 		</div>
 
 		<div class="search-bar">
@@ -38,7 +38,7 @@
 
 		<div v-else-if="filteredAcabadoCubreCantos.length === 0" class="empty-state">
 			<p>No hay acabados cubre cantos registrados.</p>
-			<button class="btn-primary" @click="$router.push('/nuevo-acabado-cubre-canto')">✨ Crear Primer Acabado Cubre Canto</button>
+			<button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-acabado-cubre-canto')">✨ Crear Primer Acabado Cubre Canto</button>
 		</div>
 
 		<div v-else class="acabado-cubre-cantos-grid">
@@ -61,7 +61,7 @@
 					</div>
 				</div>
 
-				<div class="card-actions">
+				<div v-if="canWrite" class="card-actions">
 					<button class="btn-edit" @click="editarAcabadoCubreCanto(acabado.id)">Editar</button>
 					<button class="btn-delete" @click="confirmarEliminar(acabado.id)">Eliminar</button>
 				</div>
@@ -69,7 +69,7 @@
 		</div>
 
 		<!-- Modal de confirmación de eliminación -->
-		<div v-if="modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+		<div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
 			<div class="modal-content">
 				<h3>Confirmar eliminación</h3>
 				<p>¿Estás seguro de que deseas eliminar este acabado cubre canto?</p>
@@ -86,8 +86,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchAcabadoCubreCantos, eliminarAcabadoCubreCanto as deleteAcabadoCubreCanto } from '@/http/acabado_cubre-cantos-api.js';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const acabadoCubreCantos = ref([]);
 const cargando = ref(true);
@@ -96,6 +98,7 @@ const exito = ref(null);
 const modalEliminar = ref(false);
 const acabadoCubreCantoAEliminar = ref(null);
 const searchTerm = ref('');
+const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 const cargarAcabadoCubreCantos = async () => {
 	try {
