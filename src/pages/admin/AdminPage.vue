@@ -135,19 +135,19 @@
                                 <span class="user-date">{{ formatDate(u.created_at) }}</span>
                             </td>
                             <td class="td-actions">
-                                <button class="btn-icon btn-permisos" @click="abrirModalPermisos(u)" title="Permisos">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <button class="btn-action btn-permisos" @click="abrirModalPermisos(u)" title="Permisos">
+                                    🛡️
                                 </button>
-                                <button class="btn-icon btn-edit" @click="abrirModalEditar(u)" title="Editar">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                <button class="btn-action btn-edit" @click="abrirModalEditar(u)" title="Editar">
+                                    ✏️
                                 </button>
                                 <button
-                                    class="btn-icon btn-delete"
+                                    class="btn-action btn-delete"
                                     @click="confirmarEliminar(u)"
                                     title="Eliminar"
                                     :disabled="u.id === authStore.user?.id"
                                 >
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    🗑️
                                 </button>
                             </td>
                         </tr>
@@ -1023,7 +1023,8 @@ onMounted(async () => {
 
 .th-actions {
     text-align: center;
-    width: 100px;
+    width: 150px;
+    min-width: 150px;
 }
 
 .users-table td {
@@ -1088,24 +1089,27 @@ onMounted(async () => {
 
 .td-actions {
     text-align: center;
+    white-space: nowrap;
 }
 
-.btn-icon {
+.btn-action {
     width: 34px;
     height: 34px;
     border: 1px solid #e8e3dd;
     border-radius: 8px;
     background: white;
-    color: #8b7355;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    margin: 0 3px;
+    margin: 0 2px;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
 }
 
-.btn-icon:hover {
+.btn-action:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -1113,13 +1117,16 @@ onMounted(async () => {
 .btn-edit:hover {
     background: #eff6ff;
     border-color: #93c5fd;
-    color: #2563eb;
 }
 
 .btn-delete:hover {
     background: #fef2f2;
     border-color: #fca5a5;
-    color: #dc2626;
+}
+
+.btn-permisos:hover {
+    background: #fef3c7;
+    border-color: #f59e0b;
 }
 
 .btn-delete:disabled {
@@ -1130,7 +1137,6 @@ onMounted(async () => {
 .btn-delete:disabled:hover {
     background: white;
     border-color: #e8e3dd;
-    color: #8b7355;
     transform: none;
     box-shadow: none;
 }
@@ -1706,12 +1712,6 @@ onMounted(async () => {
     font-size: 13px;
     color: #8b7355;
     font-weight: 600;
-}
-
-.btn-permisos:hover {
-    background: #fef3c7;
-    border-color: #f59e0b;
-    color: #92400e;
 }
 
 /* ========== Access Denied ========== */
