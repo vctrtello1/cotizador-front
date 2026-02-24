@@ -111,20 +111,11 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="precio_unitario" class="form-label">Precio Unitario <span class="required">*</span></label>
-                        <div class="input-with-prefix">
+                        <label class="form-label">Precio Unitario</label>
+                        <div class="input-with-prefix input-readonly">
                             <span class="input-prefix">$</span>
-                            <input
-                                v-model="formData.precio_unitario"
-                                type="number"
-                                id="precio_unitario"
-                                class="form-input form-input--prefixed"
-                                placeholder="0.00"
-                                min="0"
-                                step="0.01"
-                            />
+                            <span class="form-input form-input--prefixed readonly-value">{{ formatCurrency(formData.precio_unitario) }}</span>
                         </div>
-                        <span v-if="errors.precio_unitario" class="error-text">{{ errors.precio_unitario }}</span>
                     </div>
 
                     <div class="form-group full-width">
@@ -777,10 +768,6 @@ const validar = () => {
         errors.value.nombre = 'El nombre es requerido';
     }
     
-    if (formData.value.precio_unitario === '' || formData.value.precio_unitario <= 0) {
-        errors.value.precio_unitario = 'El precio unitario debe ser mayor a 0';
-    }
-    
     return Object.keys(errors.value).length === 0;
 };
 
@@ -796,7 +783,6 @@ const guardarComponente = async () => {
             nombre: formData.value.nombre.trim(),
             codigo: formData.value.codigo.trim(),
             descripcion: formData.value.descripcion.trim(),
-            precio_unitario: parseFloat(formData.value.precio_unitario),
         };
         
         await api.put(`/componentes/${componenteId.value || route.params.id}`, datos);
@@ -1429,6 +1415,24 @@ onMounted(async () => {
 
 .form-input--prefixed:focus {
     box-shadow: none !important;
+}
+
+.input-readonly {
+    background: #f5f1ed;
+    cursor: default;
+}
+
+.input-readonly:hover {
+    border-color: #e0d5c7;
+}
+
+.readonly-value {
+    display: flex;
+    align-items: center;
+    color: #5a4037;
+    font-weight: 600;
+    user-select: text;
+    cursor: default;
 }
 
 .form-input {
