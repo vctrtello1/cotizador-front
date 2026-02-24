@@ -21,7 +21,8 @@ const navItems = [
   { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true },
   { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true },
   { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true },
-  { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true }
+  { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true },
+  { path: '/admin', icon: '⚙️', label: 'Admin', excludeNew: false }
 ];
 
 const isActive = (path, excludeNew) => {

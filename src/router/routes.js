@@ -153,6 +153,11 @@ export const routes = [
         path: "/editar-accesorio/:id",
         name: "EditarAccesorio",
         component: () => import("@/pages/accesorios/EditarAccesorioPage.vue"),
+    },
+    {
+        path: "/admin",
+        name: "Admin",
+        component: () => import("@/pages/admin/AdminPage.vue"),
     }
 
 ];
