@@ -11,7 +11,15 @@ export const useAuthStore = defineStore("auth", () => {
   const initialized = ref(false);
 
   const isAuthenticated = computed(() => !!token.value);
-  const hasPermission = (permission) => permissions.value.includes(permission);
+  const isAdmin = computed(() => {
+    const role = user.value?.role || user.value?.rol;
+    return role === 'admin' || role === 'administrador';
+  });
+  const hasPermission = (permission) => {
+    // Admins have all permissions
+    if (isAdmin.value) return true;
+    return permissions.value.includes(permission);
+  };
 
   const login = async (credentials) => {
     loading.value = true;
@@ -27,6 +35,7 @@ export const useAuthStore = defineStore("auth", () => {
       const authToken = data.token || data.access_token || response.data?.token;
       const authUser = data.user || data.usuario || data;
       const authPermissions = data.permissions || response.data?.permissions || [];
+      const authRole = data.role || data.rol || authUser?.role || authUser?.rol;
 
       if (authToken) {
         token.value = authToken;
@@ -35,6 +44,10 @@ export const useAuthStore = defineStore("auth", () => {
       }
 
       if (authUser) {
+        // Ensure role is on the user object
+        if (authRole && !authUser.role) {
+          authUser.role = authRole;
+        }
         user.value = authUser;
         localStorage.setItem("auth_user", JSON.stringify(authUser));
       }
@@ -83,8 +96,14 @@ export const useAuthStore = defineStore("auth", () => {
 
     try {
       const response = await api.get('/auth/me');
-      user.value = response.data?.user || response.data?.data?.user || null;
-      permissions.value = response.data?.permissions || [];
+      const meData = response.data?.data || response.data;
+      user.value = meData?.user || meData || null;
+      permissions.value = meData?.permissions || response.data?.permissions || [];
+      // Ensure role is on the user object
+      const meRole = meData?.role || meData?.rol || user.value?.role || user.value?.rol;
+      if (user.value && meRole && !user.value.role) {
+        user.value.role = meRole;
+      }
       if (user.value) {
         localStorage.setItem('auth_user', JSON.stringify(user.value));
       }
@@ -112,6 +131,7 @@ export const useAuthStore = defineStore("auth", () => {
     error,
     initialized,
     isAuthenticated,
+    isAdmin,
     permissions,
     hasPermission,
     login,

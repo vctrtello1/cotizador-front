@@ -17,8 +17,25 @@
             </div>
         </div>
 
+        <!-- Acceso denegado -->
+        <div v-if="sinAcceso" class="access-denied-card">
+            <div class="access-denied-icon">🔒</div>
+            <h2 class="access-denied-title">Acceso Denegado</h2>
+            <p class="access-denied-desc">
+                No tienes permisos para acceder al panel de administración.<br/>
+                Contacta a un administrador para obtener acceso.
+            </p>
+            <div class="access-denied-info">
+                <span class="access-denied-user">👤 {{ authStore.user?.name || authStore.user?.nombre || authStore.user?.email }}</span>
+                <span class="access-denied-role" v-if="authStore.user?.role">Rol: {{ rolesMap[authStore.user.role] || authStore.user.role }}</span>
+            </div>
+            <router-link to="/cotizaciones" class="btn-back">
+                ← Volver a Cotizaciones
+            </router-link>
+        </div>
+
         <!-- Stats -->
-        <div class="stats-row">
+        <div v-if="!sinAcceso" class="stats-row">
             <div class="stat-card">
                 <div class="stat-icon">👥</div>
                 <div class="stat-info">
@@ -53,7 +70,7 @@
         </transition>
 
         <!-- Sección Usuarios -->
-        <div class="section-card">
+        <div v-if="!sinAcceso" class="section-card">
             <div class="section-header">
                 <h2 class="section-title">
                     <span class="section-icon">👥</span>
@@ -387,14 +404,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { useUsuariosStore } from '@/stores/usuarios';
 
+const router = useRouter();
 const authStore = useAuthStore();
 const usuariosStore = useUsuariosStore();
 
 const usuarios = ref([]);
 const cargando = ref(true);
+const sinAcceso = ref(false);
 const busqueda = ref('');
 const mensaje = ref(null);
 const tipoMensaje = ref(null);
@@ -520,12 +540,23 @@ const formatDate = (dateStr) => {
 };
 
 const cargarUsuarios = async () => {
+    if (!authStore.hasPermission('users.read')) {
+        sinAcceso.value = true;
+        return;
+    }
+
     cargando.value = true;
+    sinAcceso.value = false;
     try {
         const data = await usuariosStore.fetchUsuarios();
         usuarios.value = data;
-    } catch {
-        mostrarMensajeUI('Error al cargar usuarios', 'error');
+    } catch (err) {
+        const status = err?.response?.status;
+        if (status === 403) {
+            sinAcceso.value = true;
+        } else {
+            mostrarMensajeUI('Error al cargar usuarios', 'error');
+        }
     } finally {
         cargando.value = false;
     }
@@ -701,7 +732,16 @@ const eliminarUsuario = async () => {
     }
 };
 
-onMounted(cargarUsuarios);
+onMounted(async () => {
+    await authStore.initializeAuth();
+
+    if (!authStore.hasPermission('users.read')) {
+        router.replace('/cotizaciones');
+        return;
+    }
+
+    await cargarUsuarios();
+});
 </script>
 
 <style scoped>
@@ -1672,6 +1712,81 @@ onMounted(cargarUsuarios);
     background: #fef3c7;
     border-color: #f59e0b;
     color: #92400e;
+}
+
+/* ========== Access Denied ========== */
+.access-denied-card {
+    max-width: 460px;
+    margin: 40px auto;
+    text-align: center;
+    background: white;
+    border: 1px solid #e8e3dd;
+    border-radius: 16px;
+    padding: 48px 32px;
+    box-shadow: 0 1px 4px rgba(90, 64, 55, 0.06);
+}
+
+.access-denied-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+}
+
+.access-denied-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2c2c2c;
+    margin: 0 0 12px;
+}
+
+.access-denied-desc {
+    font-size: 14px;
+    color: #6b6b6b;
+    line-height: 1.6;
+    margin: 0 0 20px;
+}
+
+.access-denied-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px;
+    background: #faf9f7;
+    border: 1px solid #e8e3dd;
+    border-radius: 10px;
+    margin-bottom: 24px;
+}
+
+.access-denied-user {
+    font-size: 14px;
+    font-weight: 600;
+    color: #5a4037;
+}
+
+.access-denied-role {
+    font-size: 12px;
+    color: #8b7355;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s;
+}
+
+.btn-back:hover {
+    background: linear-gradient(135deg, #c89564 0%, #b8854e 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
 }
 
 @media (max-width: 640px) {

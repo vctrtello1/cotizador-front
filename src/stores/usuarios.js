@@ -28,7 +28,7 @@ export const useUsuariosStore = defineStore("usuarios", () => {
       console.error("⚠️ Error cargando usuarios:", err);
       error.value = err.message || "Error al cargar usuarios";
       usuarios.value = [];
-      return [];
+      throw err;
     } finally {
       loading.value = false;
     }
