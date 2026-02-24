@@ -129,7 +129,8 @@
                             <div v-for="componente in modulo.componentes" :key="`comp-${componente.id}`" class="table-row">
                                 <div class="col-nombre"><strong>{{ componente.nombre }}</strong></div>
                                 <div class="col-cantidad">{{ componente.cantidad }}</div>
-                                <div class="col-precio">${{ formatCurrency(componente.precio_unitario) }}</div>
+                                <div class="col-precio" v-if="!esViewerOEditor">${{ formatCurrency(componente.precio_unitario) }}</div>
+                                <div class="col-precio" v-else>—</div>
                                 <div class="col-subtotal"><strong>${{ formatCurrency(calcularSubtotal(componente)) }}</strong></div>
                             </div>
                         </div>
@@ -155,6 +156,11 @@
 
 
 <script setup>
+const esViewerOEditor = computed(() => {
+    const authStore = useAuthStore ? useAuthStore() : null;
+    const role = authStore?.user?.role || authStore?.user?.rol || 'viewer';
+    return role === 'viewer' || role === 'visualizador' || role === 'editor';
+});
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCotizacionesStore } from '@/stores/cotizaciones';

@@ -68,9 +68,9 @@
                         <strong class="stat-value">{{ e.items.length }} <small>tipos</small></strong>
                         <span class="stat-detail">{{ e.totalCantidad }} unidades</span>
                     </div>
-                    <span v-if="!esViewer" class="stat-amount">${{ formatCurrency(e.totalCosto) }}</span>
+                    <span v-if="!esViewerOEditor" class="stat-amount">${{ formatCurrency(e.totalCosto) }}</span>
                 </div>
-                <div class="stat-card stat-card--highlight" v-if="!esViewer">
+                <div class="stat-card stat-card--highlight" v-if="!esViewerOEditor">
                     <div class="stat-icon stat-icon--total">💰</div>
                     <div class="stat-content">
                         <span class="stat-label">Costo total</span>
@@ -149,7 +149,7 @@
                     :obtener-codigo="e.obtenerCodigo"
                     :obtener-costo-unitario="e.obtenerCostoUnitario"
                     :obtener-subtotal="e.obtenerSubtotal"
-                    :ocultar-precios="esViewer"
+                    :ocultar-precios="esViewerOEditor"
                     @abrir-selector="e.abrirSelector"
                     @incrementar="e.incrementar"
                     @decrementar="e.decrementar"
@@ -188,7 +188,7 @@
             :items-filtrados="e.itemsFiltrados"
             :format-currency="formatCurrency"
             :obtener-precio="obtenerPrecio"
-            :ocultar-precios="esViewer"
+            :ocultar-precios="esViewerOEditor"
             @close="e.cerrarSelector"
             @seleccionar="e.agregar"
             @update:busqueda="e.actualizarBusqueda($event)"
@@ -219,9 +219,9 @@ import EntitySection from '@/components/EntitySection.vue';
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const esViewer = computed(() => {
+const esViewerOEditor = computed(() => {
     const role = authStore.user?.role || authStore.user?.rol || 'viewer';
-    return role === 'viewer' || role === 'visualizador';
+    return role === 'viewer' || role === 'visualizador' || role === 'editor';
 });
 const componenteId = computed(() => Number.parseInt(route.params.id, 10) || 0);
 const storeEstructurasPorComponente = useEstructurasPorComponenteStore();

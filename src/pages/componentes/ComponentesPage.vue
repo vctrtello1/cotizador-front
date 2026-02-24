@@ -91,7 +91,8 @@
                         <td class="cell-nombre">{{ componente.nombre }}</td>
                         <td class="cell-codigo">{{ componente.codigo }}</td>
                         <td class="cell-descripcion">{{ componente.descripcion || '—' }}</td>
-                        <td class="cell-precio">${{ formatCurrency(componente.costo_total) }}</td>
+                        <td class="cell-precio" v-if="!esViewerOEditor">${{ formatCurrency(componente.costo_total) }}</td>
+                        <td class="cell-precio" v-else>—</td>
                         <td v-if="canWrite" class="cell-actions">
                             <button 
                                 class="btn-action btn-edit" 
@@ -126,7 +127,8 @@
                 <div class="componente-info">
                     <div class="info-item">
                         <label>Precio</label>
-                        <span class="price">${{ formatCurrency(componente.costo_total) }}</span>
+                        <span class="price" v-if="!esViewerOEditor">${{ formatCurrency(componente.costo_total) }}</span>
+                        <span class="price" v-else>—</span>
                     </div>
                 </div>
 
@@ -173,6 +175,10 @@ import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const esViewerOEditor = computed(() => {
+    const role = authStore.user?.role || authStore.user?.rol || 'viewer';
+    return role === 'viewer' || role === 'visualizador' || role === 'editor';
+});
 
 // Estado
 const componentes = ref([]);
