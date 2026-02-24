@@ -229,7 +229,16 @@ export function useEntidadPorComponente(config) {
             const rel = items.value.find(i => i.id === id);
             if (!rel?.id) return;
 
-            await store[storeEliminar](rel.id);
+            try {
+                await store[storeEliminar](rel.id);
+            } catch (err) {
+                // Si el registro ya no existe (404), igual lo removemos de la UI
+                if (err?.response?.status === 404) {
+                    console.warn(`${label} con id ${rel.id} no encontrado en el servidor, removiendo de la UI`);
+                } else {
+                    throw err;
+                }
+            }
             items.value = items.value.filter(i => i.id !== rel.id);
             mostrarMensaje(`✅ ${label} eliminado`, 'success', 2000);
         } catch (err) {
