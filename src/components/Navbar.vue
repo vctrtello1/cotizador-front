@@ -12,7 +12,8 @@ const navItems = [
   { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false },
   { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true },
   { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true },
-  { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true }
+  { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true },
+  { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true }
 ];
 
 const isActive = (path, excludeNew) => {

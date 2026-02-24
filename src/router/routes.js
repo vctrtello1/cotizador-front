@@ -132,6 +132,21 @@ export const routes = [
         path: "/editar-puerta/:id",
         name: "EditarPuerta",
         component: () => import("@/pages/puertas/EditarPuertaPage.vue"),
+    },
+    {
+        path: "/accesorios",
+        name: "Accesorios",
+        component: () => import("@/pages/accesorios/AccesoriosPage.vue"),
+    },
+    {
+        path: "/nuevo-accesorio",
+        name: "NuevoAccesorio",
+        component: () => import("@/pages/accesorios/NuevoAccesorioPage.vue"),
+    },
+    {
+        path: "/editar-accesorio/:id",
+        name: "EditarAccesorio",
+        component: () => import("@/pages/accesorios/EditarAccesorioPage.vue"),
     }
 
 ];

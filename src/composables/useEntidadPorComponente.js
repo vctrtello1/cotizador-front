@@ -28,6 +28,7 @@ export function useEntidadPorComponente(config) {
         nestedKeys = [],
         idAccessors = [],
         costFields = ['costo_unitario', 'costo'],
+        payloadValueField = 'id',
         disponiblesMap,
         store,
         storeCrear,
@@ -157,9 +158,10 @@ export function useEntidadPorComponente(config) {
                 return;
             }
 
+            const valorPayload = payloadValueField === 'id' ? entidad.id : entidad[payloadValueField];
             const payload = {
                 componente_id: componenteId.value,
-                [campoIdRelacion.value]: entidad.id,
+                [campoIdRelacion.value]: valorPayload,
                 cantidad: 1,
             };
 
@@ -171,7 +173,7 @@ export function useEntidadPorComponente(config) {
                 if (alternateIdField && campoIdRelacion.value === primaryIdField) {
                     campoIdRelacion.value = alternateIdField;
                     payload[alternateIdField] = entidad.id;
-                    delete payload[primaryIdField];
+                    delete payload[primaryIdField];                    
                     resultado = await store[storeCrear](payload);
                 } else {
                     throw err;
@@ -221,9 +223,10 @@ export function useEntidadPorComponente(config) {
         guardarCantidad(item);
     };
 
-    const remover = async (relacionId) => {
+    const remover = async (relacionIdOrItem) => {
         try {
-            const rel = items.value.find(i => i.id === relacionId);
+            const id = typeof relacionIdOrItem === 'object' ? relacionIdOrItem?.id : relacionIdOrItem;
+            const rel = items.value.find(i => i.id === id);
             if (!rel?.id) return;
 
             await store[storeEliminar](rel.id);

@@ -157,65 +157,6 @@
                 />
             </div>
 
-            <!-- Accesorios -->
-            <div class="info-card">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">🧩</span>
-                        Accesorios
-                        <span v-if="accesorios.length" class="section-count">{{ accesorios.length }}</span>
-                    </h2>
-                </div>
-
-                <div class="accesorio-add">
-                    <input
-                        v-model="nuevoAccesorio"
-                        type="text"
-                        class="form-input"
-                        placeholder="Nombre del accesorio..."
-                        @keyup.enter="agregarAccesorio"
-                    />
-                    <button
-                        type="button"
-                        class="btn-action-header"
-                        :disabled="!nuevoAccesorio.trim() || agregandoAccesorio"
-                        @click="agregarAccesorio"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        {{ agregandoAccesorio ? 'Agregando...' : 'Agregar' }}
-                    </button>
-                </div>
-
-                <TransitionGroup v-if="accesorios.length" name="entity-list" tag="div" class="entity-list" style="margin-top: 12px;">
-                    <div
-                        v-for="acc in accesorios"
-                        :key="`acc-${acc.id}`"
-                        class="entity-row"
-                    >
-                        <div class="entity-row-left">
-                            <div class="entity-avatar">🧩</div>
-                            <div class="entity-info">
-                                <div class="entity-name">{{ acc.accesorio }}</div>
-                            </div>
-                        </div>
-                        <div class="entity-row-right">
-                            <button type="button" class="btn-delete-sm" @click="eliminarAccesorio(acc)" title="Eliminar">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </TransitionGroup>
-
-                <div v-else class="empty-state-inline">
-                    <div class="empty-illustration">
-                        <span class="empty-icon">🧩</span>
-                        <div class="empty-rings"></div>
-                    </div>
-                    <p class="empty-title">Sin accesorios</p>
-                    <p class="empty-desc">Agrega accesorios como complementos del componente</p>
-                </div>
-            </div>
-
             <!-- Acciones -->
             <div class="form-actions form-actions--sticky">
                 <button type="button" class="btn-secondary" @click="$router.back()">
@@ -267,6 +208,7 @@ import { useAcabadoTableroStore } from '@/stores/acabado-tablero';
 import { usePuertasPorComponenteStore } from '@/stores/puertas-por-componente';
 import { usePuertasStore } from '@/stores/puertas';
 import { useAccesoriosPorComponenteStore } from '@/stores/accesorios-por-componente';
+import { useAccesoriosStore } from '@/stores/accesorios';
 import { useEntidadPorComponente } from '@/composables/useEntidadPorComponente';
 import EntitySelectorModal from '@/components/EntitySelectorModal.vue';
 import EntitySection from '@/components/EntitySection.vue';
@@ -282,7 +224,8 @@ const storeAcabadoTableroPorComponente = useAcabadoTableroPorComponenteStore();
 const storeAcabadoTableros = useAcabadoTableroStore();
 const storePuertasPorComponente = usePuertasPorComponenteStore();
 const storePuertas = usePuertasStore();
-const storeAccesorios = useAccesoriosPorComponenteStore();
+const storeAccesoriosPorComponente = useAccesoriosPorComponenteStore();
+const storeAccesorios = useAccesoriosStore();
 
 // Estado
 const formData = ref({
@@ -299,10 +242,7 @@ const tipoMensaje = ref(null); // 'success', 'error', 'warning'
 const guardando = ref(false);
 const cargando = ref(true);
 
-// ===== Accesorios =====
-const accesorios = ref([]);
-const nuevoAccesorio = ref('');
-const agregandoAccesorio = ref(false);
+
 
 // Función para mostrar mensajes amigables
 const mostrarMensaje = (texto, tipo = 'info', duracion = 3000) => {
@@ -339,10 +279,12 @@ const estructurasDisponibles = ref([]);
 const cubreCantosDisponibles = ref([]);
 const acabadoTablerosDisponibles = ref([]);
 const puertasDisponibles = ref([]);
+const accesoriosDisponibles = ref([]);
 const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles.value || []).map(e => [e.id, e])));
 const cubreCantosDisponiblesMap = computed(() => new Map((cubreCantosDisponibles.value || []).map(c => [c.id, c])));
 const acabadoTablerosDisponiblesMap = computed(() => new Map((acabadoTablerosDisponibles.value || []).map(t => [t.id, t])));
 const puertasDisponiblesMap = computed(() => new Map((puertasDisponibles.value || []).map(p => [p.id, p])));
+const accesoriosDisponiblesMap = computed(() => new Map((accesoriosDisponibles.value || []).map(a => [a.id, a])));
 
 // ===== Composables de entidades por componente =====
 const {
@@ -485,10 +427,47 @@ const {
     mostrarMensaje,
 });
 
+const {
+    items: accesoriosDelComponente,
+    mostrarSelector: mostrarSelectorAccesorios,
+    busqueda: busquedaAccesorio,
+    obtenerId: obtenerIdAccesorioRelacion,
+    obtenerNombre: obtenerNombreAccesorio,
+    obtenerCodigo: obtenerCodigoAccesorio,
+    obtenerCostoUnitario: obtenerCostoUnitarioAccesorio,
+    obtenerSubtotal: obtenerSubtotalAccesorio,
+    itemsOrdenados: accesoriosOrdenadosParaVista,
+    totalCantidad: totalCantidadAccesorios,
+    totalCosto: totalCostoAccesorios,
+    cargar: cargarAccesoriosPorComponente,
+    agregar: agregarAccesorio,
+    guardarCantidad: guardarCantidadAccesorio,
+    incrementarCantidad: incrementarCantidadAccesorio,
+    decrementarCantidad: decrementarCantidadAccesorio,
+    remover: removerAccesorio,
+} = useEntidadPorComponente({
+    label: 'Accesorio',
+    primaryIdField: 'accesorio',
+    alternateIdField: 'accesorio_id',
+    nestedKeys: ['accesorio'],
+    idAccessors: ['accesorio', 'accesorio_id', 'accesorio.id', 'accesorioId'],
+    costFields: ['precio', 'costo_unitario', 'costo'],
+    payloadValueField: 'nombre',
+    disponiblesMap: accesoriosDisponiblesMap,
+    store: storeAccesoriosPorComponente,
+    storeCrear: 'crearAccesorioPorComponente',
+    storeActualizar: 'actualizarAccesorioPorComponente',
+    storeEliminar: 'eliminarAccesorioPorComponente',
+    storeFetch: 'fetchAccesoriosPorComponente',
+    componenteId,
+    mostrarMensaje,
+});
+
 const busquedaEstructuraDebounced = createDebouncedRef(busquedaEstructura);
 const busquedaCubreCantoDebounced = createDebouncedRef(busquedaCubreCanto);
 const busquedaAcabadoTableroDebounced = createDebouncedRef(busquedaAcabadoTablero);
 const busquedaPuertaDebounced = createDebouncedRef(busquedaPuerta);
+const busquedaAccesorioDebounced = createDebouncedRef(busquedaAccesorio);
 
 // Cargar componente (placeholder - actualizar con API real)
 const cargarComponente = async () => {
@@ -530,12 +509,12 @@ const cargarComponente = async () => {
                     puertasDisponibles.value = storePuertas.puertas || [];
                 }
             }),
-            // Cargar accesorios
-            (async () => {
-                await storeAccesorios.fetchAccesoriosPorComponente();
-                const todos = storeAccesorios.accesoriosPorComponente || [];
-                accesorios.value = todos.filter(a => a.componente_id === (componenteId.value || Number(route.params.id)));
-            })(),
+            cargarAccesoriosPorComponente(async () => {
+                if (!accesoriosDisponibles.value.length) {
+                    await storeAccesorios.fetchAccesorios();
+                    accesoriosDisponibles.value = storeAccesorios.accesorios || [];
+                }
+            }),
         ]);
     } catch (err) {
         error.value = 'Error al cargar el componente';
@@ -567,22 +546,23 @@ const abrirSelectorEstructuras = crearAbrirSelector(storeEstructuras, 'fetchEstr
 const abrirSelectorCubreCantos = crearAbrirSelector(storeAcabadoCubreCantos, 'fetchAcabadoCubreCantos', 'acabadoCubreCantos', cubreCantosDisponibles, mostrarSelectorCubreCantos);
 const abrirSelectorAcabadoTableros = crearAbrirSelector(storeAcabadoTableros, 'fetchAcabadoTableros', 'acabadoTableros', acabadoTablerosDisponibles, mostrarSelectorAcabadoTableros);
 const abrirSelectorPuertas = crearAbrirSelector(storePuertas, 'fetchPuertas', 'puertas', puertasDisponibles, mostrarSelectorPuertas);
+const abrirSelectorAccesorios = crearAbrirSelector(storeAccesorios, 'fetchAccesorios', 'accesorios', accesoriosDisponibles, mostrarSelectorAccesorios);
 
 // Helper para filtrar por búsqueda y por items existentes
 const filtrarCatalogo = (catalog, busqueda, itemsExistentes) => {
     // itemsExistentes puede ser un array de objetos o un array de IDs
     const existentesIds = new Set(Array.isArray(itemsExistentes) 
-        ? itemsExistentes.map(item => typeof item === 'object' ? item.id : item)
+        ? itemsExistentes.filter(Boolean).map(item => typeof item === 'object' ? item?.id : item)
         : []);
     
-    const filtrados = catalog.filter(item => !existentesIds.has(item.id));
+    const filtrados = (catalog || []).filter(item => item && !existentesIds.has(item.id));
     
-    if (!busqueda.trim()) return filtrados;
+    if (!busqueda || !busqueda.trim()) return filtrados;
     
     const busquedaLower = busqueda.toLowerCase();
     return filtrados.filter(item => 
-        item.nombre.toLowerCase().includes(busquedaLower) ||
-        item.codigo.toLowerCase().includes(busquedaLower)
+        (item.nombre || '').toLowerCase().includes(busquedaLower) ||
+        (item.codigo || '').toLowerCase().includes(busquedaLower)
     );
 };
 
@@ -591,6 +571,7 @@ const estructurasFiltradas = crearFiltro(estructurasDelComponente, obtenerIdEstr
 const cubreCantosFiltrados = crearFiltro(acabadoCubreCantosDelComponente, obtenerIdCubreCantoRelacion, cubreCantosDisponibles, busquedaCubreCantoDebounced);
 const acabadoTablerosFiltrados = crearFiltro(acabadoTablerosDelComponente, obtenerIdAcabadoTableroRelacion, acabadoTablerosDisponibles, busquedaAcabadoTableroDebounced);
 const puertasFiltradas = crearFiltro(puertasDelComponente, obtenerIdPuertaRelacion, puertasDisponibles, busquedaPuertaDebounced);
+const accesoriosFiltrados = crearFiltro(accesoriosDelComponente, obtenerIdAccesorioRelacion, accesoriosDisponibles, busquedaAccesorioDebounced);
 
 // === Configuración data-driven de entidades ===
 const obtenerPrecio = (item) => item.precio_final || item.costo_unitario || item.costo || item.precio || 0;
@@ -720,45 +701,42 @@ const entidades = computed(() => [
         cerrarSelector: () => { mostrarSelectorPuertas.value = false; },
         actualizarBusqueda: (val) => { busquedaPuerta.value = val; },
     },
+    {
+        key: 'accesorios',
+        icon: '🔩',
+        titulo: 'Accesorios Asociados',
+        tituloModal: 'Seleccionar Accesorios',
+        labelSingular: 'Accesorio',
+        labelCorto: 'Accesorios',
+        emptyTitle: 'Sin accesorios asignados',
+        emptyDesc: 'Agrega accesorios como complementos del componente',
+        addLabel: 'Agregar Accesorio',
+        keyPrefix: 'acc-inline',
+        items: accesoriosDelComponente.value,
+        itemsOrdenados: accesoriosOrdenadosParaVista.value,
+        totalCantidad: totalCantidadAccesorios.value,
+        totalCosto: totalCostoAccesorios.value,
+        obtenerNombre: obtenerNombreAccesorio,
+        obtenerCodigo: obtenerCodigoAccesorio,
+        obtenerCostoUnitario: obtenerCostoUnitarioAccesorio,
+        obtenerSubtotal: obtenerSubtotalAccesorio,
+        incrementar: incrementarCantidadAccesorio,
+        decrementar: decrementarCantidadAccesorio,
+        guardarCantidad: guardarCantidadAccesorio,
+        remover: removerAccesorio,
+        agregar: agregarAccesorio,
+        abrirSelector: abrirSelectorAccesorios,
+        selectorVisible: mostrarSelectorAccesorios.value,
+        busqueda: busquedaAccesorio.value,
+        itemsFiltrados: accesoriosFiltrados.value,
+        cerrarSelector: () => { mostrarSelectorAccesorios.value = false; },
+        actualizarBusqueda: (val) => { busquedaAccesorio.value = val; },
+    },
 ]);
 
 const costoTotalGeneral = computed(() =>
     entidades.value.reduce((sum, e) => sum + e.totalCosto, 0)
 );
-
-// ===== Funciones de Accesorios =====
-const agregarAccesorio = async () => {
-    const texto = nuevoAccesorio.value.trim();
-    if (!texto) return;
-    try {
-        agregandoAccesorio.value = true;
-        await storeAccesorios.crearAccesorioPorComponente({
-            componente_id: componenteId.value || Number(route.params.id),
-            accesorio: texto,
-        });
-        const todos = storeAccesorios.accesoriosPorComponente || [];
-        accesorios.value = todos.filter(a => a.componente_id === (componenteId.value || Number(route.params.id)));
-        nuevoAccesorio.value = '';
-        mostrarMensaje('Accesorio agregado', 'success');
-    } catch (err) {
-        mostrarMensaje('Error al agregar accesorio', 'error');
-        console.error(err);
-    } finally {
-        agregandoAccesorio.value = false;
-    }
-};
-
-const eliminarAccesorio = async (acc) => {
-    try {
-        await storeAccesorios.eliminarAccesorioPorComponente(acc.id);
-        accesorios.value = accesorios.value.filter(a => a.id !== acc.id);
-        mostrarMensaje('Accesorio eliminado', 'success');
-    } catch (err) {
-        mostrarMensaje('Error al eliminar accesorio', 'error');
-        console.error(err);
-    }
-};
-
 
 // Validar formulario
 const validar = () => {
