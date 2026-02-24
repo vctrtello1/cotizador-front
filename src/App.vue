@@ -1,8 +1,12 @@
 <script setup>
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import Navbar from '@/components/Navbar.vue';
 
 const router = useRouter();
+const route = useRoute();
+
+const isLoginPage = computed(() => route.name === 'Login');
 
 const getTransitionName = (route) => {
   // Si es una página de detalle o edición, usa slide
@@ -16,7 +20,7 @@ const getTransitionName = (route) => {
 
 <template>
   <div class="app">
-    <Navbar />
+    <Navbar v-if="!isLoginPage" />
 
     <main class="app-main">
       <router-view v-slot="{ Component, route }">
@@ -26,7 +30,7 @@ const getTransitionName = (route) => {
       </router-view>
     </main>
 
-    <footer class="app-footer">
+    <footer v-if="!isLoginPage" class="app-footer">
       <p>&copy; 2026 Cotizador de Muebles. Todos los derechos reservados.</p>
     </footer>
   </div>

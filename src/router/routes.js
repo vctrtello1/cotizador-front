@@ -1,7 +1,13 @@
 export const routes = [
     {
         path: "/",
-        redirect: "/cotizaciones",
+        redirect: "/login",
+    },
+    {
+        path: "/login",
+        name: "Login",
+        component: () => import("@/pages/login/LoginPage.vue"),
+        meta: { public: true },
     },
     {
         path: "/cotizaciones",

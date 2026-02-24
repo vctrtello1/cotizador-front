@@ -69,6 +69,11 @@ export async function obtenerTokenCsrf() {
 // Request interceptor para agregar token CSRF
 api.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     // Para operaciones POST/PUT/DELETE, enviar token CSRF si está disponible
     if (['post', 'put', 'patch', 'delete'].includes(config.method)) {
       const csrfToken = getCsrfFromCookie();
@@ -127,6 +132,20 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    const status = error?.response?.status;
+    const requestUrl = error?.config?.url || "";
+    const isAuthRequest = /\/auth\/(login|register)$/.test(requestUrl);
+
+    if (status === 401 && !isAuthRequest) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      delete api.defaults.headers.common["Authorization"];
+
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
+    }
+
     // Log detallado de errores
     if (error.response) {
       console.error(`❌ Error ${error.response.status}:`, error.response.data);
