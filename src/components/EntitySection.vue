@@ -21,7 +21,7 @@
                 <span class="metric-number">{{ totalCantidad }}</span>
                 <span class="metric-label">Unidades</span>
             </div>
-            <div class="metric-pill metric-pill--accent">
+            <div class="metric-pill metric-pill--accent" v-if="!ocultarPrecios">
                 <span class="metric-number">${{ formatCurrency(totalCosto) }}</span>
                 <span class="metric-label">Costo total</span>
             </div>
@@ -40,7 +40,7 @@
                         <div class="entity-code">{{ obtenerCodigo(item) }}</div>
                     </div>
                 </div>
-                <div class="entity-row-center">
+                <div class="entity-row-center" v-if="!ocultarPrecios">
                     <div class="entity-pricing">
                         <span class="entity-unit-price">${{ formatCurrency(obtenerCostoUnitario(item)) }} <small>c/u</small></span>
                         <span class="entity-subtotal">${{ formatCurrency(obtenerSubtotal(item)) }}</span>
@@ -97,6 +97,7 @@ defineProps({
     obtenerCodigo: { type: Function, required: true },
     obtenerCostoUnitario: { type: Function, required: true },
     obtenerSubtotal: { type: Function, required: true },
+    ocultarPrecios: { type: Boolean, default: false },
 });
 
 defineEmits(['abrir-selector', 'incrementar', 'decrementar', 'guardar-cantidad', 'remover']);

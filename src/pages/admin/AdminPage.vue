@@ -291,11 +291,15 @@
                                         class="role-option"
                                         :class="{ 'role-option--active': formPermisos.role === r.value }"
                                         @click="seleccionarRol(r.value)"
+                                        :disabled="isEditingCurrentUserPerms"
                                     >
                                         <span class="role-option-icon">{{ r.icon }}</span>
                                         <span class="role-option-label">{{ r.label }}</span>
                                     </button>
                                 </div>
+                                <p v-if="isEditingCurrentUserPerms" class="admin-notice">
+                                    🔒 No puedes cambiar tu propio rol desde este panel.
+                                </p>
                                 <p v-if="formPermisos.role === 'admin'" class="admin-notice">
                                     🛡️ Los administradores tienen acceso completo a todas las funciones.
                                 </p>
@@ -481,6 +485,15 @@ const formPermisos = ref({
     permissions: [],
 });
 
+const isEditingCurrentUserPerms = computed(() => {
+    const currentUserId = authStore.user?.id;
+    const targetUserId = usuarioPermisos.value?.id;
+
+    if (!currentUserId || !targetUserId) return false;
+
+    return Number(currentUserId) === Number(targetUserId);
+});
+
 // Modal confirmar eliminar
 const mostrarConfirmacion = ref(false);
 const usuarioAEliminar = ref(null);
@@ -596,6 +609,12 @@ const abrirModalPermisos = async (u) => {
         role: data.role || u.role || 'viewer',
         permissions: Array.isArray(data.permissions) ? [...data.permissions] : [],
     };
+
+    if (isEditingCurrentUserPerms.value) {
+        formPermisos.value.role = 'admin';
+        formPermisos.value.permissions = [];
+    }
+
     cargandoPermisos.value = false;
     mostrarModalPermisos.value = true;
 };
@@ -607,6 +626,10 @@ const cerrarModalPermisos = () => {
 };
 
 const seleccionarRol = (role) => {
+    if (isEditingCurrentUserPerms.value) {
+        return;
+    }
+
     formPermisos.value.role = role;
     if (role === 'admin') {
         // Admin tiene todo, limpiamos permisos granulares
@@ -645,14 +668,17 @@ const guardarPermisos = async () => {
     guardandoPermisos.value = true;
     errorPermisos.value = null;
     try {
+        const roleToPersist = isEditingCurrentUserPerms.value ? 'admin' : formPermisos.value.role;
+        const permissionsToPersist = roleToPersist === 'admin' ? [] : formPermisos.value.permissions;
+
         await usuariosStore.actualizarPermisosUsuario(usuarioPermisos.value.id, {
-            role: formPermisos.value.role,
-            permissions: formPermisos.value.role === 'admin' ? [] : formPermisos.value.permissions,
+            role: roleToPersist,
+            permissions: permissionsToPersist,
         });
         // Actualizar rol en la lista local
         const idx = usuarios.value.findIndex(u => u.id === usuarioPermisos.value.id);
         if (idx !== -1) {
-            usuarios.value[idx] = { ...usuarios.value[idx], role: formPermisos.value.role, permissions: formPermisos.value.permissions };
+            usuarios.value[idx] = { ...usuarios.value[idx], role: roleToPersist, permissions: permissionsToPersist };
         }
         cerrarModalPermisos();
         mostrarMensajeUI('Permisos actualizados correctamente');

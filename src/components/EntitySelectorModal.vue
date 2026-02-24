@@ -25,7 +25,7 @@
                             <div class="card-name">{{ item.nombre }}</div>
                             <div class="card-badge">{{ item.codigo }}</div>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" v-if="!ocultarPrecios">
                             <p class="card-label">Costo Unitario</p>
                             <p class="card-price">${{ formatCurrency(obtenerPrecio(item)) }}</p>
                         </div>
@@ -58,6 +58,7 @@ defineProps({
         type: Function,
         default: (item) => item.costo_unitario || item.costo || item.precio || 0,
     },
+    ocultarPrecios: { type: Boolean, default: false },
 });
 
 defineEmits(['close', 'seleccionar', 'update:busqueda']);

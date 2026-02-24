@@ -15,19 +15,25 @@ const cerrarSesion = async () => {
 const navItems = [
   { path: '/cotizaciones', icon: '📋', label: 'Cotizaciones', excludeNew: true },
   { path: '/modulos', icon: '🧩', label: 'Módulos', excludeNew: true },
-  { path: '/componentes', icon: '🔧', label: 'Componentes', excludeNew: true },
-  { path: '/estructuras', icon: '🏗️', label: 'Estructuras', excludeNew: true },
-  { path: '/acabado-tablero', icon: '🎨', label: 'Acabado Tablero', excludeNew: true },
-  { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false },
-  { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true },
-  { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true },
-  { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true },
-  { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true },
-  { path: '/admin', icon: '⚙️', label: 'Admin', excludeNew: false, permission: 'users.read' }
+  { path: '/componentes', icon: '🔧', label: 'Componentes', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/estructuras', icon: '🏗️', label: 'Estructuras', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/acabado-tablero', icon: '🎨', label: 'Acabado Tablero', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false, roles: ['admin', 'editor'] },
+  { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/admin', icon: '⚙️', label: 'Admin', excludeNew: false, roles: ['admin'] }
 ];
 
+const userRole = computed(() => authStore.user?.role || authStore.user?.rol || 'viewer');
+
 const visibleNavItems = computed(() =>
-  navItems.filter((item) => !item.permission || authStore.hasPermission(item.permission))
+  navItems.filter((item) => {
+    if (item.roles && !item.roles.includes(userRole.value)) return false;
+    if (item.permission && !authStore.hasPermission(item.permission)) return false;
+    return true;
+  })
 );
 
 const isActive = (path, excludeNew) => {

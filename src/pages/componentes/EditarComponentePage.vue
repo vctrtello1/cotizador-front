@@ -68,9 +68,9 @@
                         <strong class="stat-value">{{ e.items.length }} <small>tipos</small></strong>
                         <span class="stat-detail">{{ e.totalCantidad }} unidades</span>
                     </div>
-                    <span class="stat-amount">${{ formatCurrency(e.totalCosto) }}</span>
+                    <span v-if="!esViewer" class="stat-amount">${{ formatCurrency(e.totalCosto) }}</span>
                 </div>
-                <div class="stat-card stat-card--highlight">
+                <div class="stat-card stat-card--highlight" v-if="!esViewer">
                     <div class="stat-icon stat-icon--total">💰</div>
                     <div class="stat-content">
                         <span class="stat-label">Costo total</span>
@@ -149,6 +149,7 @@
                     :obtener-codigo="e.obtenerCodigo"
                     :obtener-costo-unitario="e.obtenerCostoUnitario"
                     :obtener-subtotal="e.obtenerSubtotal"
+                    :ocultar-precios="esViewer"
                     @abrir-selector="e.abrirSelector"
                     @incrementar="e.incrementar"
                     @decrementar="e.decrementar"
@@ -187,6 +188,7 @@
             :items-filtrados="e.itemsFiltrados"
             :format-currency="formatCurrency"
             :obtener-precio="obtenerPrecio"
+            :ocultar-precios="esViewer"
             @close="e.cerrarSelector"
             @seleccionar="e.agregar"
             @update:busqueda="e.actualizarBusqueda($event)"
@@ -197,6 +199,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import api from '@/http/apl';
 import { getComponenteById } from '@/http/componentes-api';
 import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-componente';
@@ -215,6 +218,11 @@ import EntitySection from '@/components/EntitySection.vue';
 
 const router = useRouter();
 const route = useRoute();
+const authStore = useAuthStore();
+const esViewer = computed(() => {
+    const role = authStore.user?.role || authStore.user?.rol || 'viewer';
+    return role === 'viewer' || role === 'visualizador';
+});
 const componenteId = computed(() => Number.parseInt(route.params.id, 10) || 0);
 const storeEstructurasPorComponente = useEstructurasPorComponenteStore();
 const storeEstructuras = useEstructuraStore();
