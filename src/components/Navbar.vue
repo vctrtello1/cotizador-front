@@ -15,7 +15,7 @@ const cerrarSesion = async () => {
 const navItems = [
   { path: '/cotizaciones', icon: '📋', label: 'Cotizaciones', excludeNew: true },
   { path: '/modulos', icon: '🧩', label: 'Módulos', excludeNew: true },
-  { path: '/componentes', icon: '🔧', label: 'Componentes', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/componentes', icon: '🔧', label: 'Componentes', excludeNew: true },
   { path: '/estructuras', icon: '🏗️', label: 'Estructuras', excludeNew: true, roles: ['admin', 'editor'] },
   { path: '/acabado-tablero', icon: '🎨', label: 'Acabado Tablero', excludeNew: true, roles: ['admin', 'editor'] },
   { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false, roles: ['admin', 'editor'] },

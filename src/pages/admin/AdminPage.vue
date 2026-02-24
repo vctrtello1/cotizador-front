@@ -605,6 +605,7 @@ const abrirModalPermisos = async (u) => {
 
     // Cargar permisos actuales del usuario
     const data = await usuariosStore.fetchPermisosUsuario(u.id);
+    console.log('[Permisos usuario]', u.id, 'role:', data.role, 'permissions:', data.permissions);
     formPermisos.value = {
         role: data.role || u.role || 'viewer',
         permissions: Array.isArray(data.permissions) ? [...data.permissions] : [],
