@@ -32,16 +32,24 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="capacidad_carga">Capacidad de Carga (kg) *</label>
-                    <input
-                        v-model.number="formData.capacidad_carga"
-                        type="number"
-                        id="capacidad_carga"
-                        min="0"
-                        placeholder="Ej: 30"
-                        required
-                    />
+                    <label for="capacidad_carga">Capacidad de Carga *</label>
+                    <select v-model="formData.capacidad_carga" id="capacidad_carga" required>
+                        <option value="">Selecciona una capacidad</option>
+                        <option v-if="capacidadesDisponibles.length === 0" disabled>
+                            Cargando opciones...
+                        </option>
+                        <option 
+                            v-for="capacidad in capacidadesDisponibles" 
+                            :key="capacidad.id" 
+                            :value="capacidad.id"
+                        >
+                            {{ capacidad.capacidad }} kg
+                        </option>
+                    </select>
                     <span v-if="errors.capacidad_carga" class="error-text">{{ errors.capacidad_carga }}</span>
+                    <small v-if="capacidadesDisponibles.length === 0" style="color: #999; display: block; margin-top: 0.5rem;">
+                        ⚠️ No hay capacidades disponibles. Asegúrate de que el API esté funcionando correctamente.
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -115,14 +123,16 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCorrederasStore } from '@/stores/correderas.js';
+import { useCapacidadCorrederasStore } from '@/stores/capacidad-correderas.js';
 
 const router = useRouter();
 const correderasStore = useCorrederasStore();
+const capacidadCorrederasStore = useCapacidadCorrederasStore();
 
 // Estado
 const formData = ref({
     nombre: '',
-    capacidad_carga: 30,
+    capacidad_carga: '',
     tipo: '',
     incluye_varilla: false,
     precio_base: 0,
@@ -133,6 +143,7 @@ const errors = ref({});
 const error = ref(null);
 const exito = ref(null);
 const guardando = ref(false);
+const capacidadesDisponibles = ref([]);
 
 // Validar formulario
 const validar = () => {
@@ -146,8 +157,8 @@ const validar = () => {
         errors.value.tipo = 'El tipo es requerido';
     }
     
-    if (!formData.value.capacidad_carga || formData.value.capacidad_carga <= 0) {
-        errors.value.capacidad_carga = 'La capacidad de carga debe ser mayor a 0';
+    if (!formData.value.capacidad_carga) {
+        errors.value.capacidad_carga = 'La capacidad de carga es requerida';
     }
     
     if (formData.value.precio_base === '' || formData.value.precio_base < 0) {
@@ -174,7 +185,7 @@ const guardarCorredera = async () => {
         
         const datos = {
             nombre: formData.value.nombre.trim(),
-            capacidad_carga: parseInt(formData.value.capacidad_carga),
+            capacidad_carga: formData.value.capacidad_carga,
             tipo: formData.value.tipo,
             incluye_varilla: formData.value.incluye_varilla,
             precio_base: parseFloat(formData.value.precio_base),
@@ -206,9 +217,23 @@ const guardarCorredera = async () => {
     }
 };
 
+// Cargar capacidades disponibles
+const cargarCapacidades = async () => {
+    try {
+        const response = await capacidadCorrederasStore.fetchCapacidadCorrederas();
+        const data = response.data || response || [];
+        capacidadesDisponibles.value = data;
+    } catch (err) {
+        console.error('Error al cargar capacidades:', err);
+    }
+};
+
 // Cargar datos al montar
 onMounted(async () => {
     console.log('NuevaCorredera mounted');
+    
+    // Cargar capacidades disponibles
+    await cargarCapacidades();
     
     // Cargar correderas existentes para generar nombre incremental
     let numeroCorredera = 1;

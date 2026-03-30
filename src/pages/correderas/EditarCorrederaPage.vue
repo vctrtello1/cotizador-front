@@ -34,17 +34,24 @@
             </div>
 
             <div class="form-group">
-                <label for="capacidad_carga">Capacidad de Carga (kg) *</label>
-                <input
-                    v-model.number="formData.capacidad_carga"
-                    type="number"
-                    id="capacidad_carga"
-                    min="0"
-                    step="1"
-                    placeholder="Ej: 65"
-                    required
-                />
+                <label for="capacidad_carga">Capacidad de Carga *</label>
+                <select v-model="formData.capacidad_carga" id="capacidad_carga" required>
+                    <option value="">Selecciona una capacidad</option>
+                    <option v-if="capacidadesDisponibles.length === 0" disabled>
+                        Cargando opciones...
+                    </option>
+                    <option 
+                        v-for="capacidad in capacidadesDisponibles" 
+                        :key="capacidad.id" 
+                        :value="capacidad.id"
+                    >
+                        {{ capacidad.capacidad }} kg
+                    </option>
+                </select>
                 <span v-if="errors.capacidad_carga" class="error-text">{{ errors.capacidad_carga }}</span>
+                <small v-if="capacidadesDisponibles.length === 0" style="color: #999; display: block; margin-top: 0.5rem;">
+                    ⚠️ No hay capacidades disponibles. Asegúrate de que el API esté funcionando correctamente.
+                </small>
             </div>
 
             <div class="form-group">
@@ -115,10 +122,12 @@
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useCorrederasStore } from '@/stores/correderas.js';
+import { useCapacidadCorrederasStore } from '@/stores/capacidad-correderas.js';
 
 const router = useRouter();
 const route = useRoute();
 const correderasStore = useCorrederasStore();
+const capacidadCorrederasStore = useCapacidadCorrederasStore();
 
 // Estado
 const formData = ref({
@@ -134,6 +143,7 @@ const errors = ref({});
 const error = ref(null);
 const guardando = ref(false);
 const cargando = ref(true);
+const capacidadesDisponibles = ref([]);
 
 // Cargar corredera
 const cargarCorredera = async () => {
@@ -141,9 +151,21 @@ const cargarCorredera = async () => {
         cargando.value = true;
         const response = await correderasStore.getCorrederaByIdStore(route.params.id);
         const data = response.data || response;
+        
+        // Buscar el ID de la capacidad que corresponde al valor numérico
+        let capacidadId = data.capacidad_carga;
+        if (typeof data.capacidad_carga === 'number' && capacidadesDisponibles.value.length > 0) {
+            const capacidadEncontrada = capacidadesDisponibles.value.find(
+                cap => cap.capacidad === data.capacidad_carga
+            );
+            if (capacidadEncontrada) {
+                capacidadId = capacidadEncontrada.id;
+            }
+        }
+        
         formData.value = {
             nombre: data.nombre || '',
-            capacidad_carga: data.capacidad_carga || '',
+            capacidad_carga: capacidadId || '',
             tipo: data.tipo || '',
             incluye_varilla: data.incluye_varilla || false,
             precio_base: data.precio_base || '',
@@ -169,8 +191,8 @@ const validar = () => {
         errors.value.tipo = 'El tipo es requerido';
     }
     
-    if (formData.value.capacidad_carga === '' || formData.value.capacidad_carga <= 0) {
-        errors.value.capacidad_carga = 'La capacidad de carga debe ser mayor a 0';
+    if (!formData.value.capacidad_carga) {
+        errors.value.capacidad_carga = 'La capacidad de carga es requerida';
     }
     
     if (formData.value.precio_base === '' || formData.value.precio_base < 0) {
@@ -194,7 +216,7 @@ const guardarCorredera = async () => {
         
         const datos = {
             nombre: formData.value.nombre.trim(),
-            capacidad_carga: parseInt(formData.value.capacidad_carga),
+            capacidad_carga: formData.value.capacidad_carga,
             tipo: formData.value.tipo,
             incluye_varilla: formData.value.incluye_varilla,
             precio_base: parseFloat(formData.value.precio_base),
@@ -213,9 +235,21 @@ const guardarCorredera = async () => {
     }
 };
 
+// Cargar capacidades disponibles
+const cargarCapacidades = async () => {
+    try {
+        const response = await capacidadCorrederasStore.fetchCapacidadCorrederas();
+        const data = response.data || response || [];
+        capacidadesDisponibles.value = data;
+    } catch (err) {
+        console.error('Error al cargar capacidades:', err);
+    }
+};
+
 // Cargar datos al montar
-onMounted(() => {
-    cargarCorredera();
+onMounted(async () => {
+    await cargarCapacidades();
+    await cargarCorredera();
 });
 </script>
 
