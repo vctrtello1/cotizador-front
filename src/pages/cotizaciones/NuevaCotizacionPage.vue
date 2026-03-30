@@ -324,8 +324,10 @@ import { useComponentesPorCotizacionStore } from '../../stores/componentes-por-c
 import { crearCotizacion } from '../../http/cotizaciones-api';
 import { crearCliente } from '../../http/clientes-api';
 import { obtenerTokenCsrf } from '../../http/apl';
+import { useAuthStore } from '../../stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 const storeC = useCotizacionesStore();
 const storeClientes = useClientesStore();
 const storeModulos = useModulosStore();
@@ -541,7 +543,8 @@ const guardarCotizacion = async () => {
         const datosParaEnviar = {
             cliente_id: Number(formData.cliente_id),
             fecha: formData.fecha,
-            total: totalCotizacion.value
+            total: totalCotizacion.value,
+            usuario_id: authStore.user?.id
         };
 
         console.log('Enviando cotización:', datosParaEnviar);

@@ -5,6 +5,7 @@ import { fetchCotizaciones as fetchCotizacionesApi, getCotizacionById } from "..
 
 export const useCotizacionesStore = defineStore("cotizaciones", () => {
   const cotizaciones = ref([]);
+  const cotizacionesLocales = ref([]);
 
   const fetchCotizaciones = async () => {
     try {
@@ -15,11 +16,32 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
       const data = Array.isArray(response) ? response : (response.data || response || []);
       console.log("Final data to store:", data);
       
-      cotizaciones.value = data;
+      if (data.length > 0) {
+        cotizaciones.value = data;
+        // Limpiar locales que ya existan en el API
+        cotizacionesLocales.value = cotizacionesLocales.value.filter(
+          local => !data.some(api => api.id === local.id)
+        );
+      } else {
+        // Si el API no devuelve nada, mantener las creadas localmente
+        cotizaciones.value = [...cotizacionesLocales.value];
+      }
     } catch (error) {
       console.error("⚠️ Error fetching cotizaciones:", error);
-      cotizaciones.value = [];
+      cotizaciones.value = [...cotizacionesLocales.value];
     }
+  };
+
+  const agregarCotizacionLocal = (cotizacion) => {
+    cotizacionesLocales.value.push(cotizacion);
+    if (!cotizaciones.value.some(c => c.id === cotizacion.id)) {
+      cotizaciones.value = [...cotizaciones.value, cotizacion];
+    }
+  };
+
+  const eliminarCotizacionLocal = (id) => {
+    cotizacionesLocales.value = cotizacionesLocales.value.filter(c => c.id !== id);
+    cotizaciones.value = cotizaciones.value.filter(c => c.id !== id);
   };
 
   const fecthCotizacionById = async (id) => {
@@ -36,7 +58,10 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
 
   return {
     cotizaciones,
+    cotizacionesLocales,
     fetchCotizaciones,
+    agregarCotizacionLocal,
+    eliminarCotizacionLocal,
     fecthCotizacionById,
   };
 });

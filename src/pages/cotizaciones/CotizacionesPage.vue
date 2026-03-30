@@ -82,6 +82,7 @@
     import { useComponentesStore } from '@/stores/componentes';
     import { crearCotizacion, eliminarCotizacion as eliminarCotizacionApi } from '@/http/cotizaciones-api';
     import { useAuthStore } from '@/stores/auth';
+    import { obtenerTokenCsrf } from '@/http/apl';
 
     const router = useRouter();
     const authStore = useAuthStore();
@@ -182,14 +183,6 @@
             ? cotizacionesConComponentes.value
             : cotizaciones.value;
 
-        const user = authStore.user;
-        const role = user?.role || user?.rol;
-        const isVendedor = role === 'vendedor';
-
-        if (isVendedor && user?.id) {
-            return lista.filter(c => c.usuario_id === user.id || c.user_id === user.id);
-        }
-
         return lista;
     });
 
@@ -275,6 +268,8 @@
     const crearNuevaCotizacion = async () => {
         creandoCotizacion.value = true;
         try {
+            await obtenerTokenCsrf();
+
             // Buscar el cliente "Público General"
             await storeClientes.fetchClientes();
             const clientePublicoGeneral = storeClientes.clientes.find(c => 
@@ -293,18 +288,35 @@
             const nuevaCotizacion = {
                 cliente_id: clientePublicoGeneral.id,
                 fecha: new Date().toISOString().split('T')[0],
-                total: 0
+                total: 0,
+                usuario_id: authStore.user?.id
             };
 
             console.log('Creando nueva cotización:', nuevaCotizacion);
             const response = await crearCotizacion(nuevaCotizacion);
             console.log('Cotización creada:', response);
 
-            const cotizacionId = response.id || response.data?.id;
+            const cotizacionCreada = response.data || response;
+            const cotizacionId = cotizacionCreada.id || response.id;
 
             if (cotizacionId) {
-                // Recargar cotizaciones
-                await fetchCotizaciones();
+                // Agregar la cotización al store para que persista entre navegaciones
+                const cotizacionParaLista = {
+                    id: cotizacionId,
+                    cliente_id: clientePublicoGeneral.id,
+                    cliente: clientePublicoGeneral,
+                    fecha: nuevaCotizacion.fecha,
+                    total: 0,
+                    estado: cotizacionCreada.estado || 'activa',
+                    usuario_id: authStore.user?.id,
+                    user_id: authStore.user?.id,
+                    modulos: [],
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+
+                store.agregarCotizacionLocal(cotizacionParaLista);
+
                 // Redirigir a editar la cotización recién creada
                 router.push(`/editar-cotizacion/${cotizacionId}`);
             } else {
@@ -322,12 +334,9 @@
         try {
             await eliminarCotizacionApi(id);
             
-            // Actualizar la lista local eliminando la cotización
+            // Eliminar del store (local y API)
+            store.eliminarCotizacionLocal(id);
             cotizacionesConComponentes.value = cotizacionesConComponentes.value.filter(c => c.id !== id);
-            
-            // También actualizar el store
-            await fetchCotizaciones();
-            await sincronizarComponentesDeCotizaciones();
         } catch (error) {
             console.error('Error eliminando cotización:', error);
             alert('Error al eliminar la cotización: ' + (error.response?.data?.message || error.message));
