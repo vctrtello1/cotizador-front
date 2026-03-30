@@ -81,8 +81,10 @@
     import { useModulosStore } from '@/stores/modulos';
     import { useComponentesStore } from '@/stores/componentes';
     import { crearCotizacion, eliminarCotizacion as eliminarCotizacionApi } from '@/http/cotizaciones-api';
+    import { useAuthStore } from '@/stores/auth';
 
     const router = useRouter();
+    const authStore = useAuthStore();
     const store = useCotizacionesStore();
     const storeClientes = useClientesStore();
     const componentesPorCotizacionStore = useComponentesPorCotizacionStore();
@@ -176,9 +178,19 @@
 
     // Computed para usar cotizaciones con componentes o las del store
     const cotizacionesMostradas = computed(() => {
-        return cotizacionesConComponentes.value.length > 0 
-            ? cotizacionesConComponentes.value 
+        const lista = cotizacionesConComponentes.value.length > 0
+            ? cotizacionesConComponentes.value
             : cotizaciones.value;
+
+        const user = authStore.user;
+        const role = user?.role || user?.rol;
+        const isVendedor = role === 'vendedor';
+
+        if (isVendedor && user?.id) {
+            return lista.filter(c => c.usuario_id === user.id || c.user_id === user.id);
+        }
+
+        return lista;
     });
 
     const sincronizarComponentesDeCotizaciones = async () => {
