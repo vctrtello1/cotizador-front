@@ -55,8 +55,10 @@
                     </div>
                 </div>
                 <div class="card-footer" @click="goToCotizacionDetallada(cotizacion.id)">
-                    <span class="label">Total:</span>
-                    <span class="amount">{{ formatCurrency(calcularTotalReal(cotizacion)) }}</span>
+                    <template v-if="!isVendedor">
+                        <span class="label">Total:</span>
+                        <span class="amount">{{ formatCurrency(calcularTotalReal(cotizacion)) }}</span>
+                    </template>
                 </div>
             </div>
         </TransitionGroup>
@@ -94,6 +96,11 @@
     const { cotizaciones } = storeToRefs(store);
     const { fetchCotizaciones } = store;
     const creandoCotizacion = ref(false);
+
+    const isVendedor = computed(() => {
+        const role = authStore.user?.role || authStore.user?.rol;
+        return role === 'vendedor';
+    });
 
     // Crear ref local para evitar problemas con storeToRefs
     const cotizacionesConComponentes = ref([]);

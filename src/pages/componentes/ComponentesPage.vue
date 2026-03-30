@@ -94,7 +94,8 @@
                         <th>Nombre</th>
                         <th>Código</th>
                         <th>Descripción</th>
-                        <th class="text-right">Costo Total</th>
+                        <th>Entidades Relacionadas</th>
+                        <th v-if="!isVendedor" class="text-right">Costo Total</th>
                         <th v-if="canWrite" class="text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -103,7 +104,29 @@
                         <td class="cell-nombre">{{ componente.nombre }}</td>
                         <td class="cell-codigo">{{ componente.codigo }}</td>
                         <td class="cell-descripcion">{{ componente.descripcion || '—' }}</td>
-                        <td class="cell-precio">${{ formatCurrency(componente.costo_total || 0) }}</td>
+                        <td class="cell-entidades">
+                            <div class="entidades-tags">
+                                <span v-for="e in getEstructuras(componente.id)" :key="'est-'+e.nombre" class="tag tag-estructura" :title="'Estructura: ' + e.nombre">
+                                    🏗️ {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                                </span>
+                                <span v-for="e in getAcabadoTableros(componente.id)" :key="'at-'+e.nombre" class="tag tag-acabado-tablero" :title="'Acabado Tablero: ' + e.nombre">
+                                    🪵 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                                </span>
+                                <span v-for="e in getCubreCantos(componente.id)" :key="'cc-'+e.nombre" class="tag tag-cubre-canto" :title="'Cubre Canto: ' + e.nombre">
+                                    📏 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                                </span>
+                                <span v-for="e in getPuertas(componente.id)" :key="'pu-'+e.nombre" class="tag tag-puerta" :title="'Puerta: ' + e.nombre">
+                                    🚪 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                                </span>
+                                <span v-for="e in getAccesorios(componente.id)" :key="'ac-'+e.nombre" class="tag tag-accesorio" :title="'Accesorio: ' + e.nombre">
+                                    🔩 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                                </span>
+                                <span v-if="!getEstructuras(componente.id).length && !getAcabadoTableros(componente.id).length && !getCubreCantos(componente.id).length && !getPuertas(componente.id).length && !getAccesorios(componente.id).length" class="tag-empty">
+                                    Sin entidades
+                                </span>
+                            </div>
+                        </td>
+                        <td v-if="!isVendedor" class="cell-precio">${{ formatCurrency(componente.costo_total || 0) }}</td>
                         <td v-if="canWrite" class="cell-actions">
                             <button 
                                 class="btn-action btn-edit" 
@@ -144,7 +167,31 @@
 
                 <p class="componente-descripcion">{{ componente.descripcion || 'Sin descripción' }}</p>
 
-                <div class="componente-info">
+                <!-- Entidades relacionadas -->
+                <div class="componente-entidades">
+                    <div class="entidades-tags">
+                        <span v-for="e in getEstructuras(componente.id)" :key="'est-'+e.nombre" class="tag tag-estructura">
+                            🏗️ {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                        </span>
+                        <span v-for="e in getAcabadoTableros(componente.id)" :key="'at-'+e.nombre" class="tag tag-acabado-tablero">
+                            🪵 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                        </span>
+                        <span v-for="e in getCubreCantos(componente.id)" :key="'cc-'+e.nombre" class="tag tag-cubre-canto">
+                            📏 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                        </span>
+                        <span v-for="e in getPuertas(componente.id)" :key="'pu-'+e.nombre" class="tag tag-puerta">
+                            🚪 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                        </span>
+                        <span v-for="e in getAccesorios(componente.id)" :key="'ac-'+e.nombre" class="tag tag-accesorio">
+                            🔩 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
+                        </span>
+                        <span v-if="!getEstructuras(componente.id).length && !getAcabadoTableros(componente.id).length && !getCubreCantos(componente.id).length && !getPuertas(componente.id).length && !getAccesorios(componente.id).length" class="tag-empty">
+                            Sin entidades relacionadas
+                        </span>
+                    </div>
+                </div>
+
+                <div class="componente-info" v-if="!isVendedor">
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="info-icon">💰</span>
@@ -204,9 +251,29 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchComponentes, eliminarComponente, getComponenteById, crearComponente } from '@/http/componentes-api';
 import { useAuthStore } from '@/stores/auth';
+import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-componente';
+import { useAcabadoTableroPorComponenteStore } from '@/stores/acabado-tablero-por-componente';
+import { useAcabadoCubreCantosPorComponenteStore } from '@/stores/acabado-cubre-cantos-por-componente';
+import { usePuertasPorComponenteStore } from '@/stores/puertas-por-componente';
+import { useAccesoriosPorComponenteStore } from '@/stores/accesorios-por-componente';
+import { useEstructuraStore } from '@/stores/estructura';
+import { useAcabadoTableroStore } from '@/stores/acabado-tablero';
+import { useAcabadoCubreCantosStore } from '@/stores/acabado-cubre-cantos';
+import { usePuertasStore } from '@/stores/puertas';
+import { useAccesoriosStore } from '@/stores/accesorios';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const estructurasPorCompStore = useEstructurasPorComponenteStore();
+const acabadoTableroPorCompStore = useAcabadoTableroPorComponenteStore();
+const acabadoCubreCantosPorCompStore = useAcabadoCubreCantosPorComponenteStore();
+const puertasPorCompStore = usePuertasPorComponenteStore();
+const accesoriosPorCompStore = useAccesoriosPorComponenteStore();
+const estructuraStore = useEstructuraStore();
+const acabadoTableroStore = useAcabadoTableroStore();
+const acabadoCubreCantosStore = useAcabadoCubreCantosStore();
+const puertasStore = usePuertasStore();
+const accesoriosStore = useAccesoriosStore();
 const esViewerOEditor = computed(() => {
     const role = authStore.user?.role || authStore.user?.rol || 'viewer';
     return role === 'viewer' || role === 'visualizador' || role === 'editor';
@@ -222,6 +289,10 @@ const componenteAEliminar = ref(null);
 const searchQuery = ref('');
 const viewMode = ref('grid');
 const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
+const isVendedor = computed(() => {
+    const role = authStore.user?.role || authStore.user?.rol;
+    return role === 'vendedor';
+});
 
 // Componentes filtrados por búsqueda
 const filteredComponentes = computed(() => {
@@ -344,9 +415,77 @@ const formatCurrency = (value) => {
 };
 
 // Lifecycle
-onMounted(() => {
-    cargarComponentes();
+onMounted(async () => {
+    await cargarComponentes();
+    // Cargar entidades relacionadas en paralelo
+    await Promise.all([
+        estructurasPorCompStore.fetchEstructurasPorComponente(),
+        acabadoTableroPorCompStore.fetchAcabadoTablerosPorComponente(),
+        acabadoCubreCantosPorCompStore.fetchAcabadoCubreCantosPorComponente(),
+        puertasPorCompStore.fetchPuertasPorComponente(),
+        accesoriosPorCompStore.fetchAccesoriosPorComponente(),
+        estructuraStore.fetchEstructuras(),
+        acabadoTableroStore.fetchAcabadoTableros(),
+        acabadoCubreCantosStore.fetchAcabadoCubreCantos(),
+        puertasStore.fetchPuertas(),
+        accesoriosStore.fetchAccesorios(),
+    ]);
 });
+
+// Obtener entidades relacionadas a un componente
+const getEstructuras = (componenteId) => {
+    const relaciones = estructurasPorCompStore.estructurasPorComponente.filter(
+        r => Number(r.componente_id) === Number(componenteId)
+    );
+    return relaciones.map(r => {
+        const entidad = estructuraStore.estructuras.find(e => Number(e.id) === Number(r.estructura_id));
+        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+    }).filter(Boolean);
+};
+
+const getAcabadoTableros = (componenteId) => {
+    const relaciones = acabadoTableroPorCompStore.acabadoTablerosPorComponente.filter(
+        r => Number(r.componente_id) === Number(componenteId)
+    );
+    return relaciones.map(r => {
+        const entidad = acabadoTableroStore.acabadoTableros.find(e => Number(e.id) === Number(r.acabado_tablero_id));
+        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+    }).filter(Boolean);
+};
+
+const getCubreCantos = (componenteId) => {
+    const relaciones = acabadoCubreCantosPorCompStore.acabadoCubreCantosPorComponente.filter(
+        r => Number(r.componente_id) === Number(componenteId)
+    );
+    return relaciones.map(r => {
+        const id = r.acabado_cubre_canto_id || r.acabado_cubre_cantos_id;
+        const entidad = acabadoCubreCantosStore.acabadoCubreCantos.find(e => Number(e.id) === Number(id));
+        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+    }).filter(Boolean);
+};
+
+const getPuertas = (componenteId) => {
+    const relaciones = puertasPorCompStore.puertasPorComponente.filter(
+        r => Number(r.componente_id) === Number(componenteId)
+    );
+    return relaciones.map(r => {
+        const entidad = puertasStore.puertas.find(e => Number(e.id) === Number(r.puerta_id));
+        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+    }).filter(Boolean);
+};
+
+const getAccesorios = (componenteId) => {
+    const relaciones = accesoriosPorCompStore.accesoriosPorComponente.filter(
+        r => Number(r.componente_id) === Number(componenteId)
+    );
+    return relaciones.map(r => {
+        const id = r.accesorio_id || r.accesorio;
+        const entidad = accesoriosStore.accesorios.find(e => 
+            Number(e.id) === Number(id) || e.nombre === id
+        );
+        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+    }).filter(Boolean);
+};
 </script>
 
 <style scoped>
@@ -1071,6 +1210,75 @@ onMounted(() => {
 
 .modal-actions button {
     flex: 1;
+}
+
+/* ========== Entity Tags ========== */
+.componente-entidades {
+    margin-top: 4px;
+}
+
+.cell-entidades {
+    max-width: 350px;
+}
+
+.entidades-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid;
+}
+
+.tag-qty {
+    font-size: 10px;
+    opacity: 0.7;
+    font-weight: 700;
+}
+
+.tag-estructura {
+    background: #eef2ff;
+    color: #4338ca;
+    border-color: #c7d2fe;
+}
+
+.tag-acabado-tablero {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.tag-cubre-canto {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.tag-puerta {
+    background: #fdf2f8;
+    color: #9d174d;
+    border-color: #fbcfe8;
+}
+
+.tag-accesorio {
+    background: #f0f9ff;
+    color: #075985;
+    border-color: #bae6fd;
+}
+
+.tag-empty {
+    font-size: 12px;
+    color: #999;
+    font-style: italic;
 }
 
 /* ========== Transitions ========== */
