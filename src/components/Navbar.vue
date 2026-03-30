@@ -45,14 +45,31 @@ const isActive = (path, excludeNew) => {
 
 <template>
   <header class="app-header">
-    <div class="header-content">
-      <div class="logo-section">
-        <router-link to="/" class="logo-link">
-          <span class="logo-icon">📐</span>
-          <h1 class="logo-text">Cotizador</h1>
-        </router-link>
+    <!-- Top bar: logo + user -->
+    <div class="top-bar">
+      <router-link to="/" class="logo-link">
+        <span class="logo-icon">📐</span>
+        <h1 class="logo-text">Cotizador</h1>
+      </router-link>
+      <div class="user-section">
+        <div class="user-info" v-if="authStore.user">
+          <span class="user-avatar">{{ (authStore.user.name || authStore.user.nombre || 'U')[0].toUpperCase() }}</span>
+          <span class="user-name">{{ authStore.user.name || authStore.user.nombre || 'Usuario' }}</span>
+          <span class="user-role">{{ userRole }}</span>
+        </div>
+        <button class="btn-logout" @click="cerrarSesion" title="Cerrar sesión">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span class="logout-text">Salir</span>
+        </button>
       </div>
-      <nav class="nav-menu">
+    </div>
+    <!-- Navigation bar -->
+    <nav class="nav-bar">
+      <div class="nav-scroll">
         <router-link 
           v-for="item in visibleNavItems"
           :key="item.path"
@@ -61,44 +78,31 @@ const isActive = (path, excludeNew) => {
           :class="{ active: isActive(item.path, item.excludeNew) }"
         >
           <span class="nav-icon">{{ item.icon }}</span>
-          {{ item.label }}
+          <span class="nav-label">{{ item.label }}</span>
         </router-link>
-      </nav>
-      <button class="btn-logout" @click="cerrarSesion" title="Cerrar sesión">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-        <span class="logout-text">Salir</span>
-      </button>
-    </div>
+      </div>
+    </nav>
   </header>
 </template>
 
 <style scoped>
+/* ========== Header container ========== */
 .app-header {
-  background: linear-gradient(135deg, #2c2c2c 0%, #3a3a3a 100%);
-  padding: 0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 20px;
+/* ========== Top bar: logo + user ========== */
+.top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 40px;
-  height: 70px;
-}
-
-.logo-section {
-  flex-shrink: 0;
+  padding: 0 24px;
+  height: 56px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .logo-link {
@@ -111,282 +115,132 @@ const isActive = (path, excludeNew) => {
 }
 
 .logo-link:hover {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .logo-icon {
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .logo-text {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: #d4a574;
   letter-spacing: -0.5px;
 }
 
-.nav-menu {
+.user-section {
   display: flex;
-  gap: 8px;
-  flex: 1;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.user-name {
+  color: #e0dbd4;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.user-role {
+  color: #888;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* ========== Navigation bar ========== */
+.nav-bar {
+  position: relative;
+  padding: 0 24px;
+}
+
+.nav-scroll {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 8px 0;
+}
+
+.nav-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  color: #c0bbb4;
+  gap: 6px;
+  padding: 8px 16px;
+  color: #999;
   text-decoration: none;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   border-radius: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   white-space: nowrap;
   position: relative;
-  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .nav-icon {
-  font-size: 18px;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 16px;
+  transition: transform 0.2s ease;
 }
 
-.nav-link:hover .nav-icon {
-  transform: scale(1.1) translateY(-2px);
+.nav-label {
+  pointer-events: none;
 }
 
 .nav-link:hover {
   color: #d4a574;
-  background: rgba(212, 165, 116, 0.1);
-  transform: translateY(-2px);
+  background: rgba(212, 165, 116, 0.08);
+}
+
+.nav-link:hover .nav-icon {
+  transform: scale(1.1);
 }
 
 .nav-link.active {
   color: #d4a574;
-  background: rgba(212, 165, 116, 0.15);
+  background: rgba(212, 165, 116, 0.12);
   font-weight: 600;
-}
-
-.nav-link.active .nav-icon {
-  transform: scale(1.15);
 }
 
 .nav-link.active::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 20px;
-  right: 20px;
-  height: 3px;
-  background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: #d4a574;
   border-radius: 2px 2px 0 0;
-  animation: slideInBottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.nav-link.active::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(200, 149, 100, 0.1) 100%);
-  opacity: 0;
-  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes slideInBottom {
-  from {
-    transform: scaleX(0);
-    opacity: 0;
-  }
-  to {
-    transform: scaleX(1);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Tablets y pantallas medianas */
-@media (max-width: 1024px) {
-  .header-content {
-    gap: 30px;
-    padding: 0 16px;
-  }
-
-  .nav-menu {
-    gap: 6px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .nav-link {
-    padding: 10px 16px;
-    font-size: 13px;
-  }
-
-  .nav-icon {
-    font-size: 16px;
-  }
-}
-
-/* Tablets pequeños */
-@media (max-width: 768px) {
-  .header-content {
-    gap: 16px;
-    height: auto;
-    padding: 12px;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .logo-section {
-    width: 100%;
-  }
-
-  .logo-link {
-    justify-content: center;
-  }
-
-  .logo-text {
-    font-size: 20px;
-  }
-
-  .logo-icon {
-    font-size: 24px;
-  }
-
-  .nav-menu {
-    width: 100%;
-    gap: 6px;
-    justify-content: center;
-  }
-
-  .nav-link {
-    padding: 10px 14px;
-    font-size: 12px;
-    gap: 6px;
-  }
-
-  .nav-link.active::after {
-    left: 14px;
-    right: 14px;
-  }
-
-  .nav-icon {
-    font-size: 16px;
-  }
-}
-
-/* Móviles */
-@media (max-width: 640px) {
-  .header-content {
-    padding: 10px;
-    gap: 12px;
-  }
-
-  .logo-text {
-    font-size: 18px;
-  }
-
-  .logo-icon {
-    font-size: 22px;
-  }
-
-  .nav-menu {
-    gap: 4px;
-  }
-
-  .nav-link {
-    padding: 8px 10px;
-    font-size: 11px;
-    gap: 5px;
-    flex: 1 1 calc(50% - 4px);
-    min-width: 0;
-    justify-content: center;
-  }
-
-  .nav-icon {
-    font-size: 14px;
-  }
-
-  .nav-link.active::after {
-    height: 2px;
-    left: 10px;
-    right: 10px;
-  }
-}
-
-/* Móviles muy pequeños - solo iconos */
-@media (max-width: 480px) {
-  .header-content {
-    padding: 8px;
-    gap: 10px;
-  }
-
-  .logo-section {
-    padding: 4px 0;
-  }
-
-  .logo-text {
-    font-size: 16px;
-  }
-
-  .logo-icon {
-    font-size: 20px;
-  }
-
-  .nav-menu {
-    gap: 6px;
-    justify-content: space-around;
-  }
-
-  .nav-link {
-    padding: 10px 8px;
-    font-size: 0;
-    gap: 0;
-    flex: 0 1 auto;
-    min-width: 44px;
-  }
-
-  .nav-icon {
-    font-size: 20px;
-    margin: 0;
-  }
-
-  .nav-link span:not(.nav-icon) {
-    display: none;
-  }
-
-  .nav-link.active::after {
-    display: none;
-  }
-
-  .nav-link.active {
-    background: rgba(212, 165, 116, 0.25);
-  }
-
-  .btn-logout {
-    position: fixed;
-    bottom: 16px;
-    right: 16px;
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    justify-content: center;
-  }
-
-  .logout-text {
-    display: none;
-  }
 }
 
 /* ========== Logout button ========== */
@@ -395,22 +249,22 @@ const isActive = (path, excludeNew) => {
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  color: #c0bbb4;
+  color: #999;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.25s;
+  transition: all 0.2s;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
 .btn-logout:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
   color: #fca5a5;
 }
 
@@ -420,5 +274,98 @@ const isActive = (path, excludeNew) => {
 
 .logout-text {
   pointer-events: none;
+}
+
+/* ========== Responsive ========== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 5px;
+  }
+
+  .nav-icon {
+    font-size: 15px;
+  }
+}
+
+/* Tablet small */
+@media (max-width: 768px) {
+  .top-bar {
+    padding: 0 16px;
+    height: 50px;
+  }
+
+  .nav-bar {
+    padding: 0 16px;
+  }
+
+  .user-name,
+  .user-role {
+    display: none;
+  }
+
+  .nav-link {
+    padding: 8px 10px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .nav-icon {
+    font-size: 14px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .top-bar {
+    padding: 0 12px;
+    height: 46px;
+  }
+
+  .logo-icon {
+    font-size: 20px;
+  }
+
+  .logo-text {
+    font-size: 17px;
+  }
+
+  .nav-bar {
+    padding: 0 12px;
+  }
+
+  .nav-scroll {
+    padding: 6px 0;
+    gap: 2px;
+  }
+
+  .nav-link {
+    padding: 6px 8px;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .nav-icon {
+    font-size: 18px;
+  }
+
+  .nav-link.active::after {
+    left: 6px;
+    right: 6px;
+  }
+
+  .logout-text {
+    display: none;
+  }
+
+  .btn-logout {
+    padding: 8px;
+    border-radius: 8px;
+  }
 }
 </style>
