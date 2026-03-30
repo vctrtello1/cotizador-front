@@ -82,7 +82,7 @@
             <!-- Datos Generales -->
             <div class="info-card">
                 <h2 class="section-title">
-                    <span class="section-icon">📌</span>
+                    <span class="section-icon">📌</span> 
                     Datos Generales
                 </h2>
                 <div class="info-grid">

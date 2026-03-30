@@ -77,7 +77,6 @@
                             <p class="componente-codigo">{{ comp.codigo }}</p>
                             <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
                                 <p><strong>Cantidad:</strong> {{ comp.cantidad }}</p>
-                                <p><strong>Acabado:</strong> {{ obtenerNombreAcabado(comp.acabado_id) }}</p>
                             </div>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
@@ -167,54 +166,14 @@
                         </div>
                     </div>
 
-                    <div class="modal-item">
-                        <label class="modal-label">Acabado *</label>
-                        <button 
-                            class="btn-select-modal"
-                            @click="mostrarModalSeleccionarAcabado = true"
-                        >
-                            {{ obtenerNombreAcabado(componenteActual.acabado_id) || 'Seleccionar acabado...' }}
-                        </button>
-                    </div>
+
 
                 </div>
 
             </div>
         </div>
 
-        <!-- Modal para seleccionar Acabado -->
-        <div v-if="mostrarModalSeleccionarAcabado" class="modal-overlay" @click.self="mostrarModalSeleccionarAcabado = false">
-            <div class="modal-content modal-seleccion">
-                <div class="modal-header">
-                    <h3>Seleccionar Acabado</h3>
-                    <button class="modal-close" @click="mostrarModalSeleccionarAcabado = false">✕</button>
-                </div>
 
-                <div class="modal-body modal-seleccion-body">
-                    <div v-if="acabados.length === 0" class="empty-state">
-                        <p>No hay acabados disponibles</p>
-                    </div>
-
-                    <div v-else class="items-lista">
-                        <div 
-                            v-for="acabado in acabados" 
-                            :key="acabado.id" 
-                            class="item-seleccion"
-                            :class="{ 'item-seleccionado': componenteActual.acabado_id == acabado.id }"
-                            @click="seleccionarAcabado(acabado)"
-                        >
-                            <div class="item-info">
-                                <h4>{{ acabado.nombre }}</h4>
-                                <p class="item-codigo">{{ acabado.codigo }}</p>
-                                <p v-if="acabado.descripcion" class="item-descripcion">{{ acabado.descripcion }}</p>
-                                <p class="item-precio">Costo: <strong>${{ formatCurrency(acabado.costo) }}</strong></p>
-                            </div>
-                            <div v-if="componenteActual.acabado_id == acabado.id" class="item-checkmark">✓</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
     </div>
 </template>
@@ -222,8 +181,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getModuloById, actualizarModulo, fetchAcabados, fetchModulos } from '@/http/modulos-api';
-import { crearAcabado } from '@/http/acabado-api';
+import { getModuloById, actualizarModulo, fetchModulos } from '@/http/modulos-api';
 
 const router = useRouter();
 const route = useRoute();
@@ -240,21 +198,18 @@ const formData = ref({
 const componentesOriginales = ref([]);
 
 // Catálogos
-const acabados = ref([]);
 const todosLosComponentes = ref([]);
 const componenteSeleccionado = ref('');
 
 // Modal
 const mostrarModal = ref(false);
 const mostrarModalComponentes = ref(false);
-const mostrarModalSeleccionarAcabado = ref(false);
 const indiceComponenteActual = ref(-1);  // Índice del componente siendo editado
 const componenteActual = ref({
     id: null,
     nombre: '',
     codigo: '',
-    cantidad: 1,
-    acabado_id: ''
+    cantidad: 1
 });
 
 // Estado de UI
@@ -339,10 +294,6 @@ const validarFormulario = () => {
             error.value = 'Todos los componentes deben tener una cantidad válida';
             return false;
         }
-        if (!componente.acabado_id) {
-            error.value = 'Todos los componentes deben tener un acabado';
-            return false;
-        }
     }
 
     return valido;
@@ -354,8 +305,7 @@ const agregarComponente = () => {
         nombre: '',
         codigo: '',
         descripcion: '',
-        cantidad: 1,
-        acabado_id: null
+        cantidad: 1
     });
 };
 
@@ -373,8 +323,7 @@ const eliminarComponente = async (idx) => {
             descripcion: formData.value.descripcion,
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id)
+                cantidad: comp.cantidad
             }))
         };
         
@@ -397,19 +346,7 @@ const abrirModalEdicionComponente = (componente, idx) => {
     mostrarModal.value = true;
 };
 
-// Métodos de cálculo
-const calcularCostoTotal = () => {
-    return formData.value.componentes.reduce((total, comp) => {
-        const acabado = acabados.value.find(a => a.id === Number(comp.acabado_id));
-        const costoAcabado = parseFloat(acabado?.costo || 0);
-        return total + (costoAcabado * (comp.cantidad || 0));
-    }, 0);
-};
 
-const obtenerNombreAcabado = (acabadoId) => {
-    const acabado = acabados.value.find(a => a.id === Number(acabadoId));
-    return acabado?.nombre || 'Sin seleccionar';
-};
 
 const formatCurrency = (value) => {
     return parseFloat(value).toLocaleString('es-MX', {
@@ -437,8 +374,7 @@ const guardarModulo = async () => {
             descripcion: formData.value.descripcion,
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id)
+                cantidad: comp.cantidad
             }))
         };
 
@@ -495,8 +431,7 @@ const cargarModulo = async () => {
             nombre: comp.nombre,
             codigo: comp.codigo,
             descripcion: comp.descripcion,
-            cantidad: comp.cantidad || 1,
-            acabado_id: typeof comp.acabado_id === 'object' ? comp.acabado_id.id : comp.acabado_id
+            cantidad: comp.cantidad || 1
         }));
         
         // Guardar los componentes originales para detectar cuáles son nuevos
@@ -514,9 +449,6 @@ const cargarModulo = async () => {
 const cargarCatalogos = async () => {
     try {
         cargandoCatalogos.value = true;
-        const acabadosRes = await fetchAcabados();
-
-        acabados.value = acabadosRes.data || [];
         
         // Cargar todos los componentes disponibles
         cargarTodosLosComponentes();
@@ -545,8 +477,7 @@ const cargarTodosLosComponentes = async () => {
                             nombre: comp.nombre,
                             codigo: comp.codigo,
                             descripcion: comp.descripcion,
-                            cantidad: 1,
-                            acabado_id: null
+                            cantidad: 1
                         });
                     }
                 });
@@ -583,44 +514,14 @@ const abrirModalConfiguracion = async (componente) => {
     try {
         cargando.value = true;
         
-        // Buscar o crear el acabado estándar de roble
-        let acabadoEstandar = acabados.value.find(a => a.nombre && a.nombre.toLowerCase().includes('estándar') && a.nombre.toLowerCase().includes('roble'));
-        
-        if (!acabadoEstandar) {
-            // Si no existe, intentar crearlo
-            try {
-                const nuevoAcabado = await crearAcabado({
-                    nombre: 'Estándar de Roble',
-                    codigo: 'EST_ROBLE',
-                    descripcion: 'Acabado estándar de roble',
-                    costo: 0
-                });
-                
-                // Agregar a la lista de acabados
-                const acabadoCreado = nuevoAcabado.data || nuevoAcabado;
-                acabados.value.push(acabadoCreado);
-                acabadoEstandar = acabadoCreado;
-            } catch (err) {
-                console.warn('⚠️ No se pudo crear acabado estándar:', err);
-            }
-        }
-        
         // Crear el componente con valores por defecto
         const nuevoComponente = {
             id: componente.id,
             nombre: componente.nombre,
             codigo: componente.codigo,
             descripcion: componente.descripcion,
-            cantidad: 1,
-            acabado_id: acabadoEstandar?.id ? Number(acabadoEstandar.id) : null
+            cantidad: 1
         };
-        
-        // Validar que tenga valores por defecto
-        if (!nuevoComponente.acabado_id) {
-            mostrarMensaje('⚠️ No se pudieron crear los valores por defecto', 'error', 2000);
-            console.error('Faltan valores por defecto:', { acabadoEstandar });
-            return;
-        }
         
         // Agregar a formData inmediatamente
         formData.value.componentes.push({...nuevoComponente});
@@ -632,8 +533,7 @@ const abrirModalConfiguracion = async (componente) => {
             descripcion: formData.value.descripcion,
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id)
+                cantidad: comp.cantidad
             }))
         };
         
@@ -658,11 +558,6 @@ const abrirModalConfiguracion = async (componente) => {
 
 // Guardar componente (nuevo o editado) en la API
 const guardarComponente = async () => {
-    if (!componenteActual.value.acabado_id) {
-        error.value = 'Debe seleccionar un acabado';
-        return;
-    }
-    
     try {
         cargando.value = true;
         
@@ -681,8 +576,7 @@ const guardarComponente = async () => {
             descripcion: formData.value.descripcion,
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id)
+                cantidad: comp.cantidad
             }))
         };
         
@@ -710,46 +604,11 @@ const cerrarModal = () => {
         id: null,
         nombre: '',
         codigo: '',
-        cantidad: 1,
-        acabado_id: ''
+        cantidad: 1
     };
 };
 
-// Seleccionar acabado
-const seleccionarAcabado = async (acabado) => {
-    try {
-        cargando.value = true;
-        
-        // Actualizar el componente actual
-        componenteActual.value.acabado_id = acabado.id;
-        
-        // Actualizar en formData
-        if (indiceComponenteActual.value !== -1) {
-            formData.value.componentes[indiceComponenteActual.value].acabado_id = acabado.id;
-        }
-        
-        // Guardar en la API inmediatamente
-        const datosModulo = {
-            nombre: formData.value.nombre,
-            codigo: formData.value.codigo,
-            descripcion: formData.value.descripcion,
-            componentes: formData.value.componentes.map(comp => ({
-                id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id)
-            }))
-        };
-        
-        await actualizarModulo(route.params.id, datosModulo);
-        mostrarMensaje('✅ Acabado actualizado', 'success', 1000);
-        mostrarModalSeleccionarAcabado.value = false;
-    } catch (err) {
-        console.error('❌ Error al guardar acabado:', err);
-        mostrarMensaje('Error al guardar acabado', 'error', 2000);
-    } finally {
-        cargando.value = false;
-    }
-};
+
 
 // Guardar cambios de cantidad en la API
 const guardarCambiosComponente = async () => {
@@ -777,8 +636,7 @@ const guardarCambiosComponente = async () => {
             descripcion: formData.value.descripcion,
             componentes: formData.value.componentes.map(comp => ({
                 id: Number(comp.id),
-                cantidad: comp.cantidad,
-                acabado_id: Number(comp.acabado_id)
+                cantidad: comp.cantidad
             }))
         };
         
