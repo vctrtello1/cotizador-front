@@ -4,8 +4,18 @@
         <div class="page-header">
             <div class="header-content">
                 <div class="header-text">
-                    <h1 class="page-title">Componentes</h1>
+                    <h1 class="page-title">📦 Componentes</h1>
                     <p class="header-subtitle">Gestiona y visualiza todos tus componentes</p>
+                    <div v-if="!cargando" class="stats-badges">
+                        <span class="stat-badge">
+                            <span class="stat-label">Total:</span>
+                            <span class="stat-value">{{ componentes.length }}</span>
+                        </span>
+                        <span v-if="searchQuery" class="stat-badge stat-badge-accent">
+                            <span class="stat-label">Filtrados:</span>
+                            <span class="stat-value">{{ filteredComponentes.length }}</span>
+                        </span>
+                    </div>
                 </div>
                 <button v-if="canWrite" class="btn-primary btn-new" @click="$router.push('/nuevo-componente')">
                     <span class="btn-icon">+</span>
@@ -49,12 +59,14 @@
         <!-- Toolbar con búsqueda -->
         <div v-else class="toolbar">
             <div class="search-box">
+                <span class="search-icon">🔍</span>
                 <input 
                     v-model="searchQuery" 
                     type="text" 
-                    placeholder="🔍 Buscar componentes..."
+                    placeholder="Buscar por nombre, código o descripción..."
                     class="search-input"
                 >
+                <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">✕</button>
             </div>
             <div class="view-toggle">
                 <button 
@@ -62,14 +74,14 @@
                     @click="viewMode = 'table'"
                     title="Vista tabla"
                 >
-                    ≡
+                    <span>☰</span> Tabla
                 </button>
                 <button 
                     :class="['view-btn', { active: viewMode === 'grid' }]"
                     @click="viewMode = 'grid'"
-                    title="Vista grid"
+                    title="Vista cuadrícula"
                 >
-                    ⊞
+                    <span>⊞</span> Grid
                 </button>
             </div>
         </div>
@@ -102,6 +114,13 @@
                                 ✏️
                             </button>
                             <button 
+                                class="btn-action btn-duplicate" 
+                                @click="duplicarComponente(componente.id)"
+                                title="Duplicar"
+                            >
+                                📋
+                            </button>
+                            <button 
                                 class="btn-action btn-delete" 
                                 @click="confirmarEliminar(componente.id)"
                                 title="Eliminar"
@@ -118,26 +137,62 @@
         <div v-else-if="viewMode === 'grid' && filteredComponentes.length > 0" class="componentes-grid">
             <div v-for="componente in filteredComponentes" :key="componente.id" class="componente-card">
                 <div class="card-header">
-                    <h3 class="componente-nombre">{{ componente.nombre }}</h3>
-                    <span class="componente-codigo">{{ componente.codigo }}</span>
+                    <div class="card-title-section">
+                        <h3 class="componente-nombre">{{ componente.nombre }}</h3>
+                        <span class="componente-codigo">{{ componente.codigo }}</span>
+                    </div>
                 </div>
 
                 <p class="componente-descripcion">{{ componente.descripcion || 'Sin descripción' }}</p>
 
                 <div class="componente-info">
-                    <div class="info-item">
-                        <label>Precio</label>
-                        <span class="price" v-if="!esViewerOEditor">${{ formatCurrency(componente.costo_total) }}</span>
-                        <span class="price" v-else>—</span>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-icon">💰</span>
+                            <div class="info-content">
+                                <label>Precio Total</label>
+                                <span class="price" v-if="!esViewerOEditor">${{ formatCurrency(componente.costo_total || 0) }}</span>
+                                <span class="price" v-else>—</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">📏</span>
+                            <div class="info-content">
+                                <label>Unidad</label>
+                                <span class="value">{{ componente.unidad_medida || '—' }}</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">📊</span>
+                            <div class="info-content">
+                                <label>Disponible</label>
+                                <span class="value">{{ componente.cantidad_disponible || 0 }}</span>
+                            </div>
+                        </div>
+                        <div class="info-item" v-if="!esViewerOEditor">
+                            <span class="info-icon">💵</span>
+                            <div class="info-content">
+                                <label>Costo Unit.</label>
+                                <span class="value">${{ formatCurrency(componente.costo_unitario || 0) }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div v-if="canWrite" class="card-actions">
-                    <button class="btn-edit" @click="editarComponente(componente.id)">
-                        <span>✏️</span> Editar
+                    <button class="btn-icon-action btn-edit" @click="editarComponente(componente.id)" title="Editar">
+                        ✏️
                     </button>
-                    <button class="btn-delete-secondary" @click="confirmarEliminar(componente.id)">
-                        <span>🗑️</span> Eliminar
+                    <button class="btn-icon-action btn-duplicate" @click="duplicarComponente(componente.id)" title="Duplicar">
+                        📋
+                    </button>
+                    <button class="btn-icon-action btn-delete-action" @click="confirmarEliminar(componente.id)" title="Eliminar">
+                        🗑️
+                    </button>
+                </div>
+                <div v-else class="card-footer">
+                    <button class="btn-view" @click="editarComponente(componente.id)">
+                        👁️ Ver detalles
                     </button>
                 </div>
             </div>
@@ -170,7 +225,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { fetchComponentes, eliminarComponente } from '@/http/componentes-api';
+import { fetchComponentes, eliminarComponente, getComponenteById, crearComponente } from '@/http/componentes-api';
 import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
@@ -225,6 +280,55 @@ const cargarComponentes = async () => {
 // Editar componente
 const editarComponente = (id) => {
     router.push(`/editar-componente/${id}`);
+};
+
+// Duplicar componente
+const duplicarComponente = async (id) => {
+    try {
+        cargando.value = true;
+        error.value = null;
+        
+        // Obtener el componente original
+        const response = await getComponenteById(id);
+        const componenteOriginal = response.data || response;
+        
+        // Verificar si ya existe un componente con el nombre "(Copia)"
+        let nombreCopia = `${componenteOriginal.nombre} (Copia)`;
+        let codigoCopia = `${componenteOriginal.codigo}_COPIA`;
+        
+        // Buscar si ya existe una copia
+        let contador = 1;
+        while (componentes.value.some(c => c.codigo === codigoCopia)) {
+            contador++;
+            nombreCopia = `${componenteOriginal.nombre} (Copia ${contador})`;
+            codigoCopia = `${componenteOriginal.codigo}_COPIA${contador}`;
+        }
+        
+        // Crear el nuevo componente (copia) solo con campos básicos
+        const nuevoComponente = {
+            nombre: nombreCopia,
+            codigo: codigoCopia,
+            descripcion: componenteOriginal.descripcion || '',
+            unidad_medida: componenteOriginal.unidad_medida || '',
+            cantidad_disponible: componenteOriginal.cantidad_disponible || 0,
+            costo_unitario: componenteOriginal.costo_unitario || 0
+        };
+        
+        await crearComponente(nuevoComponente);
+        exito.value = '✓ Componente duplicado exitosamente';
+        
+        // Recargar la lista de componentes
+        await cargarComponentes();
+        
+        setTimeout(() => {
+            exito.value = null;
+        }, 3000);
+    } catch (err) {
+        console.error('Error duplicando componente:', err);
+        error.value = err.response?.data?.message || 'Error al duplicar el componente';
+    } finally {
+        cargando.value = false;
+    }
 };
 
 // Confirmar eliminación
@@ -308,8 +412,41 @@ onMounted(() => {
 .header-subtitle {
     font-size: 15px;
     color: #888;
-    margin: 0;
+    margin: 0 0 12px 0;
     font-weight: 500;
+}
+
+.stats-badges {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 1px solid #e8e3dd;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+.stat-badge-accent {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    border-color: #d4a574;
+    color: white;
+}
+
+.stat-label {
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.stat-value {
+    font-weight: 700;
+    font-size: 14px;
 }
 
 .btn-new {
@@ -439,13 +576,24 @@ onMounted(() => {
 }
 
 .search-box {
+    position: relative;
     flex: 1;
     max-width: 500px;
 }
 
+.search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
 .search-input {
     width: 100%;
-    padding: 12px 16px;
+    padding: 12px 48px 12px 44px;
     border: 1px solid #e8e3dd;
     border-radius: 8px;
     font-size: 14px;
@@ -460,9 +608,32 @@ onMounted(() => {
     box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
 }
 
+.clear-search {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.clear-search:hover {
+    background: #f0ebe4;
+    color: #d4a574;
+}
+
 .view-toggle {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     background: white;
     border: 1px solid #e8e3dd;
     border-radius: 8px;
@@ -470,20 +641,33 @@ onMounted(() => {
 }
 
 .view-btn {
-    padding: 8px 12px;
-    background: white;
+    padding: 8px 16px;
+    background: transparent;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 13px;
     color: #999;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.view-btn span {
+    font-size: 14px;
 }
 
 .view-btn.active {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.view-btn:hover:not(.active) {
     background: #f0ebe4;
     color: #d4a574;
-    font-weight: 600;
 }
 
 /* ========== Table ========== */
@@ -595,10 +779,19 @@ onMounted(() => {
     background: #fff5f0;
 }
 
+.btn-action.btn-duplicate {
+    background: white;
+}
+
+.btn-action.btn-duplicate:hover {
+    border-color: #3498db;
+    background: #f0f8ff;
+}
+
 /* ========== Grid ========== */
 .componentes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 24px;
 }
 
@@ -612,6 +805,7 @@ onMounted(() => {
     gap: 16px;
     transition: all 0.3s;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    min-height: 320px;
 }
 
 .componente-card:hover {
@@ -621,6 +815,15 @@ onMounted(() => {
 }
 
 .card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0ebe4;
+}
+
+.card-title-section {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -641,63 +844,142 @@ onMounted(() => {
 .componente-codigo {
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
-    padding: 6px 10px;
+    padding: 6px 12px;
     border-radius: 6px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
     flex-shrink: 0;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    align-self: center;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .componente-descripcion {
-    color: #888;
+    color: #666;
     font-size: 14px;
     margin: 0;
-    line-height: 1.5;
-    flex: 1;
+    line-height: 1.6;
+    min-height: 44px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .componente-info {
-    background: linear-gradient(135deg, #fff9f0 0%, #fffcf8 100%);
+    background: linear-gradient(135deg, #fafaf9 0%, #ffffff 100%);
     border: 1px solid #f0ebe4;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 16px;
+    flex: 1;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
 }
 
 .info-item {
     display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.info-icon {
+    font-size: 20px;
+    opacity: 0.8;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.info-content {
+    display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
 }
 
 .info-item label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #8b7355;
+    font-size: 10px;
+    font-weight: 600;
+    color: #999;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .info-item .price {
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 16px;
+    font-weight: 700;
     color: #d4a574;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c2c2c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-actions {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     margin-top: auto;
+    padding-top: 4px;
 }
 
-.btn-edit,
-.btn-delete-secondary {
+.btn-icon-action {
     flex: 1;
-    padding: 12px 16px;
+    padding: 10px;
+    border: 1px solid #e8e3dd;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+}
+
+.btn-icon-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-icon-action.btn-edit:hover {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    border-color: #d4a574;
+}
+
+.btn-icon-action.btn-duplicate:hover {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border-color: #3498db;
+}
+
+.btn-icon-action.btn-delete-action:hover {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+    border-color: #e67e22;
+}
+
+.card-footer {
+    margin-top: auto;
+    padding-top: 4px;
+}
+
+.btn-view {
+    width: 100%;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
     border: none;
     border-radius: 8px;
     font-size: 13px;
@@ -710,26 +992,10 @@ onMounted(() => {
     gap: 6px;
 }
 
-.btn-edit {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-}
-
-.btn-edit:hover {
+.btn-view:hover {
     background: linear-gradient(135deg, #c89564 0%, #b8844c 100%);
+    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
-}
-
-.btn-delete-secondary {
-    background: #fff5f0;
-    color: #e67e22;
-    border: 1px solid #facaca;
-}
-
-.btn-delete-secondary:hover {
-    background: #fff0e6;
-    border-color: #f0a555;
-    color: #d46f1f;
 }
 
 /* ========== Buttons ========== */
