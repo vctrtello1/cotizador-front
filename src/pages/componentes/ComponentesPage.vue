@@ -94,7 +94,6 @@
                         <th>Nombre</th>
                         <th>Código</th>
                         <th>Descripción</th>
-                        <th class="text-right">Costo Unitario</th>
                         <th class="text-right">Costo Total</th>
                         <th v-if="canWrite" class="text-center">Acciones</th>
                     </tr>
@@ -104,7 +103,6 @@
                         <td class="cell-nombre">{{ componente.nombre }}</td>
                         <td class="cell-codigo">{{ componente.codigo }}</td>
                         <td class="cell-descripcion">{{ componente.descripcion || '—' }}</td>
-                        <td class="cell-precio">${{ formatCurrency(componente.costo_unitario || 0) }}</td>
                         <td class="cell-precio">${{ formatCurrency(componente.costo_total || 0) }}</td>
                         <td v-if="canWrite" class="cell-actions">
                             <button 
@@ -150,27 +148,6 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="info-icon">💰</span>
-                            <div class="info-content">
-                                <label>Costo Unitario</label>
-                                <span class="price">${{ formatCurrency(componente.costo_unitario || 0) }}</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-icon">📏</span>
-                            <div class="info-content">
-                                <label>Unidad</label>
-                                <span class="value">{{ componente.unidad_medida || '—' }}</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-icon">📊</span>
-                            <div class="info-content">
-                                <label>Disponible</label>
-                                <span class="value">{{ componente.cantidad_disponible || 0 }}</span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-icon">💵</span>
                             <div class="info-content">
                                 <label>Costo Total</label>
                                 <span class="price">${{ formatCurrency(componente.costo_total || 0) }}</span>
