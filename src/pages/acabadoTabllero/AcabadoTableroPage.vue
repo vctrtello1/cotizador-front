@@ -139,7 +139,8 @@ const eliminarAcabadoTablero = async () => {
         modalEliminar.value = false;
         await cargarAcabadoTableros();
     } catch (err) {
-        error.value = 'Error al eliminar el acabado de tablero';
+        modalEliminar.value = false;
+        error.value = err.response?.data?.message || 'Error al eliminar el acabado de tablero';
         console.error(err);
     }
 };
