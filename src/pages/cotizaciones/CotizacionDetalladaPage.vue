@@ -156,11 +156,6 @@
 
 
 <script setup>
-const esViewerOEditor = computed(() => {
-    const authStore = useAuthStore ? useAuthStore() : null;
-    const role = authStore?.user?.role || authStore?.user?.rol || 'viewer';
-    return role === 'viewer' || role === 'visualizador' || role === 'editor';
-});
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCotizacionesStore } from '@/stores/cotizaciones';
@@ -168,6 +163,13 @@ import { useClientesStore } from '@/stores/clientes';
 import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotizacion';
 import { useModulosStore } from '@/stores/modulos';
 import { useComponentesStore } from '@/stores/componentes';
+import { useAuthStore } from '@/stores/auth';
+
+const esViewerOEditor = computed(() => {
+    const authStore = useAuthStore();
+    const role = authStore?.user?.role || authStore?.user?.rol || 'viewer';
+    return role === 'viewer' || role === 'visualizador' || role === 'editor';
+});
 
 const route = useRoute();
 const router = useRouter();
