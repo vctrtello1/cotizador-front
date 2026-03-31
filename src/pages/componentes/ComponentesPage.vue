@@ -422,11 +422,19 @@ const duplicarComponente = async (id) => {
             r => Number(r.componente_id) === Number(id)
         );
         for (const rel of accesorios) {
-            await crearAccesorioPorComponente({
+            const payload = {
                 componente_id: nuevoId,
-                accesorio_id: rel.accesorio_id,
                 cantidad: rel.cantidad || 1,
-            });
+            };
+            // El API acepta 'accesorio' (nombre) o 'accesorio_id'
+            if (rel.accesorio_id) {
+                payload.accesorio_id = rel.accesorio_id;
+            } else if (rel.accesorio && typeof rel.accesorio === 'object') {
+                payload.accesorio_id = rel.accesorio.id;
+            } else if (rel.accesorio) {
+                payload.accesorio = rel.accesorio;
+            }
+            await crearAccesorioPorComponente(payload);
         }
         
         exito.value = '✓ Componente duplicado con todas sus entidades relacionadas';
