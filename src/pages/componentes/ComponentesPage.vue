@@ -250,6 +250,11 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { fetchComponentes, eliminarComponente, getComponenteById, crearComponente } from '@/http/componentes-api';
+import { crearEstructuraPorComponente, eliminarEstructuraPorComponente } from '@/http/estructuras-por-componente-api';
+import { crearAcabadoTableroPorComponente, eliminarAcabadoTableroPorComponente } from '@/http/acabado-tablero-por-componente-api';
+import { crearAcabadoCubreCantoPorComponente, eliminarAcabadoCubreCantoPorComponente } from '@/http/acabado-cubre-cantos-por-componente-api';
+import { crearPuertaPorComponente, eliminarPuertaPorComponente } from '@/http/puertas-por-componente-api';
+import { crearAccesorioPorComponente, eliminarAccesorioPorComponente } from '@/http/accesorios-por-componente-api';
 import { useAuthStore } from '@/stores/auth';
 import { useEstructurasPorComponenteStore } from '@/stores/estructuras-por-componente';
 import { useAcabadoTableroPorComponenteStore } from '@/stores/acabado-tablero-por-componente';
@@ -330,7 +335,7 @@ const editarComponente = (id) => {
     router.push(`/editar-componente/${id}`);
 };
 
-// Duplicar componente
+// Duplicar componente con todas sus entidades relacionadas
 const duplicarComponente = async (id) => {
     try {
         cargando.value = true;
@@ -340,11 +345,10 @@ const duplicarComponente = async (id) => {
         const response = await getComponenteById(id);
         const componenteOriginal = response.data || response;
         
-        // Verificar si ya existe un componente con el nombre "(Copia)"
+        // Generar nombre y código únicos para la copia
         let nombreCopia = `${componenteOriginal.nombre} (Copia)`;
         let codigoCopia = `${componenteOriginal.codigo}_COPIA`;
         
-        // Buscar si ya existe una copia
         let contador = 1;
         while (componentes.value.some(c => c.codigo === codigoCopia)) {
             contador++;
@@ -352,7 +356,7 @@ const duplicarComponente = async (id) => {
             codigoCopia = `${componenteOriginal.codigo}_COPIA${contador}`;
         }
         
-        // Crear el nuevo componente (copia) solo con campos básicos
+        // Crear el nuevo componente (copia)
         const nuevoComponente = {
             nombre: nombreCopia,
             codigo: codigoCopia,
@@ -362,11 +366,80 @@ const duplicarComponente = async (id) => {
             costo_unitario: componenteOriginal.costo_unitario || 0
         };
         
-        await crearComponente(nuevoComponente);
-        exito.value = '✓ Componente duplicado exitosamente';
+        const nuevoResp = await crearComponente(nuevoComponente);
+        const nuevoId = nuevoResp.data?.id || nuevoResp.id;
         
-        // Recargar la lista de componentes
-        await cargarComponentes();
+        // Duplicar estructuras por componente
+        const estructuras = estructurasPorCompStore.estructurasPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of estructuras) {
+            await crearEstructuraPorComponente({
+                componente_id: nuevoId,
+                estructura_id: rel.estructura_id,
+                cantidad: rel.cantidad || 1,
+            });
+        }
+        
+        // Duplicar acabado tablero por componente
+        const acabadoTableros = acabadoTableroPorCompStore.acabadoTablerosPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of acabadoTableros) {
+            await crearAcabadoTableroPorComponente({
+                componente_id: nuevoId,
+                acabado_tablero_id: rel.acabado_tablero_id,
+                cantidad: rel.cantidad || 1,
+            });
+        }
+        
+        // Duplicar acabado cubre cantos por componente
+        const cubreCantos = acabadoCubreCantosPorCompStore.acabadoCubreCantosPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of cubreCantos) {
+            await crearAcabadoCubreCantoPorComponente({
+                componente_id: nuevoId,
+                acabado_cubre_canto_id: rel.acabado_cubre_canto_id || rel.acabado_cubre_cantos_id,
+                cantidad: rel.cantidad || 1,
+            });
+        }
+        
+        // Duplicar puertas por componente
+        const puertas = puertasPorCompStore.puertasPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of puertas) {
+            await crearPuertaPorComponente({
+                componente_id: nuevoId,
+                puerta_id: rel.puerta_id,
+                cantidad: rel.cantidad || 1,
+            });
+        }
+        
+        // Duplicar accesorios por componente
+        const accesorios = accesoriosPorCompStore.accesoriosPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of accesorios) {
+            await crearAccesorioPorComponente({
+                componente_id: nuevoId,
+                accesorio_id: rel.accesorio_id,
+                cantidad: rel.cantidad || 1,
+            });
+        }
+        
+        exito.value = '✓ Componente duplicado con todas sus entidades relacionadas';
+        
+        // Recargar componentes y entidades relacionadas
+        await Promise.all([
+            cargarComponentes(),
+            estructurasPorCompStore.fetchEstructurasPorComponente(),
+            acabadoTableroPorCompStore.fetchAcabadoTablerosPorComponente(),
+            acabadoCubreCantosPorCompStore.fetchAcabadoCubreCantosPorComponente(),
+            puertasPorCompStore.fetchPuertasPorComponente(),
+            accesoriosPorCompStore.fetchAccesoriosPorComponente(),
+        ]);
         
         setTimeout(() => {
             exito.value = null;
@@ -385,16 +458,68 @@ const confirmarEliminar = (id) => {
     modalEliminar.value = true;
 };
 
-// Eliminar componente
+// Eliminar componente (primero elimina entidades relacionadas)
 const eliminarComponenteFunc = async () => {
     try {
         error.value = null;
-        await eliminarComponente(componenteAEliminar.value);
+        const id = componenteAEliminar.value;
+
+        // Eliminar estructuras relacionadas
+        const estructuras = estructurasPorCompStore.estructurasPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of estructuras) {
+            await eliminarEstructuraPorComponente(rel.id);
+        }
+
+        // Eliminar acabados tablero relacionados
+        const acabadoTableros = acabadoTableroPorCompStore.acabadoTablerosPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of acabadoTableros) {
+            await eliminarAcabadoTableroPorComponente(rel.id);
+        }
+
+        // Eliminar acabados cubre cantos relacionados
+        const cubreCantos = acabadoCubreCantosPorCompStore.acabadoCubreCantosPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of cubreCantos) {
+            await eliminarAcabadoCubreCantoPorComponente(rel.id);
+        }
+
+        // Eliminar puertas relacionadas
+        const puertas = puertasPorCompStore.puertasPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of puertas) {
+            await eliminarPuertaPorComponente(rel.id);
+        }
+
+        // Eliminar accesorios relacionados
+        const accesorios = accesoriosPorCompStore.accesoriosPorComponente.filter(
+            r => Number(r.componente_id) === Number(id)
+        );
+        for (const rel of accesorios) {
+            await eliminarAccesorioPorComponente(rel.id);
+        }
+
+        // Ahora eliminar el componente
+        await eliminarComponente(id);
         exito.value = '✓ Componente eliminado exitosamente';
         modalEliminar.value = false;
         componenteAEliminar.value = null;
-        // Recargar la lista de componentes
-        await cargarComponentes();
+
+        // Recargar componentes y entidades relacionadas
+        await Promise.all([
+            cargarComponentes(),
+            estructurasPorCompStore.fetchEstructurasPorComponente(),
+            acabadoTableroPorCompStore.fetchAcabadoTablerosPorComponente(),
+            acabadoCubreCantosPorCompStore.fetchAcabadoCubreCantosPorComponente(),
+            puertasPorCompStore.fetchPuertasPorComponente(),
+            accesoriosPorCompStore.fetchAccesoriosPorComponente(),
+        ]);
+
         setTimeout(() => {
             exito.value = null;
         }, 3000);
