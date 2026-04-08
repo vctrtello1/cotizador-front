@@ -1,0 +1,28 @@
+meta {
+  name: Create Tira LED
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/tira-leds/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "nombre": "Tira LED blanco cálido",
+    "descripcion": "LED 3000K, 60 LEDs/metro",
+    "precio": 25.50
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Cotizador API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
