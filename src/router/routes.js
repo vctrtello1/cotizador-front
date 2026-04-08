@@ -171,6 +171,11 @@ export const routes = [
         meta: { permission: "catalogs.write" },
     },
     {
+        path: "/catalogos",
+        name: "Catalogos",
+        component: () => import("@/pages/materiales/CatalogosPage.vue"),
+    },
+    {
         path: "/tiras-led",
         name: "TirasLed",
         component: () => import("@/pages/tiras-led/TirasLedPage.vue"),

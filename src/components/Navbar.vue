@@ -16,8 +16,7 @@ const navItems = [
   { path: '/cotizaciones', icon: '📋', label: 'Cotizaciones', excludeNew: true },
   { path: '/modulos', icon: '🧩', label: 'Módulos', excludeNew: true },
   { path: '/componentes', icon: '🔧', label: 'Componentes', excludeNew: true },
-  { path: '/acabados', icon: '🎨', label: 'Acabados', excludeNew: true, roles: ['admin', 'editor'] },
-  { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/catalogos', icon: '🎨', label: 'Catálogos', excludeNew: true, roles: ['admin', 'editor'] },
   { path: '/admin', icon: '⚙️', label: 'Admin', excludeNew: false, roles: ['admin'] }
 ];
 
@@ -26,7 +25,6 @@ const userRole = computed(() => authStore.user?.role || authStore.user?.rol || '
 const visibleNavItems = computed(() =>
   navItems.filter((item) => {
     if (item.roles && !item.roles.includes(userRole.value)) return false;
-    if (item.permission && !authStore.hasPermission(item.permission)) return false;
     return true;
   })
 );
