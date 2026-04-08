@@ -35,6 +35,7 @@ const items = [
     { path: '/apagadores', icon: '🔘', label: 'Apagadores', desc: 'Interruptores y apagadores eléctricos' },
     { path: '/tiras-led', icon: '💡', label: 'Tiras LED', desc: 'Sistemas de iluminación LED' },
     { path: '/perfil-aluminio', icon: '🔲', label: 'Perfil Aluminio', desc: 'Perfiles de aluminio para LED' },
+    { path: '/fuentes-alimentacion', icon: '🔌', label: 'Fuentes de Alimentación', desc: 'Fuentes de poder y alimentación eléctrica' },
 ];
 
 const visibleItems = computed(() => {

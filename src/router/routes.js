@@ -249,6 +249,23 @@ export const routes = [
         meta: { permission: "catalogs.write" },
     },
     {
+        path: "/fuentes-alimentacion",
+        name: "FuentesAlimentacion",
+        component: () => import("@/pages/fuentes-alimentacion/FuentesAlimentacionPage.vue"),
+    },
+    {
+        path: "/nueva-fuente-alimentacion",
+        name: "NuevaFuenteAlimentacion",
+        component: () => import("@/pages/fuentes-alimentacion/NuevaFuenteAlimentacionPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
+        path: "/editar-fuente-alimentacion/:id",
+        name: "EditarFuenteAlimentacion",
+        component: () => import("@/pages/fuentes-alimentacion/EditarFuenteAlimentacionPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
         path: "/admin",
         name: "Admin",
         component: () => import("@/pages/admin/AdminPage.vue"),
