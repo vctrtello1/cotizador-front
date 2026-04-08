@@ -3,246 +3,92 @@
         <!-- Header -->
         <div class="page-header">
             <div class="header-content">
-                <div class="header-text">
-                    <h1 class="page-title">📦 Componentes</h1>
-                    <p class="header-subtitle">Gestiona y visualiza todos tus componentes</p>
-                    <div v-if="!cargando" class="stats-badges">
-                        <span class="stat-badge">
-                            <span class="stat-label">Total:</span>
-                            <span class="stat-value">{{ componentes.length }}</span>
-                        </span>
-                        <span v-if="searchQuery" class="stat-badge stat-badge-accent">
-                            <span class="stat-label">Filtrados:</span>
-                            <span class="stat-value">{{ filteredComponentes.length }}</span>
-                        </span>
-                    </div>
-                </div>
-                <button v-if="canWrite" class="btn-primary btn-new" @click="$router.push('/nuevo-componente')">
-                    <span class="btn-icon">+</span>
-                    Nuevo Componente
-                </button>
+                <h1 class="page-title">📦 Componentes</h1>
+                <p class="header-subtitle">{{ componentes.length }} componentes disponibles</p>
             </div>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-componente')">➕ Nuevo Componente</button>
         </div>
 
         <!-- Mensaje de error -->
-        <transition name="fade">
-            <div v-if="error" class="alert alert-error">
-                <span class="alert-icon">⚠️</span>
-                <span class="alert-text">{{ error }}</span>
-                <button @click="error = null" class="alert-close">×</button>
-            </div>
-        </transition>
+        <div v-if="error" class="error-message">
+            <span>⚠️ {{ error }}</span>
+            <button @click="error = null" class="error-close">✕</button>
+        </div>
 
         <!-- Mensaje de éxito -->
-        <transition name="fade">
-            <div v-if="exito" class="alert alert-success">
-                <span class="alert-icon">✓</span>
-                <span class="alert-text">{{ exito }}</span>
-                <button @click="exito = null" class="alert-close">×</button>
-            </div>
-        </transition>
+        <div v-if="exito" class="success-message">
+            <span>✓ {{ exito }}</span>
+            <button @click="exito = null" class="error-close">✕</button>
+        </div>
 
         <!-- Loading -->
         <div v-if="cargando" class="loading-state">
-            <div class="spinner"></div>
             <p>Cargando componentes...</p>
         </div>
 
         <!-- Empty State -->
         <div v-else-if="componentes.length === 0" class="empty-state">
-            <div class="empty-icon">📦</div>
-            <h2>No hay componentes</h2>
-            <p>Comienza creando tu primer componente</p>
-            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-componente')">Crear Componente</button>
+            <p>No hay componentes registrados.</p>
+            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-componente')">Crear Primer Componente</button>
         </div>
 
-        <!-- Toolbar con búsqueda -->
-        <div v-else class="toolbar">
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input 
-                    v-model="searchQuery" 
-                    type="text" 
-                    placeholder="Buscar por nombre, código o descripción..."
-                    class="search-input"
-                >
-                <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search">✕</button>
-            </div>
-            <div class="view-toggle">
-                <button 
-                    :class="['view-btn', { active: viewMode === 'table' }]"
-                    @click="viewMode = 'table'"
-                    title="Vista tabla"
-                >
-                    <span>☰</span> Tabla
-                </button>
-                <button 
-                    :class="['view-btn', { active: viewMode === 'grid' }]"
-                    @click="viewMode = 'grid'"
-                    title="Vista cuadrícula"
-                >
-                    <span>⊞</span> Grid
-                </button>
-            </div>
-        </div>
-
-        <!-- Componentes Vista Tabla -->
-        <div v-if="viewMode === 'table' && filteredComponentes.length > 0" class="table-container">
-            <table class="componentes-table">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Código</th>
-                        <th>Descripción</th>
-                        <th>Entidades Relacionadas</th>
-                        <th v-if="!isVendedor" class="text-right">Costo Total</th>
-                        <th v-if="canWrite" class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="componente in filteredComponentes" :key="componente.id" class="table-row">
-                        <td class="cell-nombre">{{ componente.nombre }}</td>
-                        <td class="cell-codigo">{{ componente.codigo }}</td>
-                        <td class="cell-descripcion">{{ componente.descripcion || '—' }}</td>
-                        <td class="cell-entidades">
-                            <div class="entidades-tags">
-                                <span v-for="e in getEstructuras(componente.id)" :key="'est-'+e.nombre" class="tag tag-estructura" :title="'Estructura: ' + e.nombre">
-                                    🏗️ {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                                </span>
-                                <span v-for="e in getAcabadoTableros(componente.id)" :key="'at-'+e.nombre" class="tag tag-acabado-tablero" :title="'Acabado Tablero: ' + e.nombre">
-                                    🪵 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                                </span>
-                                <span v-for="e in getCubreCantos(componente.id)" :key="'cc-'+e.nombre" class="tag tag-cubre-canto" :title="'Cubre Canto: ' + e.nombre">
-                                    📏 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                                </span>
-                                <span v-for="e in getPuertas(componente.id)" :key="'pu-'+e.nombre" class="tag tag-puerta" :title="'Puerta: ' + e.nombre">
-                                    🚪 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                                </span>
-                                <span v-for="e in getAccesorios(componente.id)" :key="'ac-'+e.nombre" class="tag tag-accesorio" :title="'Accesorio: ' + e.nombre">
-                                    🔩 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                                </span>
-                                <span v-if="!getEstructuras(componente.id).length && !getAcabadoTableros(componente.id).length && !getCubreCantos(componente.id).length && !getPuertas(componente.id).length && !getAccesorios(componente.id).length" class="tag-empty">
-                                    Sin entidades
-                                </span>
-                            </div>
-                        </td>
-                        <td v-if="!isVendedor" class="cell-precio">${{ formatCurrency(componente.costo_total || 0) }}</td>
-                        <td v-if="canWrite" class="cell-actions">
-                            <button 
-                                class="btn-action btn-edit" 
-                                @click="editarComponente(componente.id)"
-                                title="Editar"
-                            >
-                                ✏️
-                            </button>
-                            <button 
-                                class="btn-action btn-duplicate" 
-                                @click="duplicarComponente(componente.id)"
-                                title="Duplicar"
-                            >
-                                📋
-                            </button>
-                            <button 
-                                class="btn-action btn-delete" 
-                                @click="confirmarEliminar(componente.id)"
-                                title="Eliminar"
-                            >
-                                🗑️
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Componentes Vista Grid -->
-        <div v-else-if="viewMode === 'grid' && filteredComponentes.length > 0" class="componentes-grid">
-            <div v-for="componente in filteredComponentes" :key="componente.id" class="componente-card">
-                <div class="card-header">
-                    <div class="card-title-section">
-                        <h3 class="componente-nombre">{{ componente.nombre }}</h3>
-                        <span class="componente-codigo">{{ componente.codigo }}</span>
-                    </div>
+        <!-- Componentes Grid -->
+        <div v-else class="componentes-grid">
+            <div v-for="componente in componentes" :key="componente.id" class="componente-card">
+                <div class="componente-header">
+                    <h3 class="componente-nombre">{{ componente.nombre }}</h3>
+                    <span class="componente-codigo">{{ componente.codigo }}</span>
                 </div>
 
                 <p class="componente-descripcion">{{ componente.descripcion || 'Sin descripción' }}</p>
 
-                <!-- Entidades relacionadas -->
-                <div class="componente-entidades">
-                    <div class="entidades-tags">
-                        <span v-for="e in getEstructuras(componente.id)" :key="'est-'+e.nombre" class="tag tag-estructura">
-                            🏗️ {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                        </span>
-                        <span v-for="e in getAcabadoTableros(componente.id)" :key="'at-'+e.nombre" class="tag tag-acabado-tablero">
-                            🪵 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                        </span>
-                        <span v-for="e in getCubreCantos(componente.id)" :key="'cc-'+e.nombre" class="tag tag-cubre-canto">
-                            📏 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                        </span>
-                        <span v-for="e in getPuertas(componente.id)" :key="'pu-'+e.nombre" class="tag tag-puerta">
-                            🚪 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                        </span>
-                        <span v-for="e in getAccesorios(componente.id)" :key="'ac-'+e.nombre" class="tag tag-accesorio">
-                            🔩 {{ e.nombre }} <span v-if="e.cantidad > 1" class="tag-qty">×{{ e.cantidad }}</span>
-                        </span>
-                        <span v-if="!getEstructuras(componente.id).length && !getAcabadoTableros(componente.id).length && !getCubreCantos(componente.id).length && !getPuertas(componente.id).length && !getAccesorios(componente.id).length" class="tag-empty">
-                            Sin entidades relacionadas
-                        </span>
-                    </div>
-                </div>
-
-                <div class="componente-info" v-if="!isVendedor">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-icon">💰</span>
-                            <div class="info-content">
-                                <label>Costo Total</label>
-                                <span class="price">${{ formatCurrency(componente.costo_total || 0) }}</span>
-                            </div>
+                <div class="componente-stats">
+                    <div class="stat-item">
+                        <div class="stat-icon">🔗</div>
+                        <div class="stat-content">
+                            <label>Total Entidades</label>
+                            <span>{{ getTotalEntidades(componente.id) }}</span>
                         </div>
                     </div>
                 </div>
 
-                <div v-if="canWrite" class="card-actions">
-                    <button class="btn-icon-action btn-edit" @click="editarComponente(componente.id)" title="Editar">
-                        ✏️
-                    </button>
-                    <button class="btn-icon-action btn-duplicate" @click="duplicarComponente(componente.id)" title="Duplicar">
-                        📋
-                    </button>
-                    <button class="btn-icon-action btn-delete-action" @click="confirmarEliminar(componente.id)" title="Eliminar">
-                        🗑️
-                    </button>
+                <div v-if="getTotalEntidades(componente.id) > 0" class="entidades-list">
+                    <div class="list-header">
+                        <label>📋 Entidades incluidas:</label>
+                    </div>
+                    <ul>
+                        <li v-for="entidad in getTodasEntidades(componente.id).slice(0, 4)" :key="entidad.tipo + '-' + entidad.nombre" class="entidad-item">
+                            <span class="entidad-bullet">•</span>
+                            <span class="entidad-info">
+                                <span class="entidad-icon">{{ entidad.icono }}</span>
+                                <span class="entidad-quantity">{{ entidad.cantidad }}×</span>
+                                <span class="entidad-name">{{ entidad.nombre }}</span>
+                            </span>
+                        </li>
+                        <li v-if="getTodasEntidades(componente.id).length > 4" class="mas-items">
+                            <span class="more-badge">+{{ getTodasEntidades(componente.id).length - 4 }}</span> más
+                        </li>
+                    </ul>
                 </div>
-                <div v-else class="card-footer">
-                    <button class="btn-view" @click="editarComponente(componente.id)">
-                        👁️ Ver detalles
-                    </button>
+
+                <div v-if="canWrite" class="card-actions">
+                    <button class="btn-edit" @click="editarComponente(componente.id)" title="Editar componente">✏️ Editar</button>
+                    <button class="btn-delete" @click="confirmarEliminar(componente.id)" title="Eliminar componente">🗑️ Eliminar</button>
                 </div>
             </div>
-        </div>
-
-        <!-- No hay resultados de búsqueda -->
-        <div v-else-if="!cargando && filteredComponentes.length === 0" class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <h2>No se encontraron resultados</h2>
-            <p>Intenta con otra búsqueda</p>
         </div>
 
         <!-- Modal de confirmación de eliminación -->
-        <transition name="modal">
-            <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
-                <div class="modal-content">
-                    <div class="modal-icon">⚠️</div>
-                    <h3>Confirmar eliminación</h3>
-                    <p>¿Estás seguro de que deseas eliminar este componente? Esta acción no se puede deshacer.</p>
-                    <div class="modal-actions">
-                        <button class="btn-secondary" @click="modalEliminar = false">Cancelar</button>
-                        <button class="btn-delete" @click="eliminarComponenteFunc">Eliminar</button>
-                    </div>
+        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
+            <div class="modal-content">
+                <h3>Confirmar eliminación</h3>
+                <p>¿Estás seguro de que deseas eliminar este componente?</p>
+                <div class="modal-actions">
+                    <button class="btn-secondary" @click="modalEliminar = false">Cancelar</button>
+                    <button class="btn-delete" @click="eliminarComponenteFunc">Eliminar</button>
                 </div>
             </div>
-        </transition>
+        </div>
     </div>
 </template>
 
@@ -279,10 +125,6 @@ const acabadoTableroStore = useAcabadoTableroStore();
 const acabadoCubreCantosStore = useAcabadoCubreCantosStore();
 const puertasStore = usePuertasStore();
 const accesoriosStore = useAccesoriosStore();
-const esViewerOEditor = computed(() => {
-    const role = authStore.user?.role || authStore.user?.rol || 'viewer';
-    return role === 'viewer' || role === 'visualizador' || role === 'editor';
-});
 
 // Estado
 const componentes = ref([]);
@@ -291,25 +133,7 @@ const error = ref(null);
 const exito = ref(null);
 const modalEliminar = ref(false);
 const componenteAEliminar = ref(null);
-const searchQuery = ref('');
-const viewMode = ref('grid');
 const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
-const isVendedor = computed(() => {
-    const role = authStore.user?.role || authStore.user?.rol;
-    return role === 'vendedor';
-});
-
-// Componentes filtrados por búsqueda
-const filteredComponentes = computed(() => {
-    if (!searchQuery.value) return componentes.value;
-    
-    const query = searchQuery.value.toLowerCase();
-    return componentes.value.filter(c =>
-        c.nombre.toLowerCase().includes(query) ||
-        c.codigo.toLowerCase().includes(query) ||
-        (c.descripcion && c.descripcion.toLowerCase().includes(query))
-    );
-});
 
 // Cargar componentes
 const cargarComponentes = async () => {
@@ -317,10 +141,6 @@ const cargarComponentes = async () => {
     error.value = null;
     try {
         const response = await fetchComponentes();
-        console.log('Componentes cargados:', response);
-        if (Array.isArray(response) && response.length > 0) {
-            console.log('Primer componente:', response[0]);
-        }
         componentes.value = Array.isArray(response) ? response : (response.data || []);
     } catch (err) {
         console.error('Error cargando componentes:', err);
@@ -538,15 +358,6 @@ const eliminarComponenteFunc = async () => {
     }
 };
 
-// Format currency
-const formatCurrency = (value) => {
-    if (!value) return '0.00';
-    return parseFloat(value).toLocaleString('es-MX', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-};
-
 // Lifecycle
 onMounted(async () => {
     await cargarComponentes();
@@ -619,682 +430,467 @@ const getAccesorios = (componenteId) => {
         return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
     }).filter(Boolean);
 };
+
+// NEW FUNCTION: Get total count of all entities for a component
+const getTotalEntidades = (componenteId) => {
+    const estructuras = getEstructuras(componenteId);
+    const acabadoTableros = getAcabadoTableros(componenteId);
+    const cubreCantos = getCubreCantos(componenteId);
+    const puertas = getPuertas(componenteId);
+    const accesorios = getAccesorios(componenteId);
+    
+    return estructuras.length + acabadoTableros.length + cubreCantos.length + puertas.length + accesorios.length;
+};
+
+// NEW FUNCTION: Get unified array of all entities with type, icon, name, and quantity
+const getTodasEntidades = (componenteId) => {
+    const entidades = [];
+    
+    // Estructuras
+    getEstructuras(componenteId).forEach(e => {
+        entidades.push({
+            tipo: 'estructura',
+            icono: '🏗️',
+            nombre: e.nombre,
+            cantidad: e.cantidad
+        });
+    });
+    
+    // Acabado Tableros
+    getAcabadoTableros(componenteId).forEach(e => {
+        entidades.push({
+            tipo: 'acabado-tablero',
+            icono: '🪵',
+            nombre: e.nombre,
+            cantidad: e.cantidad
+        });
+    });
+    
+    // Cubre Cantos
+    getCubreCantos(componenteId).forEach(e => {
+        entidades.push({
+            tipo: 'cubre-canto',
+            icono: '📏',
+            nombre: e.nombre,
+            cantidad: e.cantidad
+        });
+    });
+    
+    // Puertas
+    getPuertas(componenteId).forEach(e => {
+        entidades.push({
+            tipo: 'puerta',
+            icono: '🚪',
+            nombre: e.nombre,
+            cantidad: e.cantidad
+        });
+    });
+    
+    // Accesorios
+    getAccesorios(componenteId).forEach(e => {
+        entidades.push({
+            tipo: 'accesorio',
+            icono: '🔩',
+            nombre: e.nombre,
+            cantidad: e.cantidad
+        });
+    });
+    
+    return entidades;
+};
 </script>
 
 <style scoped>
 .componentes-container {
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 40px 20px;
-    min-height: calc(100vh - 140px);
+    background: linear-gradient(135deg, #f5f1ed 0%, #faf7f2 100%);
+    min-height: 100vh;
 }
 
-/* ========== Header ========== */
 .page-header {
-    margin-bottom: 40px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f7f6 100%);
-    padding: 32px;
-    border-radius: 12px;
-    border: 1px solid #e8e3dd;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 24px;
+    margin-bottom: 30px;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(212, 165, 116, 0.05) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(212, 165, 116, 0.2);
 }
 
-.header-text {
+.header-content {
     flex: 1;
 }
 
 .page-title {
-    font-size: 36px;
-    font-weight: 800;
-    color: #2c2c2c;
-    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #5a4037;
+    margin: 0;
     letter-spacing: -0.5px;
 }
 
 .header-subtitle {
-    font-size: 15px;
-    color: #888;
-    margin: 0 0 12px 0;
-    font-weight: 500;
-}
-
-.stats-badges {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-}
-
-.stat-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: white;
-    border: 1px solid #e8e3dd;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-}
-
-.stat-badge-accent {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    border-color: #d4a574;
-    color: white;
-}
-
-.stat-label {
-    font-weight: 500;
-    opacity: 0.8;
-}
-
-.stat-value {
-    font-weight: 700;
+    color: #999;
     font-size: 14px;
+    margin: 8px 0 0 0;
+    font-weight: 500;
 }
 
-.btn-new {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.btn-icon {
-    font-size: 20px;
-    font-weight: 600;
-}
-
-/* ========== Alerts ========== */
-.alert {
+.error-message,
+.success-message {
     padding: 16px 20px;
     border-radius: 8px;
     margin-bottom: 20px;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 12px;
     font-weight: 500;
-    font-size: 14px;
+    animation: slideDown 0.3s ease-out;
 }
 
-.alert-icon {
-    font-size: 18px;
-    flex-shrink: 0;
+.error-message {
+    background: #fee;
+    color: #c33;
+    border-left: 4px solid #c33;
 }
 
-.alert-text {
-    flex: 1;
+.success-message {
+    background: #efe;
+    color: #3c3;
+    border-left: 4px solid #3c3;
 }
 
-.alert-close {
+.error-close {
     background: none;
     border: none;
-    font-size: 24px;
-    cursor: pointer;
     color: inherit;
-    padding: 0;
-    opacity: 0.6;
-    transition: opacity 0.2s;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 8px;
 }
 
-.alert-close:hover {
-    opacity: 1;
-}
-
-.alert-error {
-    background: #fff5f5;
-    color: #c51c15;
-    border: 1px solid #facaca;
-}
-
-.alert-success {
-    background: #f0fdf4;
-    color: #15803d;
-    border: 1px solid #bbf7d0;
-}
-
-/* ========== Loading & Empty ========== */
-.loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 20px;
+.loading-state,
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
     background: white;
     border-radius: 12px;
-    border: 1px solid #e8e3dd;
-}
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #e8e3dd;
-    border-top-color: #d4a574;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 16px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
+    color: #999;
 }
 
 .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    background: white;
-    border-radius: 12px;
-    border: 2px dashed #e8e3dd;
-    text-align: center;
-}
-
-.empty-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
-}
-
-.empty-state h2 {
-    font-size: 22px;
-    color: #2c2c2c;
-    margin: 0 0 8px 0;
-    font-weight: 700;
+    gap: 20px;
 }
 
 .empty-state p {
-    color: #888;
-    margin: 0 0 24px 0;
-    font-size: 15px;
-}
-
-/* ========== Toolbar ========== */
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.search-box {
-    position: relative;
-    flex: 1;
-    max-width: 500px;
-}
-
-.search-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
+    margin: 0;
     font-size: 16px;
-    pointer-events: none;
-    opacity: 0.5;
 }
 
-.search-input {
-    width: 100%;
-    padding: 12px 48px 12px 44px;
-    border: 1px solid #e8e3dd;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: inherit;
-    background: white;
-    transition: all 0.2s;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: #d4a574;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
-}
-
-.clear-search {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #999;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.clear-search:hover {
-    background: #f0ebe4;
-    color: #d4a574;
-}
-
-.view-toggle {
-    display: flex;
-    gap: 6px;
-    background: white;
-    border: 1px solid #e8e3dd;
-    border-radius: 8px;
-    padding: 4px;
-}
-
-.view-btn {
-    padding: 8px 16px;
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    color: #999;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 500;
-}
-
-.view-btn span {
-    font-size: 14px;
-}
-
-.view-btn.active {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    font-weight: 600;
-}
-
-.view-btn:hover:not(.active) {
-    background: #f0ebe4;
-    color: #d4a574;
-}
-
-/* ========== Table ========== */
-.table-container {
-    background: white;
-    border: 1px solid #e8e3dd;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.componentes-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.componentes-table thead {
-    background: linear-gradient(135deg, #f8f7f6 0%, #f0ebe4 100%);
-    border-bottom: 2px solid #e8e3dd;
-}
-
-.componentes-table th {
-    padding: 16px 20px;
-    text-align: left;
-    font-weight: 700;
-    font-size: 13px;
-    color: #5a4037;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.componentes-table th.text-right {
-    text-align: right;
-}
-
-.componentes-table th.text-center {
-    text-align: center;
-}
-
-.table-row {
-    border-bottom: 1px solid #f0ebe4;
-    transition: background-color 0.2s;
-}
-
-.table-row:hover {
-    background-color: #fdfbf9;
-}
-
-.componentes-table td {
-    padding: 16px 20px;
-    font-size: 14px;
-    color: #2c2c2c;
-}
-
-.cell-nombre {
-    font-weight: 600;
-    color: #2c2c2c;
-}
-
-.cell-codigo {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    width: fit-content;
-}
-
-.cell-descripcion {
-    color: #888;
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.cell-precio {
-    text-align: right;
-    font-weight: 700;
-    color: #d4a574;
-}
-
-.cell-actions {
-    text-align: center;
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
-
-.btn-action {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 18px;
-    transition: all 0.2s;
-    background: white;
-    border: 1px solid #e8e3dd;
-}
-
-.btn-action:hover {
-    border-color: #d4a574;
-    background: #fff9f0;
-}
-
-.btn-action.btn-delete:hover {
-    border-color: #e67e22;
-    background: #fff5f0;
-}
-
-.btn-action.btn-duplicate {
-    background: white;
-}
-
-.btn-action.btn-duplicate:hover {
-    border-color: #3498db;
-    background: #f0f8ff;
-}
-
-/* ========== Grid ========== */
 .componentes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
 }
 
 .componente-card {
     background: white;
-    border: 1px solid #e8e3dd;
     border-radius: 12px;
-    padding: 24px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #ede7e0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 15px;
     transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    min-height: 320px;
 }
 
 .componente-card:hover {
-    border-color: #d4a574;
-    box-shadow: 0 8px 24px rgba(212, 165, 116, 0.15);
-    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
 }
 
-.card-header {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #f0ebe4;
-}
-
-.card-title-section {
+.componente-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
-    width: 100%;
+    gap: 10px;
 }
 
 .componente-nombre {
-    margin: 0;
     font-size: 18px;
-    font-weight: 700;
-    color: #2c2c2c;
-    line-height: 1.3;
+    font-weight: 600;
+    color: #5a4037;
+    margin: 0;
     flex: 1;
-    word-break: break-word;
 }
 
 .componente-codigo {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
-    flex-shrink: 0;
-    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    background: #f5f1ed;
+    color: #5a4037;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .componente-descripcion {
     color: #666;
     font-size: 14px;
     margin: 0;
-    line-height: 1.6;
-    min-height: 44px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    line-height: 1.5;
+    flex-grow: 1;
 }
 
-.componente-info {
-    background: linear-gradient(135deg, #fafaf9 0%, #ffffff 100%);
-    border: 1px solid #f0ebe4;
-    border-radius: 10px;
-    padding: 16px;
-    flex: 1;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-}
-
-.info-item {
+.componente-stats {
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
+    gap: 15px;
+    padding: 15px 0;
+    border-top: 1px solid #ede7e0;
+    border-bottom: 1px solid #ede7e0;
 }
 
-.info-icon {
+.stat-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: #faf7f2;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: #f5f1ed;
+    transform: translateX(2px);
+}
+
+.stat-icon {
     font-size: 20px;
-    opacity: 0.8;
-    flex-shrink: 0;
-    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.info-content {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
+.stat-content {
     flex: 1;
 }
 
-.info-item label {
-    font-size: 10px;
-    font-weight: 600;
+.stat-content label {
+    display: block;
+    font-size: 11px;
     color: #999;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    white-space: nowrap;
-}
-
-.info-item .price {
-    font-size: 16px;
-    font-weight: 700;
-    color: #d4a574;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.info-item .value {
-    font-size: 14px;
+    margin-bottom: 2px;
     font-weight: 600;
-    color: #2c2c2c;
-    white-space: nowrap;
+}
+
+.stat-content span {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #5a4037;
+}
+
+.entidades-list {
+    background: linear-gradient(135deg, #faf7f2 0%, #f5f1ed 100%);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #ede7e0;
+    transition: all 0.3s ease;
+}
+
+.entidades-list:hover {
+    border-color: #d4a574;
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.1);
+}
+
+.list-header {
+    margin-bottom: 8px;
+}
+
+.list-header label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a4037;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+.entidades-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.entidades-list li {
+    font-size: 13px;
+    color: #666;
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.entidades-list li:hover {
+    color: #5a4037;
+    padding-left: 4px;
+}
+
+.entidad-item {
+    gap: 10px;
+}
+
+.entidad-bullet {
+    color: #d4a574;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.entidad-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.entidad-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.entidad-quantity {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+    min-width: 35px;
+    text-align: center;
+}
+
+.entidad-name {
+    color: #666;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.entidad-item:hover .entidad-name {
+    color: #5a4037;
+}
+
+.mas-items {
+    color: #999;
+    justify-content: flex-start;
+}
+
+.more-badge {
+    background: #d4a574;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 4px;
 }
 
 .card-actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     margin-top: auto;
-    padding-top: 4px;
+    padding-top: 15px;
+    border-top: 1px solid #ede7e0;
 }
 
-.btn-icon-action {
+.btn-primary,
+.btn-edit,
+.btn-secondary {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #e8e3dd;
-    border-radius: 8px;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-}
-
-.btn-icon-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.btn-icon-action.btn-edit:hover {
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    border-color: #d4a574;
-}
-
-.btn-icon-action.btn-duplicate:hover {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    border-color: #3498db;
-}
-
-.btn-icon-action.btn-delete-action:hover {
-    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
-    border-color: #e67e22;
-}
-
-.card-footer {
-    margin-top: auto;
-    padding-top: 4px;
-}
-
-.btn-view {
-    width: 100%;
-    padding: 10px 16px;
-    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
-    color: white;
+    padding: 12px 16px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    text-transform: none;
+    letter-spacing: 0px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
 }
 
-.btn-view:hover {
-    background: linear-gradient(135deg, #c89564 0%, #b8844c 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3);
-}
-
-/* ========== Buttons ========== */
 .btn-primary {
-    padding: 12px 24px;
     background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
     color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.2);
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(212, 165, 116, 0.3);
+    box-shadow: 0 4px 16px rgba(212, 165, 116, 0.4);
 }
 
-.btn-secondary {
-    padding: 10px 24px;
-    background: white;
-    color: #2c2c2c;
-    border: 1px solid #e8e3dd;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    transition: all 0.2s;
+.btn-primary:active {
+    transform: translateY(0px);
 }
 
-.btn-secondary:hover {
-    background: #f8f7f6;
-    border-color: #d4a574;
+.btn-edit {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    box-shadow: 0 1px 4px rgba(212, 165, 116, 0.2);
+}
+
+.btn-edit:hover {
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
+    transform: translateY(-1px);
 }
 
 .btn-delete {
-    background: #fff5f0;
-    color: #e67e22;
-    border: 1px solid #facaca;
+    background: #fee;
+    color: #c33;
+    border: 1.5px solid #c33;
 }
 
 .btn-delete:hover {
-    background: #ffe8d6;
-    border-color: #e67e22;
+    background: #c33;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(204, 51, 51, 0.2);
 }
 
-/* ========== Modal ========== */
+.btn-secondary {
+    background: #f5f1ed;
+    color: #5a4037;
+    border: 1px solid #d4a574;
+}
+
+.btn-secondary:hover {
+    background: #ede7e0;
+}
+
+/* Modal */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -1311,178 +907,56 @@ const getAccesorios = (componenteId) => {
 .modal-content {
     background: white;
     border-radius: 12px;
-    padding: 32px;
-    max-width: 420px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    text-align: center;
-}
-
-.modal-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
 }
 
 .modal-content h3 {
-    margin: 0 0 12px 0;
-    color: #2c2c2c;
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 600;
+    color: #5a4037;
+    margin: 0 0 15px 0;
 }
 
 .modal-content p {
-    margin: 0 0 32px 0;
-    color: #888;
-    font-size: 14px;
-    line-height: 1.6;
+    color: #666;
+    margin: 0 0 20px 0;
+    line-height: 1.5;
 }
 
 .modal-actions {
     display: flex;
-    gap: 12px;
+    gap: 10px;
 }
 
 .modal-actions button {
     flex: 1;
 }
 
-/* ========== Entity Tags ========== */
-.componente-entidades {
-    margin-top: 4px;
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.cell-entidades {
-    max-width: 350px;
-}
-
-.entidades-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 16px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-    border: 1px solid;
-}
-
-.tag-qty {
-    font-size: 10px;
-    opacity: 0.7;
-    font-weight: 700;
-}
-
-.tag-estructura {
-    background: #eef2ff;
-    color: #4338ca;
-    border-color: #c7d2fe;
-}
-
-.tag-acabado-tablero {
-    background: #fef3c7;
-    color: #92400e;
-    border-color: #fde68a;
-}
-
-.tag-cubre-canto {
-    background: #f0fdf4;
-    color: #166534;
-    border-color: #bbf7d0;
-}
-
-.tag-puerta {
-    background: #fdf2f8;
-    color: #9d174d;
-    border-color: #fbcfe8;
-}
-
-.tag-accesorio {
-    background: #f0f9ff;
-    color: #075985;
-    border-color: #bae6fd;
-}
-
-.tag-empty {
-    font-size: 12px;
-    color: #999;
-    font-style: italic;
-}
-
-/* ========== Transitions ========== */
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-}
-
-.modal-enter-active,
-.modal-leave-active {
-    transition: all 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-/* ========== Responsive ========== */
 @media (max-width: 768px) {
-    .componentes-container {
-        padding: 24px 16px;
-    }
-
     .page-header {
-        padding: 24px;
-    }
-
-    .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .btn-new {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .toolbar {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .search-box {
-        max-width: 100%;
-    }
-
-    .view-toggle {
-        justify-content: center;
+    .btn-primary {
+        width: 100%;
     }
 
     .componentes-grid {
         grid-template-columns: 1fr;
-    }
-
-    .table-container {
-        overflow-x: auto;
-    }
-
-    .componentes-table {
-        min-width: 600px;
-    }
-
-    .page-title {
-        font-size: 28px;
     }
 }
 </style>
