@@ -36,6 +36,7 @@ const items = [
     { path: '/tiras-led', icon: '💡', label: 'Tiras LED', desc: 'Sistemas de iluminación LED' },
     { path: '/perfil-aluminio', icon: '🔲', label: 'Perfil Aluminio', desc: 'Perfiles de aluminio para LED' },
     { path: '/fuentes-alimentacion', icon: '🔌', label: 'Fuentes de Alimentación', desc: 'Fuentes de poder y alimentación eléctrica' },
+    { path: '/conectores', icon: '🔗', label: 'Conectores', desc: 'Conectores y terminales eléctricas' },
 ];
 
 const visibleItems = computed(() => {

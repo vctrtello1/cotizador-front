@@ -266,6 +266,23 @@ export const routes = [
         meta: { permission: "catalogs.write" },
     },
     {
+        path: "/conectores",
+        name: "Conectores",
+        component: () => import("@/pages/conectores/ConectoresPage.vue"),
+    },
+    {
+        path: "/nuevo-conector",
+        name: "NuevoConector",
+        component: () => import("@/pages/conectores/NuevoConectorPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
+        path: "/editar-conector/:id",
+        name: "EditarConector",
+        component: () => import("@/pages/conectores/EditarConectorPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
         path: "/admin",
         name: "Admin",
         component: () => import("@/pages/admin/AdminPage.vue"),
