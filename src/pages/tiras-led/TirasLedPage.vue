@@ -54,17 +54,29 @@
                 </div>
 
                 <div class="tira-led-info">
+                    <div v-if="tiraLed.codigo" class="info-item">
+                        <label>🏷️ Código</label>
+                        <span>{{ tiraLed.codigo }}</span>
+                    </div>
                     <div v-if="tiraLed.descripcion" class="info-item">
                         <label>📝 Descripción</label>
                         <span>{{ tiraLed.descripcion }}</span>
                     </div>
-                    <div v-if="tiraLed.precio" class="info-item">
-                        <label>💰 Precio</label>
-                        <span>${{ formatCurrency(tiraLed.precio) }}</span>
-                    </div>
                     <div v-if="tiraLed.precio_unitario" class="info-item">
                         <label>💰 Precio Unitario</label>
                         <span>${{ formatCurrency(tiraLed.precio_unitario) }}</span>
+                    </div>
+                    <div v-if="tiraLed.unidades_por_metro" class="info-item">
+                        <label>📏 Unidades por Metro</label>
+                        <span>{{ tiraLed.unidades_por_metro }}</span>
+                    </div>
+                    <div v-if="tiraLed.porcentaje_utilizacion" class="info-item">
+                        <label>📊 % Utilización</label>
+                        <span>{{ tiraLed.porcentaje_utilizacion }}%</span>
+                    </div>
+                    <div v-if="tiraLed.cantidad_compra" class="info-item">
+                        <label>🛒 Cantidad Compra</label>
+                        <span>{{ tiraLed.cantidad_compra }}</span>
                     </div>
                 </div>
 

@@ -31,6 +31,18 @@
             </div>
 
             <div class="form-group">
+                <label for="codigo">Código *</label>
+                <input
+                    v-model="formData.codigo"
+                    type="text"
+                    id="codigo"
+                    placeholder="Ej: TIRA_LED_001"
+                    required
+                />
+                <span v-if="errors.codigo" class="error-text">{{ errors.codigo }}</span>
+            </div>
+
+            <div class="form-group">
                 <label for="descripcion">Descripción</label>
                 <textarea
                     v-model="formData.descripcion"
@@ -41,17 +53,57 @@
             </div>
 
             <div class="form-group">
-                <label for="precio">Precio *</label>
+                <label for="precio_unitario">Precio Unitario *</label>
                 <input
-                    v-model.number="formData.precio"
+                    v-model.number="formData.precio_unitario"
                     type="number"
-                    id="precio"
+                    id="precio_unitario"
                     step="0.01"
                     min="0"
                     placeholder="0.00"
                     required
                 />
-                <span v-if="errors.precio" class="error-text">{{ errors.precio }}</span>
+                <span v-if="errors.precio_unitario" class="error-text">{{ errors.precio_unitario }}</span>
+            </div>
+
+            <div class="form-group">
+                <label for="unidades_por_metro">Unidades por Metro *</label>
+                <input
+                    v-model.number="formData.unidades_por_metro"
+                    type="number"
+                    id="unidades_por_metro"
+                    min="1"
+                    placeholder="1"
+                    required
+                />
+                <span v-if="errors.unidades_por_metro" class="error-text">{{ errors.unidades_por_metro }}</span>
+            </div>
+
+            <div class="form-group">
+                <label for="porcentaje_utilizacion">Porcentaje de Utilización *</label>
+                <input
+                    v-model.number="formData.porcentaje_utilizacion"
+                    type="number"
+                    id="porcentaje_utilizacion"
+                    step="0.001"
+                    min="0"
+                    placeholder="0.000"
+                    required
+                />
+                <span v-if="errors.porcentaje_utilizacion" class="error-text">{{ errors.porcentaje_utilizacion }}</span>
+            </div>
+
+            <div class="form-group">
+                <label for="cantidad_compra">Cantidad de Compra *</label>
+                <input
+                    v-model.number="formData.cantidad_compra"
+                    type="number"
+                    id="cantidad_compra"
+                    min="1"
+                    placeholder="1"
+                    required
+                />
+                <span v-if="errors.cantidad_compra" class="error-text">{{ errors.cantidad_compra }}</span>
             </div>
 
             <div class="form-actions">
@@ -78,8 +130,12 @@ const tirasLedStore = useTirasLedStore();
 // Estado
 const formData = ref({
     nombre: '',
+    codigo: '',
     descripcion: '',
-    precio: '',
+    precio_unitario: '',
+    unidades_por_metro: '',
+    porcentaje_utilizacion: '',
+    cantidad_compra: '',
 });
 
 const errors = ref({});
@@ -95,8 +151,24 @@ const validar = () => {
         errors.value.nombre = 'El nombre es requerido';
     }
 
-    if (formData.value.precio === '' || formData.value.precio < 0) {
-        errors.value.precio = 'El precio es requerido y debe ser mayor o igual a 0';
+    if (!formData.value.codigo || !formData.value.codigo.toString().trim()) {
+        errors.value.codigo = 'El código es requerido';
+    }
+
+    if (formData.value.precio_unitario === '' || formData.value.precio_unitario < 0) {
+        errors.value.precio_unitario = 'El precio unitario es requerido y debe ser mayor o igual a 0';
+    }
+
+    if (formData.value.unidades_por_metro === '' || formData.value.unidades_por_metro < 1) {
+        errors.value.unidades_por_metro = 'Las unidades por metro son requeridas y deben ser al menos 1';
+    }
+
+    if (formData.value.porcentaje_utilizacion === '' || formData.value.porcentaje_utilizacion < 0) {
+        errors.value.porcentaje_utilizacion = 'El porcentaje de utilización es requerido';
+    }
+
+    if (formData.value.cantidad_compra === '' || formData.value.cantidad_compra < 1) {
+        errors.value.cantidad_compra = 'La cantidad de compra es requerida y debe ser al menos 1';
     }
 
     return Object.keys(errors.value).length === 0;
@@ -112,8 +184,12 @@ const guardarTiraLed = async () => {
 
         const datos = {
             nombre: formData.value.nombre.toString().trim(),
+            codigo: formData.value.codigo.toString().trim(),
             descripcion: formData.value.descripcion ? formData.value.descripcion.trim() : '',
-            precio: parseFloat(formData.value.precio),
+            precio_unitario: parseFloat(formData.value.precio_unitario),
+            unidades_por_metro: parseInt(formData.value.unidades_por_metro),
+            porcentaje_utilizacion: parseFloat(formData.value.porcentaje_utilizacion),
+            cantidad_compra: parseInt(formData.value.cantidad_compra),
         };
 
         console.log('Guardando tira LED:', datos);
