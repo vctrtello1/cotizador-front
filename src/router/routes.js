@@ -176,6 +176,11 @@ export const routes = [
         component: () => import("@/pages/materiales/CatalogosPage.vue"),
     },
     {
+        path: "/electricidad",
+        name: "Electricidad",
+        component: () => import("@/pages/materiales/ElectricidadPage.vue"),
+    },
+    {
         path: "/tiras-led",
         name: "TirasLed",
         component: () => import("@/pages/tiras-led/TirasLedPage.vue"),
