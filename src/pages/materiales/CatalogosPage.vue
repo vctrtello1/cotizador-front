@@ -35,6 +35,7 @@ const catalogos = [
     { path: '/correderas', icon: '🔄', label: 'Correderas', desc: 'Sistemas de correderas' },
     { path: '/compases-abatibles', icon: '📐', label: 'Compases Abatibles', desc: 'Compases abatibles' },
     { path: '/tiras-led', icon: '💡', label: 'Tiras LED', desc: 'Iluminación LED' },
+    { path: '/apagadores', icon: '🔘', label: 'Apagadores', desc: 'Interruptores y apagadores' },
     { path: '/accesorios', icon: '🔩', label: 'Accesorios', desc: 'Accesorios varios' },
 ];
 

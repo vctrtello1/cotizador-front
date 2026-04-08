@@ -210,6 +210,23 @@ export const routes = [
         meta: { permission: "catalogs.write" },
     },
     {
+        path: "/apagadores",
+        name: "Apagadores",
+        component: () => import("@/pages/apagadores/ApagadoresPage.vue"),
+    },
+    {
+        path: "/nuevo-apagador",
+        name: "NuevoApagador",
+        component: () => import("@/pages/apagadores/NuevoApagadorPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
+        path: "/editar-apagador/:id",
+        name: "EditarApagador",
+        component: () => import("@/pages/apagadores/EditarApagadorPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
         path: "/admin",
         name: "Admin",
         component: () => import("@/pages/admin/AdminPage.vue"),
