@@ -1,10 +1,6 @@
 <template>
     <div class="acabados-container">
         <!-- Header -->
-        <div class="page-header">
-            <h1 class="page-title">🎨 Acabados</h1>
-            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-acabado')">✨ Nuevo Acabado</button>
-        </div>
 
         <!-- Subcategorías grid -->
         <div class="subcategorias-grid">
@@ -19,22 +15,7 @@
             </router-link>
         </div>
 
-        <div class="search-bar">
-            <input
-                v-model="searchTerm"
-                type="text"
-                class="search-input"
-                placeholder="Buscar por nombre..."
-            />
-            <button
-                v-if="searchTerm"
-                class="search-clear"
-                @click="searchTerm = ''"
-                aria-label="Limpiar búsqueda"
-            >
-                ✕
-            </button>
-        </div>
+
 
         <!-- Mensaje de error -->
         <div v-if="error" class="error-message">
@@ -53,52 +34,11 @@
             <p>Cargando acabados...</p>
         </div>
 
-        <!-- Empty State -->
-        <div v-else-if="filteredAcabados.length === 0" class="empty-state">
-            <p>No hay acabados registrados.</p>
-            <button v-if="canWrite" class="btn-primary" @click="$router.push('/nuevo-acabado')">✨ Crear Primer Acabado</button>
-        </div>
 
-        <!-- Acabados Grid -->
-        <div v-else class="acabados-grid">
-            <div v-for="acabado in filteredAcabados" :key="acabado.id" class="acabado-card">
-                <div class="acabado-header">
-                    <h3 class="acabado-nombre">{{ acabado.nombre || acabado.acabado || `Acabado #${acabado.id}` }}</h3>
-                </div>
 
-                <div class="acabado-info">
-                    <div v-if="acabado.descripcion" class="info-item">
-                        <label>📝 Descripción</label>
-                        <span>{{ acabado.descripcion }}</span>
-                    </div>
-                    <div v-if="acabado.precio" class="info-item">
-                        <label>💰 Precio</label>
-                        <span>${{ formatCurrency(acabado.precio) }}</span>
-                    </div>
-                    <div v-if="acabado.precio_unitario" class="info-item">
-                        <label>💰 Precio Unitario</label>
-                        <span>${{ formatCurrency(acabado.precio_unitario) }}</span>
-                    </div>
-                </div>
 
-                <div v-if="canWrite" class="card-actions">
-                    <button class="btn-edit" @click="editarAcabado(acabado.id)">Editar</button>
-                    <button class="btn-delete" @click="confirmarEliminar(acabado.id)">Eliminar</button>
-                </div>
-            </div>
-        </div>
 
-        <!-- Modal de confirmación de eliminación -->
-        <div v-if="canWrite && modalEliminar" class="modal-overlay" @click.self="modalEliminar = false">
-            <div class="modal-content">
-                <h3>Confirmar eliminación</h3>
-                <p>¿Estás seguro de que deseas eliminar este acabado?</p>
-                <div class="modal-actions">
-                    <button class="btn-secondary" @click="modalEliminar = false">Cancelar</button>
-                    <button class="btn-delete" @click="eliminarAcabado">Eliminar</button>
-                </div>
-            </div>
-        </div>
+
     </div>
 </template>
 
