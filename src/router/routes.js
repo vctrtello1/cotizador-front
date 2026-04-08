@@ -232,6 +232,23 @@ export const routes = [
         meta: { permission: "catalogs.write" },
     },
     {
+        path: "/perfil-aluminio",
+        name: "PerfilAluminio",
+        component: () => import("@/pages/perfil-aluminio/PerfilAluminioPage.vue"),
+    },
+    {
+        path: "/nuevo-perfil-aluminio",
+        name: "NuevoPerfilAluminio",
+        component: () => import("@/pages/perfil-aluminio/NuevoPerfilAluminioPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
+        path: "/editar-perfil-aluminio/:id",
+        name: "EditarPerfilAluminio",
+        component: () => import("@/pages/perfil-aluminio/EditarPerfilAluminioPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
         path: "/admin",
         name: "Admin",
         component: () => import("@/pages/admin/AdminPage.vue"),

@@ -34,6 +34,7 @@ const authStore = useAuthStore();
 const items = [
     { path: '/apagadores', icon: '🔘', label: 'Apagadores', desc: 'Interruptores y apagadores eléctricos' },
     { path: '/tiras-led', icon: '💡', label: 'Tiras LED', desc: 'Sistemas de iluminación LED' },
+    { path: '/perfil-aluminio', icon: '🔲', label: 'Perfil Aluminio', desc: 'Perfiles de aluminio para LED' },
 ];
 
 const visibleItems = computed(() => {
