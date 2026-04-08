@@ -43,6 +43,20 @@ bruno/
 
 ## ⚠️ Troubleshooting
 
+### Error: "Unauthenticated"
+**Causa**: No hay token válido o no se está enviando.
+
+**Solución paso a paso**:
+1. ✅ **Verifica que el environment "Local" esté seleccionado** (dropdown arriba a la derecha)
+2. 🔑 **Ejecuta `auth/Login.bru`** con credenciales válidas
+3. 📋 **Revisa la consola** (Output de Bruno) para ver si el token se guardó
+4. 🔄 **Vuelve a intentar** el request que falló
+
+**Verificación manual del token**:
+- Abre `bruno/environments/Local.bru`
+- Deberías ver `authToken: tu_token_aqui`
+- Si está vacío, el login falló
+
 ### Error: "getaddrinfo ENOTFOUND {{baseUrl}}"
 **Solución**: Verifica que el environment "Local" esté seleccionado en el dropdown de Bruno.
 
@@ -50,4 +64,7 @@ bruno/
 **Solución**: Ejecuta primero `auth/Login.bru` para obtener el token.
 
 ### Error: 404 Not Found
-**Solución**: Verifica que el backend esté corriendo en `http://localhost:8000`
+**Solución**: 
+1. Verifica que el backend esté corriendo: `http://localhost:8000`
+2. Ejecuta `Test Connection.bru` para probar la conexión
+3. Verifica que la ruta del endpoint sea correcta

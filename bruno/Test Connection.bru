@@ -1,0 +1,21 @@
+meta {
+  name: Test Connection
+  type: http
+  seq: 0
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+script:post-response {
+  console.log("Status:", res.status);
+  console.log("BaseURL being used:", "{{baseUrl}}");
+  console.log("Response:", res.body);
+}
