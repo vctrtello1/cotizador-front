@@ -16,12 +16,7 @@ const navItems = [
   { path: '/cotizaciones', icon: '📋', label: 'Cotizaciones', excludeNew: true },
   { path: '/modulos', icon: '🧩', label: 'Módulos', excludeNew: true },
   { path: '/componentes', icon: '🔧', label: 'Componentes', excludeNew: true },
-  { path: '/estructuras', icon: '🏗️', label: 'Estructuras', excludeNew: true, roles: ['admin', 'editor'] },
-  { path: '/acabado-tablero', icon: '🎨', label: 'Acabado Tablero', excludeNew: true, roles: ['admin', 'editor'] },
-  { path: '/acabado-cubre-canto', icon: '🧵', label: 'Acabado Cubre Canto', excludeNew: false, roles: ['admin', 'editor'] },
-  { path: '/correderas', icon: '🎚️', label: 'Correderas', excludeNew: true, roles: ['admin', 'editor'] },
-  { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles', excludeNew: true, roles: ['admin', 'editor'] },
-  { path: '/puertas', icon: '🚪', label: 'Puertas', excludeNew: true, roles: ['admin', 'editor'] },
+  { path: '/acabados', icon: '🎨', label: 'Acabados', excludeNew: true, roles: ['admin', 'editor'] },
   { path: '/accesorios', icon: '🔩', label: 'Accesorios', excludeNew: true, roles: ['admin', 'editor'] },
   { path: '/admin', icon: '⚙️', label: 'Admin', excludeNew: false, roles: ['admin'] }
 ];

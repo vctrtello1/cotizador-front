@@ -154,6 +154,23 @@ export const routes = [
         meta: { permission: "catalogs.write" },
     },
     {
+        path: "/acabados",
+        name: "Acabados",
+        component: () => import("@/pages/acabados/AcabadosPage.vue"),
+    },
+    {
+        path: "/nuevo-acabado",
+        name: "NuevoAcabado",
+        component: () => import("@/pages/acabados/NuevoAcabadoPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
+        path: "/editar-acabado/:id",
+        name: "EditarAcabado",
+        component: () => import("@/pages/acabados/EditarAcabadoPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
         path: "/accesorios",
         name: "Accesorios",
         component: () => import("@/pages/accesorios/AccesoriosPage.vue"),
