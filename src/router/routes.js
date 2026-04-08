@@ -171,6 +171,23 @@ export const routes = [
         meta: { permission: "catalogs.write" },
     },
     {
+        path: "/tiras-led",
+        name: "TirasLed",
+        component: () => import("@/pages/tiras-led/TirasLedPage.vue"),
+    },
+    {
+        path: "/nueva-tira-led",
+        name: "NuevaTiraLed",
+        component: () => import("@/pages/tiras-led/NuevaTiraLedPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
+        path: "/editar-tira-led/:id",
+        name: "EditarTiraLed",
+        component: () => import("@/pages/tiras-led/EditarTiraLedPage.vue"),
+        meta: { permission: "catalogs.write" },
+    },
+    {
         path: "/accesorios",
         name: "Accesorios",
         component: () => import("@/pages/accesorios/AccesoriosPage.vue"),

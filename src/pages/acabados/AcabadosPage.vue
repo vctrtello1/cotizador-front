@@ -22,6 +22,7 @@ const subcategorias = [
     { path: '/correderas', icon: '🎚️', label: 'Correderas' },
     { path: '/compases-abatibles', icon: '🔀', label: 'Compases Abatibles' },
     { path: '/puertas', icon: '🚪', label: 'Puertas' },
+    { path: '/tiras-led', icon: '💡', label: 'Tiras LED' },
 ];
 </script>
 
