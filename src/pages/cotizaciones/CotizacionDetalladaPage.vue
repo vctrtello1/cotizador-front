@@ -1,4 +1,14 @@
 <template>
+    <!-- Notificación flotante -->
+    <transition name="slide-down">
+        <div v-if="mensaje" class="custom-message" :class="`message-${tipoMensaje}`">
+            <div class="message-content">
+                <span class="message-text">{{ mensaje }}</span>
+                <button @click="cerrarMensaje" class="message-close">✕</button>
+            </div>
+        </div>
+    </transition>
+
     <div v-if="cotizacion" class="cotizacion-detallada-container">
         <!-- Header con acciones -->
         <div class="page-header">
@@ -183,6 +193,25 @@ const { fetchClientes } = clientesStore;
 
 const cotizacion = ref(null);
 const generandoPDF = ref(false);
+const mensaje = ref(null);
+const tipoMensaje = ref('info');
+let mensajeTimer = null;
+
+const mostrarMensaje = (texto, tipo = 'info', duracion = 3000) => {
+    mensaje.value = texto;
+    tipoMensaje.value = tipo;
+    if (mensajeTimer) clearTimeout(mensajeTimer);
+    mensajeTimer = setTimeout(() => {
+        mensaje.value = null;
+        tipoMensaje.value = 'info';
+    }, duracion);
+};
+
+const cerrarMensaje = () => {
+    if (mensajeTimer) clearTimeout(mensajeTimer);
+    mensaje.value = null;
+    tipoMensaje.value = 'info';
+};
 const mostrarSelectorClientes = ref(false);
 const busquedaCliente = ref('');
 const clientes = ref([]);
@@ -270,10 +299,10 @@ const seleccionarCliente = async (cliente) => {
         await updateCotizacion(cotizacion.value.id, cotizacionActualizada);
         cotizacion.value = cotizacionActualizada;
         cerrarSelectorClientes();
-        alert('Cliente actualizado correctamente');
+        mostrarMensaje('✅ Cliente actualizado correctamente', 'success', 3000);
     } catch (error) {
         console.error('Error al actualizar cliente:', error);
-        alert('Error al actualizar el cliente');
+        mostrarMensaje('❌ Error al actualizar el cliente', 'error', 4000);
     }
 };
 
@@ -367,7 +396,7 @@ const generarPDF = async () => {
         doc.save(`Cotizacion_${cotizacion.value.id}.pdf`);
     } catch (err) {
         console.error('Error al generar PDF:', err);
-        alert('Error al generar el PDF');
+        mostrarMensaje('❌ Error al generar el PDF', 'error', 4000);
     } finally {
         generandoPDF.value = false;
     }
@@ -1326,5 +1355,93 @@ const sincronizarComponentes = async () => {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Notificación flotante */
+.custom-message {
+    padding: 14px 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 480px;
+    z-index: 2000;
+    backdrop-filter: blur(8px);
+}
+
+.message-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+}
+
+.message-text {
+    flex: 1;
+    font-size: 0.95rem;
+}
+
+.message-close {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1.4rem;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+.message-close:hover {
+    opacity: 0.7;
+    transform: scale(1.1);
+}
+
+.message-success {
+    background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+    color: #2e7d32;
+    border-left: 4px solid #4caf50;
+}
+
+.message-error {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    color: #c62828;
+    border-left: 4px solid #f44336;
+}
+
+.message-warning {
+    background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%);
+    color: #f57f17;
+    border-left: 4px solid #fbc02d;
+}
+
+.message-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    color: #1565c0;
+    border-left: 4px solid #2196f3;
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+    transition: all 0.3s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
 }
 </style>

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue"; 
-import { fetchCotizaciones as fetchCotizacionesApi, getCotizacionById } from "../http/cotizaciones-api";
+import { fetchCotizaciones as fetchCotizacionesApi, getCotizacionById, actualizarCotizacion as actualizarCotizacionApi } from "../http/cotizaciones-api";
 
 
 export const useCotizacionesStore = defineStore("cotizaciones", () => {
@@ -44,6 +44,19 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
     cotizaciones.value = cotizaciones.value.filter(c => c.id !== id);
   };
 
+  const updateCotizacion = async (id, datos) => {
+    try {
+      const response = await actualizarCotizacionApi(id, datos);
+      const updated = response.data || response;
+      const idx = cotizaciones.value.findIndex(c => c.id === id);
+      if (idx !== -1) cotizaciones.value[idx] = { ...cotizaciones.value[idx], ...updated };
+      return updated;
+    } catch (error) {
+      console.error('⚠️ Error actualizando cotización:', error);
+      throw error;
+    }
+  };
+
   const fecthCotizacionById = async (id) => {
     try {
       const response = await getCotizacionById(id);
@@ -63,5 +76,6 @@ export const useCotizacionesStore = defineStore("cotizaciones", () => {
     agregarCotizacionLocal,
     eliminarCotizacionLocal,
     fecthCotizacionById,
+    updateCotizacion,
   };
 });
