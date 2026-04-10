@@ -105,7 +105,9 @@
                         <div class="grupo-items">
                             <div v-for="e in getEstructuras(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
                                 <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
                                 <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
                             </div>
                         </div>
                     </div>
@@ -116,7 +118,9 @@
                         <div class="grupo-items">
                             <div v-for="e in getAcabadoTableros(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
                                 <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
                                 <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
                             </div>
                         </div>
                     </div>
@@ -127,7 +131,9 @@
                         <div class="grupo-items">
                             <div v-for="e in getCubreCantos(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
                                 <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
                                 <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
                             </div>
                         </div>
                     </div>
@@ -138,7 +144,9 @@
                         <div class="grupo-items">
                             <div v-for="e in getPuertas(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
                                 <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
                                 <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
                             </div>
                         </div>
                     </div>
@@ -149,14 +157,16 @@
                         <div class="grupo-items">
                             <div v-for="e in getAccesorios(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
                                 <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
                                 <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-detalle-footer">
-                    <span class="modal-total-badge">{{ getTotalEntidades(componenteSeleccionado.id) }} entidades en total</span>
+                    <span class="modal-total-badge">{{ getTotalEntidades(componenteSeleccionado.id) }} entidades · {{ formatCosto(getCostoTotal(componenteSeleccionado.id)) }}</span>
                     <button v-if="canWrite" class="btn-edit" @click="editarComponente(componenteSeleccionado.id); modalDetalle = false">✏️ Editar</button>
                     <button class="btn-secondary" @click="modalDetalle = false">Cerrar</button>
                 </div>
@@ -476,7 +486,10 @@ const getEstructuras = (componenteId) => {
     );
     return relaciones.map(r => {
         const entidad = estructuraStore.estructuras.find(e => Number(e.id) === Number(r.estructura_id));
-        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+        if (!entidad) return null;
+        const cantidad = Number(r.cantidad) || 1;
+        const costo = Number(entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
+        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
     }).filter(Boolean);
 };
 
@@ -486,7 +499,10 @@ const getAcabadoTableros = (componenteId) => {
     );
     return relaciones.map(r => {
         const entidad = acabadoTableroStore.acabadoTableros.find(e => Number(e.id) === Number(r.acabado_tablero_id));
-        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+        if (!entidad) return null;
+        const cantidad = Number(r.cantidad) || 1;
+        const costo = Number(entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
+        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
     }).filter(Boolean);
 };
 
@@ -497,7 +513,10 @@ const getCubreCantos = (componenteId) => {
     return relaciones.map(r => {
         const id = r.acabado_cubre_canto_id || r.acabado_cubre_cantos_id;
         const entidad = acabadoCubreCantosStore.acabadoCubreCantos.find(e => Number(e.id) === Number(id));
-        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+        if (!entidad) return null;
+        const cantidad = Number(r.cantidad) || 1;
+        const costo = Number(entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
+        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
     }).filter(Boolean);
 };
 
@@ -507,7 +526,10 @@ const getPuertas = (componenteId) => {
     );
     return relaciones.map(r => {
         const entidad = puertasStore.puertas.find(e => Number(e.id) === Number(r.puerta_id));
-        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+        if (!entidad) return null;
+        const cantidad = Number(r.cantidad) || 1;
+        const costo = Number(entidad.precio_final ?? entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
+        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
     }).filter(Boolean);
 };
 
@@ -520,19 +542,33 @@ const getAccesorios = (componenteId) => {
         const entidad = accesoriosStore.accesorios.find(e => 
             Number(e.id) === Number(id) || e.nombre === id
         );
-        return entidad ? { nombre: entidad.nombre, cantidad: r.cantidad || 1 } : null;
+        if (!entidad) return null;
+        const cantidad = Number(r.cantidad) || 1;
+        const costo = Number(entidad.precio ?? entidad.costo_unitario ?? entidad.costo ?? 0);
+        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
     }).filter(Boolean);
 };
 
 // NEW FUNCTION: Get total count of all entities for a component
 const getTotalEntidades = (componenteId) => {
-    const estructuras = getEstructuras(componenteId);
-    const acabadoTableros = getAcabadoTableros(componenteId);
-    const cubreCantos = getCubreCantos(componenteId);
-    const puertas = getPuertas(componenteId);
-    const accesorios = getAccesorios(componenteId);
-    
-    return estructuras.length + acabadoTableros.length + cubreCantos.length + puertas.length + accesorios.length;
+    return getEstructuras(componenteId).length
+        + getAcabadoTableros(componenteId).length
+        + getCubreCantos(componenteId).length
+        + getPuertas(componenteId).length
+        + getAccesorios(componenteId).length;
+};
+
+const getCostoTotal = (componenteId) => [
+    ...getEstructuras(componenteId),
+    ...getAcabadoTableros(componenteId),
+    ...getCubreCantos(componenteId),
+    ...getPuertas(componenteId),
+    ...getAccesorios(componenteId),
+].reduce((acc, e) => acc + (e.subtotal || 0), 0);
+
+const formatCosto = (val) => {
+    if (!val) return '—';
+    return '$' + Number(val).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // NEW FUNCTION: Get unified array of all entities with type, icon, name, and quantity
@@ -1189,6 +1225,13 @@ const getTodasEntidades = (componenteId) => {
     white-space: nowrap;
 }
 
+.entidad-row-costo {
+    font-size: 12px;
+    color: #999;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .entidad-row-cantidad {
     background: #f5f1ed;
     color: #5a4037;
@@ -1199,6 +1242,16 @@ const getTodasEntidades = (componenteId) => {
     font-weight: 700;
     flex-shrink: 0;
     white-space: nowrap;
+}
+
+.entidad-row-subtotal {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5a4037;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 80px;
+    text-align: right;
 }
 
 .modal-detalle-footer {
