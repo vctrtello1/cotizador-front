@@ -777,7 +777,6 @@ const getTodasEntidades = (componenteId) => {
     font-size: 14px;
     margin: 0;
     line-height: 1.5;
-    flex-grow: 1;
 }
 
 .componente-stats {
@@ -1199,12 +1198,13 @@ const getTodasEntidades = (componenteId) => {
 }
 
 .entidad-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 90px 70px 90px;
     align-items: center;
     padding: 10px 14px;
     border-bottom: 1px solid #f0ece6;
     transition: background 0.2s;
-    gap: 12px;
+    gap: 8px;
 }
 
 .entidad-row:last-child {
@@ -1218,8 +1218,6 @@ const getTodasEntidades = (componenteId) => {
 .entidad-row-nombre {
     font-size: 14px;
     color: #444;
-    flex: 1;
-    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1229,7 +1227,7 @@ const getTodasEntidades = (componenteId) => {
     font-size: 12px;
     color: #999;
     white-space: nowrap;
-    flex-shrink: 0;
+    text-align: right;
 }
 
 .entidad-row-cantidad {
@@ -1240,8 +1238,9 @@ const getTodasEntidades = (componenteId) => {
     border-radius: 20px;
     font-size: 12px;
     font-weight: 700;
-    flex-shrink: 0;
     white-space: nowrap;
+    text-align: center;
+    justify-self: center;
 }
 
 .entidad-row-subtotal {
@@ -1249,8 +1248,6 @@ const getTodasEntidades = (componenteId) => {
     font-weight: 700;
     color: #5a4037;
     white-space: nowrap;
-    flex-shrink: 0;
-    min-width: 80px;
     text-align: right;
 }
 
