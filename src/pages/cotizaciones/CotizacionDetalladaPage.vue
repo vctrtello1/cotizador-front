@@ -214,10 +214,13 @@ const totalComponentes = computed(() => {
 });
 
 const totalCotizacion = computed(() => {
+    // Primero intentar usar el total de la cotización
     const total = cotizacion.value?.total;
     if (total != null && total !== '') {
         const numTotal = Number(String(total).replace(/,/g, ''));
-        if (!isNaN(numTotal)) return numTotal;
+        if (!isNaN(numTotal) && numTotal > 0) {
+            return numTotal;
+        }
     }
     
     // Calcular desde componentes
@@ -426,7 +429,11 @@ const sincronizarComponentes = async () => {
                 const componenteCompleto = componentes.find(c => c.id === compApi.componente_id) || compApi.componente;
                 
                 if (componenteCompleto) {
-                    const precioUnitario = componenteCompleto.precio_unitario || componenteCompleto.costo_total || 0;
+                    // Buscar el precio en diferentes campos posibles
+                    const precioUnitario = componenteCompleto.precio_unitario 
+                        || componenteCompleto.costo_unitario 
+                        || componenteCompleto.costo_total 
+                        || 0;
                     const cantidad = compApi.cantidad || 1;
                     
                     moduloEnMapa.componentes.push({
