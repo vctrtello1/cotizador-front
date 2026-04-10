@@ -71,9 +71,94 @@
                     </ul>
                 </div>
 
-                <div v-if="canWrite" class="card-actions">
-                    <button class="btn-edit" @click="editarComponente(componente.id)" title="Editar componente">✏️ Editar</button>
-                    <button class="btn-delete" @click="confirmarEliminar(componente.id)" title="Eliminar componente">🗑️ Eliminar</button>
+                <div class="card-actions">
+                    <button class="btn-detail" @click="abrirDetalle(componente)" title="Ver detalles">🔍 Ver Detalles</button>
+                    <template v-if="canWrite">
+                        <button class="btn-edit" @click="editarComponente(componente.id)" title="Editar componente">✏️ Editar</button>
+                        <button class="btn-delete" @click="confirmarEliminar(componente.id)" title="Eliminar componente">🗑️ Eliminar</button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de detalle del componente -->
+        <div v-if="modalDetalle && componenteSeleccionado" class="modal-overlay" @click.self="modalDetalle = false">
+            <div class="modal-detalle-content">
+                <div class="modal-detalle-header">
+                    <div class="modal-detalle-title-group">
+                        <h3 class="modal-detalle-nombre">{{ componenteSeleccionado.nombre }}</h3>
+                        <span class="componente-codigo">{{ componenteSeleccionado.codigo }}</span>
+                    </div>
+                    <button class="btn-close-modal" @click="modalDetalle = false">✕</button>
+                </div>
+
+                <p v-if="componenteSeleccionado.descripcion" class="modal-detalle-desc">{{ componenteSeleccionado.descripcion }}</p>
+
+                <div v-if="getTotalEntidades(componenteSeleccionado.id) === 0" class="modal-detalle-empty">
+                    <p>Este componente no tiene entidades asociadas.</p>
+                </div>
+
+                <div v-else class="modal-detalle-body">
+                    <!-- Estructuras -->
+                    <div v-if="getEstructuras(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
+                        <h4 class="grupo-titulo"><span>🏗️</span> Estructuras</h4>
+                        <div class="grupo-items">
+                            <div v-for="e in getEstructuras(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
+                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acabado Tableros -->
+                    <div v-if="getAcabadoTableros(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
+                        <h4 class="grupo-titulo"><span>🪵</span> Acabado Tableros</h4>
+                        <div class="grupo-items">
+                            <div v-for="e in getAcabadoTableros(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
+                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cubre Cantos -->
+                    <div v-if="getCubreCantos(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
+                        <h4 class="grupo-titulo"><span>📏</span> Cubre Cantos</h4>
+                        <div class="grupo-items">
+                            <div v-for="e in getCubreCantos(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
+                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Puertas -->
+                    <div v-if="getPuertas(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
+                        <h4 class="grupo-titulo"><span>🚪</span> Puertas</h4>
+                        <div class="grupo-items">
+                            <div v-for="e in getPuertas(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
+                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Accesorios -->
+                    <div v-if="getAccesorios(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
+                        <h4 class="grupo-titulo"><span>🔩</span> Accesorios</h4>
+                        <div class="grupo-items">
+                            <div v-for="e in getAccesorios(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
+                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
+                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-detalle-footer">
+                    <span class="modal-total-badge">{{ getTotalEntidades(componenteSeleccionado.id) }} entidades en total</span>
+                    <button v-if="canWrite" class="btn-edit" @click="editarComponente(componenteSeleccionado.id); modalDetalle = false">✏️ Editar</button>
+                    <button class="btn-secondary" @click="modalDetalle = false">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -133,6 +218,8 @@ const error = ref(null);
 const exito = ref(null);
 const modalEliminar = ref(false);
 const componenteAEliminar = ref(null);
+const modalDetalle = ref(false);
+const componenteSeleccionado = ref(null);
 const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
 
 // Cargar componentes
@@ -148,6 +235,12 @@ const cargarComponentes = async () => {
     } finally {
         cargando.value = false;
     }
+};
+
+// Abrir modal de detalle
+const abrirDetalle = (componente) => {
+    componenteSeleccionado.value = componente;
+    modalDetalle.value = true;
 };
 
 // Editar componente
@@ -816,10 +909,35 @@ const getTodasEntidades = (componenteId) => {
 
 .card-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     margin-top: auto;
     padding-top: 15px;
     border-top: 1px solid #ede7e0;
+    flex-wrap: wrap;
+}
+
+.btn-detail {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid #d4a574;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: white;
+    color: #5a4037;
+}
+
+.btn-detail:hover {
+    background: linear-gradient(135deg, #d4a574 0%, #c89564 100%);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(212, 165, 116, 0.3);
 }
 
 .btn-primary,
@@ -932,6 +1050,171 @@ const getTodasEntidades = (componenteId) => {
 
 .modal-actions button {
     flex: 1;
+}
+
+/* Modal de detalles */
+.modal-detalle-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.modal-detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 24px 28px 20px;
+    border-bottom: 2px solid #f5f1ed;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.modal-detalle-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-detalle-nombre {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5a4037;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.btn-close-modal {
+    background: #f5f1ed;
+    border: none;
+    color: #5a4037;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    line-height: 1;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-close-modal:hover {
+    background: #ede7e0;
+    transform: scale(1.1);
+}
+
+.modal-detalle-desc {
+    padding: 0 28px;
+    margin: 16px 0 0;
+    color: #888;
+    font-size: 14px;
+    line-height: 1.6;
+    flex-shrink: 0;
+}
+
+.modal-detalle-empty {
+    padding: 40px 28px;
+    text-align: center;
+    color: #aaa;
+    font-size: 15px;
+}
+
+.modal-detalle-body {
+    padding: 16px 28px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-entidad-grupo {
+    background: #faf7f2;
+    border-radius: 10px;
+    border: 1px solid #ede7e0;
+    overflow: visible;
+}
+
+.grupo-titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #5a4037;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #f5f1ed 0%, #ede7e0 100%);
+    border-bottom: 1px solid #ede7e0;
+    border-radius: 10px 10px 0 0;
+}
+
+.grupo-items {
+    display: flex;
+    flex-direction: column;
+}
+
+.entidad-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0ece6;
+    transition: background 0.2s;
+    gap: 12px;
+}
+
+.entidad-row:last-child {
+    border-bottom: none;
+}
+
+.entidad-row:hover {
+    background: #f5f1ed;
+}
+
+.entidad-row-nombre {
+    font-size: 14px;
+    color: #444;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.entidad-row-cantidad {
+    background: #f5f1ed;
+    color: #5a4037;
+    border: 1.5px solid #d4a574;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.modal-detalle-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 28px;
+    border-top: 2px solid #f5f1ed;
+    flex-shrink: 0;
+}
+
+.modal-total-badge {
+    flex: 1;
+    font-size: 13px;
+    color: #999;
+    font-weight: 600;
 }
 
 @keyframes slideDown {
