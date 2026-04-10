@@ -74,7 +74,7 @@
                 <div class="card-actions">
                     <button class="btn-detail" @click="abrirDetalle(componente)" title="Ver detalles">🔍 Ver Detalles</button>
                     <template v-if="canWrite">
-                        <button class="btn-edit" @click="editarComponente(componente.id)" title="Editar componente">✏️ Editar</button>
+                        
                         <button class="btn-delete" @click="confirmarEliminar(componente.id)" title="Eliminar componente">🗑️ Eliminar</button>
                     </template>
                 </div>
