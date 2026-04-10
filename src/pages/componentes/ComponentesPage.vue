@@ -57,7 +57,7 @@
                         <label>📋 Entidades incluidas:</label>
                     </div>
                     <ul>
-                        <li v-for="entidad in getTodasEntidades(componente.id).slice(0, 4)" :key="entidad.tipo + '-' + entidad.nombre" class="entidad-item">
+                        <li v-for="entidad in getTodasEntidades(componente.id).slice(0, PREVIEW_LIMIT)" :key="entidad.tipo + '-' + entidad.nombre" class="entidad-item">
                             <span class="entidad-bullet">•</span>
                             <span class="entidad-info">
                                 <span class="entidad-icon">{{ entidad.icono }}</span>
@@ -65,8 +65,8 @@
                                 <span class="entidad-name">{{ entidad.nombre }}</span>
                             </span>
                         </li>
-                        <li v-if="getTodasEntidades(componente.id).length > 4" class="mas-items">
-                            <span class="more-badge">+{{ getTodasEntidades(componente.id).length - 4 }}</span> más
+                        <li v-if="getTodasEntidades(componente.id).length > PREVIEW_LIMIT" class="mas-items">
+                            <span class="more-badge">+{{ getTodasEntidades(componente.id).length - PREVIEW_LIMIT }}</span> más
                         </li>
                     </ul>
                 </div>
@@ -74,7 +74,6 @@
                 <div class="card-actions">
                     <button class="btn-detail" @click="abrirDetalle(componente)" title="Ver detalles">🔍 Ver Detalles</button>
                     <template v-if="canWrite">
-                        
                         <button class="btn-delete" @click="confirmarEliminar(componente.id)" title="Eliminar componente">🗑️ Eliminar</button>
                     </template>
                 </div>
@@ -99,63 +98,12 @@
                 </div>
 
                 <div v-else class="modal-detalle-body">
-                    <!-- Estructuras -->
-                    <div v-if="getEstructuras(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
-                        <h4 class="grupo-titulo"><span>🏗️</span> Estructuras</h4>
+                    <div v-for="tipo in ENTITY_TYPES" :key="tipo.key" 
+                         v-show="getEntitiesByType(componenteSeleccionado.id, tipo.key).length > 0" 
+                         class="modal-entidad-grupo">
+                        <h4 class="grupo-titulo"><span>{{ tipo.icon }}</span> {{ tipo.label }}</h4>
                         <div class="grupo-items">
-                            <div v-for="e in getEstructuras(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
-                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
-                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
-                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
-                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Acabado Tableros -->
-                    <div v-if="getAcabadoTableros(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
-                        <h4 class="grupo-titulo"><span>🪵</span> Acabado Tableros</h4>
-                        <div class="grupo-items">
-                            <div v-for="e in getAcabadoTableros(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
-                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
-                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
-                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
-                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Cubre Cantos -->
-                    <div v-if="getCubreCantos(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
-                        <h4 class="grupo-titulo"><span>📏</span> Cubre Cantos</h4>
-                        <div class="grupo-items">
-                            <div v-for="e in getCubreCantos(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
-                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
-                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
-                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
-                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Puertas -->
-                    <div v-if="getPuertas(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
-                        <h4 class="grupo-titulo"><span>🚪</span> Puertas</h4>
-                        <div class="grupo-items">
-                            <div v-for="e in getPuertas(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
-                                <span class="entidad-row-nombre">{{ e.nombre }}</span>
-                                <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
-                                <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
-                                <span class="entidad-row-subtotal">{{ formatCosto(e.subtotal) }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Accesorios -->
-                    <div v-if="getAccesorios(componenteSeleccionado.id).length > 0" class="modal-entidad-grupo">
-                        <h4 class="grupo-titulo"><span>🔩</span> Accesorios</h4>
-                        <div class="grupo-items">
-                            <div v-for="e in getAccesorios(componenteSeleccionado.id)" :key="e.nombre" class="entidad-row">
+                            <div v-for="e in getEntitiesByType(componenteSeleccionado.id, tipo.key)" :key="e.nombre" class="entidad-row">
                                 <span class="entidad-row-nombre">{{ e.nombre }}</span>
                                 <span class="entidad-row-costo">{{ formatCosto(e.costo) }}</span>
                                 <span class="entidad-row-cantidad">{{ Number(e.cantidad) || 1 }} pza</span>
@@ -231,6 +179,78 @@ const componenteAEliminar = ref(null);
 const modalDetalle = ref(false);
 const componenteSeleccionado = ref(null);
 const canWrite = computed(() => authStore.hasPermission('catalogs.write'));
+
+// Constants
+const PREVIEW_LIMIT = 4;
+const ENTITY_TYPES = [
+    {
+        key: 'estructuras',
+        label: 'Estructuras',
+        icon: '🏗️',
+        relationStore: estructurasPorCompStore,
+        entityStore: estructuraStore,
+        relationField: 'estructurasPorComponente',
+        entityField: 'estructuras',
+        idField: 'estructura_id',
+        costFields: ['costo_unitario', 'costo', 'precio'],
+        createFn: crearEstructuraPorComponente,
+        deleteFn: eliminarEstructuraPorComponente,
+    },
+    {
+        key: 'acabado-tableros',
+        label: 'Acabado Tableros',
+        icon: '🪵',
+        relationStore: acabadoTableroPorCompStore,
+        entityStore: acabadoTableroStore,
+        relationField: 'acabadoTablerosPorComponente',
+        entityField: 'acabadoTableros',
+        idField: 'acabado_tablero_id',
+        costFields: ['costo_unitario', 'costo', 'precio'],
+        createFn: crearAcabadoTableroPorComponente,
+        deleteFn: eliminarAcabadoTableroPorComponente,
+    },
+    {
+        key: 'cubre-cantos',
+        label: 'Cubre Cantos',
+        icon: '📏',
+        relationStore: acabadoCubreCantosPorCompStore,
+        entityStore: acabadoCubreCantosStore,
+        relationField: 'acabadoCubreCantosPorComponente',
+        entityField: 'acabadoCubreCantos',
+        idField: 'acabado_cubre_canto_id',
+        idFieldAlt: 'acabado_cubre_cantos_id',
+        costFields: ['costo_unitario', 'costo', 'precio'],
+        createFn: crearAcabadoCubreCantoPorComponente,
+        deleteFn: eliminarAcabadoCubreCantoPorComponente,
+    },
+    {
+        key: 'puertas',
+        label: 'Puertas',
+        icon: '🚪',
+        relationStore: puertasPorCompStore,
+        entityStore: puertasStore,
+        relationField: 'puertasPorComponente',
+        entityField: 'puertas',
+        idField: 'puerta_id',
+        costFields: ['precio_final', 'costo_unitario', 'costo', 'precio'],
+        createFn: crearPuertaPorComponente,
+        deleteFn: eliminarPuertaPorComponente,
+    },
+    {
+        key: 'accesorios',
+        label: 'Accesorios',
+        icon: '🔩',
+        relationStore: accesoriosPorCompStore,
+        entityStore: accesoriosStore,
+        relationField: 'accesoriosPorComponente',
+        entityField: 'accesorios',
+        idField: 'accesorio_id',
+        idFieldAlt: 'accesorio',
+        costFields: ['precio', 'costo_unitario', 'costo'],
+        createFn: crearAccesorioPorComponente,
+        deleteFn: eliminarAccesorioPorComponente,
+    },
+];
 
 // Cargar componentes
 const cargarComponentes = async () => {
@@ -464,168 +484,68 @@ const eliminarComponenteFunc = async () => {
 // Lifecycle
 onMounted(async () => {
     await cargarComponentes();
-    // Cargar entidades relacionadas en paralelo
+    // Cargar todas las stores en paralelo
     await Promise.all([
-        estructurasPorCompStore.fetchEstructurasPorComponente(),
-        acabadoTableroPorCompStore.fetchAcabadoTablerosPorComponente(),
-        acabadoCubreCantosPorCompStore.fetchAcabadoCubreCantosPorComponente(),
-        puertasPorCompStore.fetchPuertasPorComponente(),
-        accesoriosPorCompStore.fetchAccesoriosPorComponente(),
-        estructuraStore.fetchEstructuras(),
-        acabadoTableroStore.fetchAcabadoTableros(),
-        acabadoCubreCantosStore.fetchAcabadoCubreCantos(),
-        puertasStore.fetchPuertas(),
-        accesoriosStore.fetchAccesorios(),
+        ...ENTITY_TYPES.map(t => t.relationStore[`fetch${t.relationField.charAt(0).toUpperCase() + t.relationField.slice(1)}`]()),
+        ...ENTITY_TYPES.map(t => t.entityStore[`fetch${t.entityField.charAt(0).toUpperCase() + t.entityField.slice(1)}`]()),
     ]);
 });
 
-// Obtener entidades relacionadas a un componente
-const getEstructuras = (componenteId) => {
-    const relaciones = estructurasPorCompStore.estructurasPorComponente.filter(
-        r => Number(r.componente_id) === Number(componenteId)
-    );
-    return relaciones.map(r => {
-        const entidad = estructuraStore.estructuras.find(e => Number(e.id) === Number(r.estructura_id));
-        if (!entidad) return null;
-        const cantidad = Number(r.cantidad) || 1;
-        const costo = Number(entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
-        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
-    }).filter(Boolean);
-};
+// Generic entity getter
+const getEntitiesByType = (componenteId, typeKey) => {
+    const tipo = ENTITY_TYPES.find(t => t.key === typeKey);
+    if (!tipo) return [];
 
-const getAcabadoTableros = (componenteId) => {
-    const relaciones = acabadoTableroPorCompStore.acabadoTablerosPorComponente.filter(
+    const relaciones = tipo.relationStore[tipo.relationField].filter(
         r => Number(r.componente_id) === Number(componenteId)
     );
-    return relaciones.map(r => {
-        const entidad = acabadoTableroStore.acabadoTableros.find(e => Number(e.id) === Number(r.acabado_tablero_id));
-        if (!entidad) return null;
-        const cantidad = Number(r.cantidad) || 1;
-        const costo = Number(entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
-        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
-    }).filter(Boolean);
-};
 
-const getCubreCantos = (componenteId) => {
-    const relaciones = acabadoCubreCantosPorCompStore.acabadoCubreCantosPorComponente.filter(
-        r => Number(r.componente_id) === Number(componenteId)
-    );
     return relaciones.map(r => {
-        const id = r.acabado_cubre_canto_id || r.acabado_cubre_cantos_id;
-        const entidad = acabadoCubreCantosStore.acabadoCubreCantos.find(e => Number(e.id) === Number(id));
-        if (!entidad) return null;
-        const cantidad = Number(r.cantidad) || 1;
-        const costo = Number(entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
-        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
-    }).filter(Boolean);
-};
-
-const getPuertas = (componenteId) => {
-    const relaciones = puertasPorCompStore.puertasPorComponente.filter(
-        r => Number(r.componente_id) === Number(componenteId)
-    );
-    return relaciones.map(r => {
-        const entidad = puertasStore.puertas.find(e => Number(e.id) === Number(r.puerta_id));
-        if (!entidad) return null;
-        const cantidad = Number(r.cantidad) || 1;
-        const costo = Number(entidad.precio_final ?? entidad.costo_unitario ?? entidad.costo ?? entidad.precio ?? 0);
-        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
-    }).filter(Boolean);
-};
-
-const getAccesorios = (componenteId) => {
-    const relaciones = accesoriosPorCompStore.accesoriosPorComponente.filter(
-        r => Number(r.componente_id) === Number(componenteId)
-    );
-    return relaciones.map(r => {
-        const id = r.accesorio_id || r.accesorio;
-        const entidad = accesoriosStore.accesorios.find(e => 
-            Number(e.id) === Number(id) || e.nombre === id
+        const entityId = r[tipo.idField] || (tipo.idFieldAlt && r[tipo.idFieldAlt]);
+        const entidad = tipo.entityStore[tipo.entityField].find(e => 
+            Number(e.id) === Number(entityId) || (tipo.idFieldAlt === 'accesorio' && e.nombre === entityId)
         );
         if (!entidad) return null;
+
         const cantidad = Number(r.cantidad) || 1;
-        const costo = Number(entidad.precio ?? entidad.costo_unitario ?? entidad.costo ?? 0);
-        return { nombre: entidad.nombre, cantidad, costo, subtotal: costo * cantidad };
+        const costo = tipo.costFields.reduce((cost, field) => cost ?? entidad[field], null) ?? 0;
+        
+        return { nombre: entidad.nombre, cantidad, costo: Number(costo), subtotal: Number(costo) * cantidad };
     }).filter(Boolean);
 };
 
-// NEW FUNCTION: Get total count of all entities for a component
-const getTotalEntidades = (componenteId) => {
-    return getEstructuras(componenteId).length
-        + getAcabadoTableros(componenteId).length
-        + getCubreCantos(componenteId).length
-        + getPuertas(componenteId).length
-        + getAccesorios(componenteId).length;
-};
+// Legacy specific getters (for backward compatibility)
+const getEstructuras = (componenteId) => getEntitiesByType(componenteId, 'estructuras');
+const getAcabadoTableros = (componenteId) => getEntitiesByType(componenteId, 'acabado-tableros');
+const getCubreCantos = (componenteId) => getEntitiesByType(componenteId, 'cubre-cantos');
+const getPuertas = (componenteId) => getEntitiesByType(componenteId, 'puertas');
+const getAccesorios = (componenteId) => getEntitiesByType(componenteId, 'accesorios');
 
-const getCostoTotal = (componenteId) => [
-    ...getEstructuras(componenteId),
-    ...getAcabadoTableros(componenteId),
-    ...getCubreCantos(componenteId),
-    ...getPuertas(componenteId),
-    ...getAccesorios(componenteId),
-].reduce((acc, e) => acc + (e.subtotal || 0), 0);
+// Total count and cost
+const getTotalEntidades = (componenteId) => 
+    ENTITY_TYPES.reduce((total, tipo) => total + getEntitiesByType(componenteId, tipo.key).length, 0);
+
+const getCostoTotal = (componenteId) => 
+    ENTITY_TYPES.reduce((total, tipo) => {
+        const entities = getEntitiesByType(componenteId, tipo.key);
+        return total + entities.reduce((sum, e) => sum + (e.subtotal || 0), 0);
+    }, 0);
 
 const formatCosto = (val) => {
     if (!val) return '—';
     return '$' + Number(val).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-// NEW FUNCTION: Get unified array of all entities with type, icon, name, and quantity
+// Get all entities with metadata for preview
 const getTodasEntidades = (componenteId) => {
-    const entidades = [];
-    
-    // Estructuras
-    getEstructuras(componenteId).forEach(e => {
-        entidades.push({
-            tipo: 'estructura',
-            icono: '🏗️',
+    return ENTITY_TYPES.flatMap(tipo => 
+        getEntitiesByType(componenteId, tipo.key).map(e => ({
+            tipo: tipo.key,
+            icono: tipo.icon,
             nombre: e.nombre,
             cantidad: e.cantidad
-        });
-    });
-    
-    // Acabado Tableros
-    getAcabadoTableros(componenteId).forEach(e => {
-        entidades.push({
-            tipo: 'acabado-tablero',
-            icono: '🪵',
-            nombre: e.nombre,
-            cantidad: e.cantidad
-        });
-    });
-    
-    // Cubre Cantos
-    getCubreCantos(componenteId).forEach(e => {
-        entidades.push({
-            tipo: 'cubre-canto',
-            icono: '📏',
-            nombre: e.nombre,
-            cantidad: e.cantidad
-        });
-    });
-    
-    // Puertas
-    getPuertas(componenteId).forEach(e => {
-        entidades.push({
-            tipo: 'puerta',
-            icono: '🚪',
-            nombre: e.nombre,
-            cantidad: e.cantidad
-        });
-    });
-    
-    // Accesorios
-    getAccesorios(componenteId).forEach(e => {
-        entidades.push({
-            tipo: 'accesorio',
-            icono: '🔩',
-            nombre: e.nombre,
-            cantidad: e.cantidad
-        });
-    });
-    
-    return entidades;
+        }))
+    );
 };
 </script>
 
