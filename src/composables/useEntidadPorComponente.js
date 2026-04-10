@@ -61,7 +61,7 @@ export function useEntidadPorComponente(config) {
 
     const obtenerEntidadAnidada = (registro, id) => {
         for (const key of nestedKeys) {
-            if (registro?.[key]) return registro[key];
+            if (registro?.[key] && typeof registro[key] === 'object') return registro[key];
         }
         return disponiblesMap.value?.get(id) || null;
     };
@@ -80,7 +80,7 @@ export function useEntidadPorComponente(config) {
     const obtenerNombre = (registro) => {
         const id = obtenerId(registro);
         const entidad = obtenerEntidadAnidada(registro, id);
-        return entidad?.nombre || `${label} #${id || 'N/A'}`;
+        return entidad?.nombre || entidad?.accesorio || `${label} #${id || 'N/A'}`;
     };
 
     const obtenerCodigo = (registro) => {

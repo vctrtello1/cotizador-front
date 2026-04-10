@@ -503,14 +503,14 @@ const getEntitiesByType = (componenteId, typeKey) => {
     return relaciones.map(r => {
         const entityId = r[tipo.idField] || (tipo.idFieldAlt && r[tipo.idFieldAlt]);
         const entidad = tipo.entityStore[tipo.entityField].find(e => 
-            Number(e.id) === Number(entityId) || (tipo.idFieldAlt === 'accesorio' && e.nombre === entityId)
+            Number(e.id) === Number(entityId) || (tipo.idFieldAlt === 'accesorio' && (e.nombre === entityId || e.accesorio === entityId))
         );
         if (!entidad) return null;
 
         const cantidad = Number(r.cantidad) || 1;
         const costo = tipo.costFields.reduce((cost, field) => cost ?? entidad[field], null) ?? 0;
         
-        return { nombre: entidad.nombre, cantidad, costo: Number(costo), subtotal: Number(costo) * cantidad };
+        return { nombre: entidad.nombre || entidad.accesorio, cantidad, costo: Number(costo), subtotal: Number(costo) * cantidad };
     }).filter(Boolean);
 };
 

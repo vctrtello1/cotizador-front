@@ -292,7 +292,16 @@ const estructurasDisponiblesMap = computed(() => new Map((estructurasDisponibles
 const cubreCantosDisponiblesMap = computed(() => new Map((cubreCantosDisponibles.value || []).map(c => [c.id, c])));
 const acabadoTablerosDisponiblesMap = computed(() => new Map((acabadoTablerosDisponibles.value || []).map(t => [t.id, t])));
 const puertasDisponiblesMap = computed(() => new Map((puertasDisponibles.value || []).map(p => [p.id, p])));
-const accesoriosDisponiblesMap = computed(() => new Map((accesoriosDisponibles.value || []).map(a => [a.id, a])));
+const accesoriosDisponiblesMap = computed(() => {
+    const map = new Map();
+    for (const a of accesoriosDisponibles.value || []) {
+        const entidad = { ...a, nombre: a.nombre || a.accesorio };
+        map.set(a.id, entidad);
+        const nameKey = a.nombre || a.accesorio;
+        if (nameKey) map.set(nameKey, entidad);
+    }
+    return map;
+});
 
 // ===== Composables de entidades por componente =====
 const {
