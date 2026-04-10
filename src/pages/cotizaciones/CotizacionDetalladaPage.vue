@@ -1,4 +1,5 @@
 <template>
+<div class="page-root">
     <!-- Notificación flotante -->
     <transition name="slide-down">
         <div v-if="mensaje" class="custom-message" :class="`message-${tipoMensaje}`">
@@ -162,6 +163,7 @@
         <div class="spinner"></div>
         <p>Cargando cotización...</p>
     </div>
+</div>
 </template>
 
 
@@ -485,6 +487,10 @@ const sincronizarComponentes = async () => {
 </script>
 
 <style scoped>
+.page-root {
+    display: contents;
+}
+
 .cotizacion-detallada-container {
     max-width: 1400px;
     margin: 0 auto;
