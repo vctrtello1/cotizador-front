@@ -44,3 +44,20 @@ export const actualizarEstadoCotizacion = async (id, estado) => {
   const response = await api.put(`/cotizaciones/${id}/estado`, { estado });
   return response.data;
 };
+
+export const descargarPDFCotizacion = async (id) => {
+  const response = await api.get(`/cotizaciones/${id}/pdf`, {
+    responseType: 'blob',
+  });
+  const url = window.URL.createObjectURL(response.data);
+  const link = document.createElement('a');
+  link.href = url;
+  const filename = response.headers['content-disposition']
+    ?.match(/filename="?([^"]+)"?/)?.[1]
+    || `cotizacion-${String(id).padStart(6, '0')}.pdf`;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};

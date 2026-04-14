@@ -135,7 +135,7 @@
                     </div>
                     <div class="modulo-details-row">
                         <input v-model="modulo.codigo" class="modulo-codigo-input" placeholder="📋 Código">
-                        <input v-model="modulo.descripcion" class="modulo-descripcion-input" placeholder="📝 Descripción">
+                        <textarea v-model="modulo.descripcion" class="modulo-descripcion-input" placeholder="📝 Descripción" rows="2"></textarea>
                     </div>
                 </div>
 
@@ -1269,6 +1269,7 @@ const cargarModulos = async () => {
     color: #F5F1E8;
     font-family: inherit;
     font-size: 0.95rem;
+    resize: vertical;
 }
 
 .modulo-codigo-input::placeholder,

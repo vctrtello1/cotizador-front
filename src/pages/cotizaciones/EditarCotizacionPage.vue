@@ -1312,7 +1312,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion } from '../../http/cotizaciones-api';
+import { getCotizacionById, actualizarCotizacion, sincronizarModulos, actualizarEstadoCotizacion, descargarPDFCotizacion } from '../../http/cotizaciones-api';
 import { fetchClientes, crearCliente, actualizarCliente } from '../../http/clientes-api';
 import { fetchModulos, getModuloById } from '../../http/modulos-api';
 import { fetchComponentes, actualizarComponente, getComponenteById } from '../../http/componentes-api';
@@ -3338,119 +3338,14 @@ const guardarCambios = async () => {
 const generarPDF = async () => {
     try {
         generandoPDF.value = true;
-        console.log('Iniciando generación de PDF...');
-        
-        // Importar jsPDF dinámicamente
-        console.log('Importando jsPDF...');
-        const jsPDFModule = await import('jspdf');
-        const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
-        console.log('jsPDF importado correctamente');
-        
-        const doc = new jsPDF();
-        console.log('Documento PDF creado');
-        
-        // Configuración
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 20;
-        let y = 20;
-        
-        // Título
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text('COTIZACIÓN', pageWidth / 2, y, { align: 'center' });
-        y += 15;
-        
-        // Número de cotización
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Número: #${cotizacion.value.id}`, margin, y);
-        y += 8;
-        doc.text(`Fecha: ${new Date(cotizacion.value.fecha).toLocaleDateString('es-ES')}`, margin, y);
-        y += 8;
-        doc.text(`Estado: ${cotizacion.value.estado}`, margin, y);
-        y += 15;
-        
-        // Información del cliente
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('CLIENTE', margin, y);
-        y += 8;
-        
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        if (cotizacion.value.cliente) {
-            doc.text(`Nombre: ${cotizacion.value.cliente.nombre}`, margin, y);
-            y += 6;
-            if (cotizacion.value.cliente.empresa) {
-                doc.text(`Empresa: ${cotizacion.value.cliente.empresa}`, margin, y);
-                y += 6;
-            }
-            if (cotizacion.value.cliente.email) {
-                doc.text(`Email: ${cotizacion.value.cliente.email}`, margin, y);
-                y += 6;
-            }
-            if (cotizacion.value.cliente.telefono) {
-                doc.text(`Teléfono: ${cotizacion.value.cliente.telefono}`, margin, y);
-                y += 6;
-            }
-        }
-        y += 10;
-        
-        // Módulos
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('MÓDULOS', margin, y);
-        y += 10;
-        
-        console.log('Agregando módulos al PDF:', modulosAsignados.value.length);
-        modulosAsignados.value.forEach((modulo, index) => {
-            // Verificar si necesitamos una nueva página
-            if (y > 250) {
-                doc.addPage();
-                y = 20;
-            }
-            
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${index + 1}. ${modulo.nombre}`, margin, y);
-            y += 6;
-            
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            if (modulo.descripcion) {
-                doc.text(`   ${modulo.descripcion}`, margin, y);
-                y += 6;
-            }
-            
-            doc.text(`   Código: ${modulo.codigo}`, margin, y);
-            y += 6;
-            doc.text(`   Cantidad: ${modulo.cantidad}`, margin, y);
-            y += 6;
-            doc.text(`   Precio Unitario: $${formatCurrency(modulo.costo_total || calcularPrecioUnitarioModulo(modulo))}`, margin, y);
-            y += 6;
-            doc.text(`   Subtotal: $${formatCurrency(calcularSubtotalModulo(modulo))}`, margin, y);
-            y += 10;
-        });
-        
-        // Total
-        y += 5;
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`TOTAL: $${formatCurrency(totalCotizacion.value)}`, pageWidth - margin, y, { align: 'right' });
-        
-        console.log('Guardando PDF...');
-        // Guardar el PDF
-        doc.save(`Cotizacion_${cotizacion.value.id}.pdf`);
-        console.log('PDF guardado correctamente');
-        
-        success.value = 'PDF generado correctamente';
+        await descargarPDFCotizacion(cotizacion.value.id);
+        success.value = 'PDF descargado correctamente';
         setTimeout(() => {
             success.value = null;
         }, 3000);
     } catch (err) {
         console.error('Error al generar PDF:', err);
-        console.error('Stack trace:', err.stack);
-        error.value = 'Error al generar el PDF: ' + err.message;
+        error.value = 'Error al generar el PDF: ' + (err.response?.data?.message || err.message);
         setTimeout(() => {
             error.value = null;
         }, 5000);

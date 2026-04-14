@@ -176,6 +176,7 @@ import { useComponentesPorCotizacionStore } from '@/stores/componentes-por-cotiz
 import { useModulosStore } from '@/stores/modulos';
 import { useComponentesStore } from '@/stores/componentes';
 import { useAuthStore } from '@/stores/auth';
+import { descargarPDFCotizacion } from '@/http/cotizaciones-api';
 
 const esViewerOEditor = computed(() => {
     const authStore = useAuthStore();
@@ -311,91 +312,8 @@ const seleccionarCliente = async (cliente) => {
 const generarPDF = async () => {
     generandoPDF.value = true;
     try {
-        const jsPDFModule = await import('jspdf');
-        const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
-        const doc = new jsPDF();
-        
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 20;
-        let y = 20;
-        
-        // Título
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text('COTIZACIÓN', pageWidth / 2, y, { align: 'center' });
-        y += 15;
-        
-        // Número y fecha
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Número: #${cotizacion.value.id}`, margin, y);
-        y += 8;
-        doc.text(`Fecha: ${new Date(cotizacion.value.fecha).toLocaleDateString('es-ES')}`, margin, y);
-        y += 15;
-        
-        // Información del cliente
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('CLIENTE', margin, y);
-        y += 8;
-        
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        const cliente = cotizacion.value.cliente;
-        if (cliente) {
-            doc.text(`Nombre: ${cliente.nombre}`, margin, y);
-            y += 6;
-            if (cliente.empresa && cliente.nombre !== 'Publico En Geneal') {
-                doc.text(`Empresa: ${cliente.empresa}`, margin, y);
-                y += 6;
-            }
-            if (cliente.email && cliente.nombre !== 'Publico En Geneal') {
-                doc.text(`Email: ${cliente.email}`, margin, y);
-                y += 6;
-            }
-            if (cliente.telefono) {
-                doc.text(`Teléfono: ${cliente.telefono}`, margin, y);
-                y += 6;
-            }
-        }
-        y += 10;
-        
-        // Módulos
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('COMPONENTES', margin, y);
-        y += 10;
-        
-        detalles.value.forEach((modulo, index) => {
-            if (y > 250) {
-                doc.addPage();
-                y = 20;
-            }
-            
-            // Componentes del módulo
-            if (modulo.componentes?.length > 0) {
-                doc.setFontSize(9);
-                modulo.componentes.forEach(comp => {
-                    if (y > 270) {
-                        doc.addPage();
-                        y = 20;
-                    }
-                    doc.text(`${comp.nombre}`, margin, y);
-                    y += 4;
-                    doc.text(`Cantidad: ${comp.cantidad} | Precio: $${formatCurrency(comp.precio_unitario)} | Subtotal: $${formatCurrency(calcularSubtotal(comp))}`, margin + 5, y);
-                    y += 6;
-                });
-            }
-            y += 3;
-        });
-        
-        // Total
-        y += 10;
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`TOTAL: $${formatCurrency(totalCotizacion.value)}`, pageWidth - margin, y, { align: 'right' });
-        
-        doc.save(`Cotizacion_${cotizacion.value.id}.pdf`);
+        await descargarPDFCotizacion(cotizacion.value.id);
+        mostrarMensaje('✅ PDF descargado correctamente', 'success', 3000);
     } catch (err) {
         console.error('Error al generar PDF:', err);
         mostrarMensaje('❌ Error al generar el PDF', 'error', 4000);
